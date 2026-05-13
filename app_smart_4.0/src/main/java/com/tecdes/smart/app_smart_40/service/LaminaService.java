@@ -1,13 +1,12 @@
 package com.tecdes.smart.app_smart_40.service;
 
 import org.springframework.stereotype.Service;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tecdes.smart.app_smart_40.dto.LaminaDTO;
 import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.repository.LaminaRepository;
-
 
 @Service
 public class LaminaService {
@@ -24,9 +23,16 @@ public class LaminaService {
         }
     }
     
+    
     @Transactional
-    public Lamina salvar(Lamina lamina) {
+    public Lamina salvar(LaminaDTO dto) {
+        Lamina lamina = new Lamina();
+        lamina.setCor(dto.cor());
+        lamina.setPadrao(dto.padrao());
+        lamina.setPosicaoNoBloco(dto.posicaoNoBloco());
+        
         validarRegrasLamina(lamina);
+        
         return laminaRepository.save(lamina);
     }
 }

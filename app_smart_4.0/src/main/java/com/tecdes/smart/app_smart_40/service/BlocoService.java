@@ -1,12 +1,16 @@
 package com.tecdes.smart.app_smart_40.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
+import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Service
 public class BlocoService {
@@ -15,31 +19,47 @@ public class BlocoService {
     private BlocoRepository blocoRepository;
 
     @Autowired
-    private LaminaService laminaService; 
-    @Transactional
-    public Bloco salvarBloco(Bloco bloco, Integer tipoPedido) {
-        validarRegrasDeOuro(bloco, tipoPedido);
+    private LaminaService laminaService;
 
-        if (bloco.getLaminas() != null) {
-            bloco.getLaminas().forEach(lamina -> {
-                laminaService.validarRegrasLamina(lamina); 
+    @Transactional
+    public Bloco salvarBloco(BlocoDTO dto, Integer tipoPedido) {
+        validarRegrasDeOuro(dto, tipoPedido);
+
+        Bloco bloco = new Bloco();
+        bloco.setIdPedido(dto.idPedido());
+        bloco.setIdEstoque(dto.idEstoque());
+        bloco.setCor(dto.cor());
+
+        if (dto.laminas() != null) {
+            List<Lamina> entidadesLaminas = dto.laminas().stream().map(lDTO -> {
+                Lamina lamina = new Lamina();
+                lamina.setCor(lDTO.cor());
+                lamina.setPadrao(lDTO.padrao());
+                lamina.setPosicaoNoBloco(lDTO.posicaoNoBloco());
+                
+                laminaService.validarRegrasLamina(lamina);
+                
                 lamina.setBloco(bloco);
-            });
+                
+                return lamina;
+            }).collect(Collectors.toList());
+
+            bloco.setLaminas(entidadesLaminas);
         }
 
         return blocoRepository.save(bloco);
     }
 
-    private void validarRegrasDeOuro(Bloco bloco, Integer tipoPedido) {
-        if (bloco.getLaminas() != null && bloco.getLaminas().size() > 3) {//•	Regra da Lâmina: Garantir que cada bloco tenha no máximo 3 lâminas
+    private void validarRegrasDeOuro(BlocoDTO dto, Integer tipoPedido) {
+        if (dto.laminas() != null && dto.laminas().size() > 3) {
             throw new RuntimeException("Erro: O bloco excede o limite permitido de 3 lâminas.");
         }
 
-        if (bloco.getCor() == null || bloco.getCor() < 1 || bloco.getCor() > 3) {
+        if (dto.cor() == null || dto.cor() < 1 || dto.cor() > 3) {
             throw new RuntimeException("Erro: Cor do bloco inválida para a produção.");
         }
 
-        if (bloco.getIdEstoque() == null || bloco.getIdEstoque() <= 0) {
+        if (dto.idEstoque() == null || dto.idEstoque() <= 0) {
             throw new RuntimeException("Erro: Posição de estoque inválida ou não informada.");
         }
     }
