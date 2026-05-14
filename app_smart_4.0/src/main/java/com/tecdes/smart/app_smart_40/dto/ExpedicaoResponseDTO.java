@@ -7,16 +7,12 @@ import lombok.Builder;
 @Builder
 public record ExpedicaoResponseDTO(
         Long idExpedicao,
-        Long nrPosicao,
-        Long idPedido,
-        Long nrOrdemProducao
-) {
+        PedidoDTO pedidoDTO,
+        Integer posicao) {
     public static ExpedicaoResponseDTO fromEntity(Expedicao expedicao) {
         return new ExpedicaoResponseDTO(
-                expedicao.getIdExpedicao(),
-                expedicao.getNrPosicao(),
-                expedicao.getPedido().getIdPedido(),
-                expedicao.getPedido().getNrOrdemProducao()
-        );
+                expedicao.getId(),
+                PedidoDTO.fromEntity(expedicao.getPedido()),
+                expedicao.getPosicao());
     }
 }

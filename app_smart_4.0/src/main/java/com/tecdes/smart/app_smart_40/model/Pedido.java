@@ -14,6 +14,9 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -54,8 +57,13 @@ public class Pedido {
     @Default
     private LocalDateTime dataCriacao = LocalDateTime.now();
     
+
+    @OneToMany(mappedBy = "pedido")
     private List<Bloco> blocos;
 
+
+    @ManyToOne
+    @JoinColumn(name= "id_expedicao")
     private Expedicao expedicao;
     
     @Column(name = "dt_entrada_expedicao", nullable = true)
