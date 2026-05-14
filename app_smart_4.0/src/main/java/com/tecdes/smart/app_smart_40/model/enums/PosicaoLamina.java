@@ -1,16 +1,13 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
-public enum CorLamina {
-    VERMELHO(1),
-    AZUL(2),
-    AMARELO(3),
-    VERDE(4),
-    PRETO(5),
-    BRANCO(6);
+public enum PosicaoLamina {
+    ESQUERDA(1),
+    FRENTE(2),
+    DIREITA(3);
 
     private final Integer value;
 
-    CorLamina(Integer value) {
+    PosicaoLamina(Integer value) {
         this.value = value;
     }
 
