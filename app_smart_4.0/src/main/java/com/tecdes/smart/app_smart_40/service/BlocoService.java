@@ -22,7 +22,7 @@ public class BlocoService {
     private LaminaService laminaService;
 
     @Transactional
-    public Bloco salvarBloco(BlocoDTO dto, Integer tipoPedido) {
+    public BlocoDTO salvarBloco(BlocoDTO dto, Integer tipoPedido) {
         validarRegrasDeOuro(dto, tipoPedido);
 
         Bloco bloco = new Bloco();
@@ -36,18 +36,22 @@ public class BlocoService {
                 lamina.setCor(lDTO.cor());
                 lamina.setPadrao(lDTO.padrao());
                 lamina.setPosicaoNoBloco(lDTO.posicaoNoBloco());
-                
+                lamina.setBloco(bloco); 
                 laminaService.validarRegrasLamina(lamina);
-                
-                lamina.setBloco(bloco);
-                
                 return lamina;
             }).collect(Collectors.toList());
-
             bloco.setLaminas(entidadesLaminas);
         }
 
-        return blocoRepository.save(bloco);
+        Bloco blocoSalvo = blocoRepository.save(bloco);
+
+        
+        return new BlocoDTO(
+            blocoSalvo.getIdPedido(),
+            blocoSalvo.getIdEstoque(),
+            blocoSalvo.getCor(),
+            dto.laminas() 
+        );
     }
 
     private void validarRegrasDeOuro(BlocoDTO dto, Integer tipoPedido) {
