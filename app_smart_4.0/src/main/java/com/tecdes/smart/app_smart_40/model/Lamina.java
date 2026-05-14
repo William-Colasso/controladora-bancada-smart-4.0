@@ -1,7 +1,5 @@
 package com.tecdes.smart.app_smart_40.model;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.tecdes.smart.app_smart_40.model.enums.CorLamina;
 import com.tecdes.smart.app_smart_40.model.enums.PadraoLamina;
@@ -12,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder.Default;
 
 @Entity
 @Table(name = "T_SMT_LAMINA")
@@ -30,6 +29,7 @@ public class Lamina {
     @Column(name = "st_cor_lamina", nullable = false)
     private CorLamina cor;
     @Column(name = "st_padrao", nullable = false)
+    @Default
     private PadraoLamina padrao = PadraoLamina.NENHUM; 
 
     @Column(name = "st_posicao", nullable = false)

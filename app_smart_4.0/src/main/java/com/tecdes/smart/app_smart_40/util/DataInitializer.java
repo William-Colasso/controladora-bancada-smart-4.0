@@ -8,21 +8,9 @@ import org.springframework.stereotype.Component;
 
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
-import com.tecdes.smart.app_smart_40.model.Pedido;
-import com.tecdes.smart.app_smart_40.model.Bloco;
-import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
-import com.tecdes.smart.app_smart_40.model.enums.CorLamina;
-import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
-import com.tecdes.smart.app_smart_40.model.enums.PadraoLamina;
-import com.tecdes.smart.app_smart_40.model.enums.PosicaoLamina;
-import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
-import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
-import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
-import com.tecdes.smart.app_smart_40.repository.LaminaRepository;
-import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
