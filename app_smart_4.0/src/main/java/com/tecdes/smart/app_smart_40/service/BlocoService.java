@@ -59,7 +59,7 @@ public class BlocoService {
             throw new RuntimeException("Erro: O bloco excede o limite permitido de 3 lâminas.");
         }
 
-        if (dto.cor() == null || dto.cor() < 1 || dto.cor() > 3) {
+        if (dto.cor() == null || dto.cor() < 0 || dto.cor() > 3) {
             throw new RuntimeException("Erro: Cor do bloco inválida para a produção.");
         }
 
