@@ -1,5 +1,7 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
+import jakarta.persistence.EnumeratedValue;
+
 public enum CorLamina {
     VERMELHO(1),
     AZUL(2),
@@ -8,13 +10,15 @@ public enum CorLamina {
     PRETO(5),
     BRANCO(6);
 
-    private final Integer value;
 
-    CorLamina(Integer value) {
+    @EnumeratedValue
+    private final int value;
+
+    CorLamina(int value) {
         this.value = value;
     }
 
-    public Integer getValue() {
+    public int getValue() {
         return value;
     }
 }

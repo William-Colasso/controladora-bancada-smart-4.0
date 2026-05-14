@@ -1,18 +1,21 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
+import jakarta.persistence.EnumeratedValue;
+
 public enum StatusPedido {
 
     PENDENTE(1),
     PRODUCAO(2),
     CONCLUIDO(3);
 
-    private final Integer value;
+    @EnumeratedValue
+    private final int value;
 
-    StatusPedido(Integer value) {
+    StatusPedido(int value) {
         this.value = value;
     }
 
-    public Integer getValue() {
+    public int getValue() {
         return value;
     }
 }

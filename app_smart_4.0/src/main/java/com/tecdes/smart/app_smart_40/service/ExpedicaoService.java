@@ -1,7 +1,6 @@
 package com.tecdes.smart.app_smart_40.service;
 
-import com.tecdes.smart.app_smart_40.dto.ExpedicaoRequestDTO;
-import com.tecdes.smart.app_smart_40.dto.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.ExpedicaoDTO;
 import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
@@ -20,7 +19,7 @@ public class ExpedicaoService {
     private final ExpedicaoRepository expedicaoRepository;
     private final PedidoRepository pedidoRepository;
 
-    public ExpedicaoResponseDTO registrarExpedicao(ExpedicaoRequestDTO dto) {
+    public ExpedicaoDTO registrarExpedicao(ExpedicaoDTO dto) {
 
         if (dto.pedidoDTO() == null) {
             throw new RuntimeException("Pedido é obrigatório!");
@@ -29,7 +28,7 @@ public class ExpedicaoService {
         Pedido pedido = pedidoRepository.findById(dto.pedidoDTO().id())
                 .orElseThrow(() -> new RuntimeException("Pedido " + dto.pedidoDTO().id() + " não encontrado!"));
 
-        if (expedicaoRepository.existsByPedidoIdPedido(dto.pedidoDTO().id())) {
+        if (expedicaoRepository.existsByPedido(dto.pedidoDTO().toEntity())) {
             throw new RuntimeException("Pedido " + dto.pedidoDTO().id() + " já possui registro na expedição!");
         }
 
@@ -54,19 +53,22 @@ public class ExpedicaoService {
         expedicao.setPedido(pedido);
         expedicao.setPosicao(posicaoLivre);
 
-        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
+        return ExpedicaoDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
 
     // Chamado internamente pelo PedidoService ao concluir pedido
-    public ExpedicaoResponseDTO registrarExpedicao(Pedido pedido) {
-        ExpedicaoRequestDTO dto = new ExpedicaoRequestDTO(PedidoDTO.fromEntity(pedido));
+    public ExpedicaoDTO registrarExpedicao(Pedido pedido) {
+        ExpedicaoDTO dto = ExpedicaoDTO
+                .builder()
+                .pedidoDTO(PedidoDTO.fromEntity(pedido))
+                .build();
         return registrarExpedicao(dto);
     }
 
-    public List<ExpedicaoResponseDTO> listarTodos() {
+    public List<ExpedicaoDTO> listarTodos() {
         return expedicaoRepository.findAll()
                 .stream()
-                .map(ExpedicaoResponseDTO::fromEntity)
+                .map(ExpedicaoDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 }

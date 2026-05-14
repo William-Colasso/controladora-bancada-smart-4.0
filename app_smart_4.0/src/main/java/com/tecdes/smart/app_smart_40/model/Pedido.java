@@ -3,6 +3,9 @@ package com.tecdes.smart.app_smart_40.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
@@ -17,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,37 +40,41 @@ public class Pedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_pedido")
     private Long id;
 
     @Column(name = "nr_ordem_producao", nullable = false)
     private Integer ordemProducao;
 
     @Column(name = "vl_status", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
     private StatusPedido status;
 
     @Column(name = "tp_pedido", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
     private TipoPedido tipoPedido;
 
     @Column(name = "vl_cor_tampa", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
     private CorTampa corTampa;
 
     @Column(name = "dt_criacao", nullable = false)
-    @Default
-    private LocalDateTime dataCriacao = LocalDateTime.now();
-    
+    private LocalDateTime dataCriacao;
+
+    @PrePersist
+    protected void prePersist() {
+        if (dataCriacao == null) {
+            dataCriacao = LocalDateTime.now();
+        }
+    }
 
     @OneToMany(mappedBy = "pedido")
+    @JsonManagedReference
     private List<Bloco> blocos;
 
-
     @ManyToOne
-    @JoinColumn(name= "id_expedicao")
+    @JoinColumn(name = "id_expedicao", nullable = false)
+    @JsonIgnore
     private Expedicao expedicao;
-    
+
     @Column(name = "dt_entrada_expedicao", nullable = true)
-    private LocalDateTime dataEntradaExpedicao ;
-    
+    private LocalDateTime dataEntradaExpedicao;
+
 }

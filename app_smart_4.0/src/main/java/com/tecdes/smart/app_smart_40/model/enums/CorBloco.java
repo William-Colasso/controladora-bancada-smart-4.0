@@ -1,18 +1,21 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
+import jakarta.persistence.EnumeratedValue;
+
 public enum CorBloco {
     VAZIO(0),
     PRETO(1),
     VERMELHO(2),
     AZUL(3);
 
-    private final Integer value;
+    @EnumeratedValue
+    private final int value;
 
-    CorBloco(Integer value) {
+    CorBloco(int value) {
         this.value = value;
     }
 
-    public Integer getValue() {
+    public int getValue() {
         return value;
     }
 }

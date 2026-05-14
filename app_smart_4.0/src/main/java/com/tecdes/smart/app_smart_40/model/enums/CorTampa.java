@@ -1,17 +1,20 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
+import jakarta.persistence.EnumeratedValue;
+
 public enum CorTampa {
     PRETO(1),
     VERMELHO(2),
     AZUL(3);
 
-    private final Integer value;
+    @EnumeratedValue
+    private final int value;
 
-    CorTampa(Integer value) {
+    CorTampa(int value) {
         this.value = value;
     }
 
-    public Integer getValue() {
+    public int getValue() {
         return value;
     }
 }

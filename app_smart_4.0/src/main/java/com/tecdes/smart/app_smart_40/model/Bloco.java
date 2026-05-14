@@ -2,6 +2,9 @@ package com.tecdes.smart.app_smart_40.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 
 import jakarta.persistence.CascadeType;
@@ -18,6 +21,7 @@ import jakarta.persistence.OneToMany;
 //import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +30,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Bloco {
 
     @Id
@@ -33,21 +38,20 @@ public class Bloco {
     @Column(name = "id_bloco")
     private Long id;
 
-    @Column(name = "id_pedido", nullable = false)
-    private Long idPedido;
-    @Column(name = "id_estoque", nullable = false)
-    private Long idEstoque;
-    @Column(name = "st_cor_bloco", nullable = false)
-    @Enumerated(EnumType.ORDINAL)
-    private CorBloco cor;
-
-    @ManyToOne()
+    @ManyToOne
+    @JoinColumn(name = "id_pedido", nullable = false)
+    @JsonBackReference
     private Pedido pedido;
 
+    @Column(name = "st_cor_bloco", nullable = false)
+    private CorBloco cor;
+
     @OneToMany(mappedBy = "bloco", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private List<Lamina> laminas;
 
     @ManyToOne
-    @JoinColumn(name = "id_estoque")
+    @JoinColumn(name = "id_estoque", nullable = false)
+    @JsonIgnore
     private Estoque estoque;
 }
