@@ -1,6 +1,7 @@
 package com.tecdes.smart.app_smart_40.model;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
@@ -53,7 +54,9 @@ public class Pedido {
     @Default
     private LocalDateTime dataCriacao = LocalDateTime.now();
     
-    
+    private List<Bloco> blocos;
+
+    private Expedicao expedicao;
     
     @Column(name = "dt_entrada_expedicao", nullable = true)
     private LocalDateTime dataEntradaExpedicao ;
