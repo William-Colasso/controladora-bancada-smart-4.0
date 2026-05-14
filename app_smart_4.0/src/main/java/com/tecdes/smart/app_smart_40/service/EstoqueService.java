@@ -5,8 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.EstoqueRequestDTO;
-import com.tecdes.smart.app_smart_40.dto.EstoqueResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
@@ -19,21 +18,21 @@ public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
 
-    public List<EstoqueResponseDTO> getDisponivel() {
-        return estoqueRepository.findByVlCorBlocoNot((byte) 0)
+    public List<EstoqueDTO> getDisponivel() {
+        return estoqueRepository.findByCorBloco(CorBloco.VAZIO)
                 .stream()
-                .map(EstoqueResponseDTO::fromEntity)
+                .map(EstoqueDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    public List<EstoqueResponseDTO> getTodos() {
+    public List<EstoqueDTO> getTodos() {
         return estoqueRepository.findAll()
                 .stream()
-                .map(EstoqueResponseDTO::fromEntity)
+                .map(EstoqueDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    public EstoqueResponseDTO adicionarBloco(EstoqueRequestDTO dto) {
+    public EstoqueDTO adicionarBloco(EstoqueDTO dto) {
         if (dto.posicao() == null) {
             throw new RuntimeException("Posição é obrigatória!");
         }
@@ -50,7 +49,7 @@ public class EstoqueService {
             throw new RuntimeException("Cor inválida! Use 0=vazio, 1=preto, 2=vermelho, 3=azul.");
         }
 
-        Estoque pos = estoqueRepository.findByNrPosicao(dto.posicao())
+        Estoque pos = estoqueRepository.findByPosicao(dto.posicao())
                 .orElseThrow(() -> new RuntimeException("Posição " + dto.posicao() + " não existe!"));
 
         // ✅ Verificar se posição já está ocupada
@@ -59,10 +58,10 @@ public class EstoqueService {
         }
 
         pos.setCorBloco(dto.corBloco());
-        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        return EstoqueDTO.fromEntity(estoqueRepository.save(pos));
     }
 
-    public EstoqueResponseDTO removerBloco(Byte nrPosicao) {
+    public EstoqueDTO removerBloco(Byte nrPosicao) {
         if (nrPosicao == null) {
             throw new RuntimeException("Posição é obrigatória!");
         }
@@ -71,7 +70,7 @@ public class EstoqueService {
             throw new RuntimeException("Posição inválida! Deve ser entre 1 e 28.");
         }
 
-        Estoque pos = estoqueRepository.findByNrPosicao(nrPosicao)
+        Estoque pos = estoqueRepository.findByPosicao( nrPosicao.intValue())
                 .orElseThrow(() -> new RuntimeException("Posição " + nrPosicao + " não existe!"));
 
         // ✅ Verificar se posição está vazia
@@ -80,6 +79,6 @@ public class EstoqueService {
         }
 
         pos.setCorBloco(CorBloco.VAZIO);
-        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        return EstoqueDTO.fromEntity(estoqueRepository.save(pos));
     }
 }

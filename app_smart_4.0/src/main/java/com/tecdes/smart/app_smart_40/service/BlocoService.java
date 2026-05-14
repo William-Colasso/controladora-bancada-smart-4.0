@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
+import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
+import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
+import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
@@ -26,8 +29,8 @@ public class BlocoService {
         validarRegrasDeOuro(dto, tipoPedido);
 
         Bloco bloco = new Bloco();
-        bloco.setIdPedido(dto.idPedido());
-        bloco.setIdEstoque(dto.idEstoque());
+        bloco.setPedido(dto.pedidoDTO().toEntity());
+        bloco.setEstoque(EstoqueDTO.toEntity(dto.estoque()));
         bloco.setCor(dto.cor());
 
         if (dto.laminas() != null) {
@@ -36,7 +39,7 @@ public class BlocoService {
                 lamina.setCor(lDTO.cor());
                 lamina.setPadrao(lDTO.padrao());
                 lamina.setPosicaoNoBloco(lDTO.posicaoNoBloco());
-                lamina.setBloco(bloco); 
+                lamina.setBloco(bloco);
                 laminaService.validarRegrasLamina(lamina);
                 return lamina;
             }).collect(Collectors.toList());
@@ -45,13 +48,11 @@ public class BlocoService {
 
         Bloco blocoSalvo = blocoRepository.save(bloco);
 
-        
         return new BlocoDTO(
-            blocoSalvo.getIdPedido(),
-            blocoSalvo.getIdEstoque(),
-            blocoSalvo.getCor(),
-            dto.laminas() 
-        );
+                PedidoDTO.fromEntity(blocoSalvo.getPedido()),
+                EstoqueDTO.fromEntity(blocoSalvo.getEstoque()),
+                blocoSalvo.getCor(),
+                dto.laminas());
     }
 
     private void validarRegrasDeOuro(BlocoDTO dto, Integer tipoPedido) {
@@ -63,7 +64,7 @@ public class BlocoService {
             throw new RuntimeException("Erro: Cor do bloco inválida para a produção.");
         }
 
-        if (dto.idEstoque() == null || dto.idEstoque() <= 0) {
+        if (dto.estoque() == null || dto.estoque().id() <= 0) {
             throw new RuntimeException("Erro: Posição de estoque inválida ou não informada.");
         }
     }

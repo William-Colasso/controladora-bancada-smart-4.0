@@ -3,8 +3,12 @@ package com.tecdes.smart.app_smart_40.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Expedicao {
 
     @Id
@@ -23,13 +28,13 @@ public class Expedicao {
     @Column(name = "nr_posicao", nullable = false, unique = true)
     private Integer posicao;
 
-    @ManyToOne
-    @JoinColumn(name = "id_pedido", unique = true)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_pedido", nullable = true)
+    @JsonIgnore
     private Pedido pedido;
 
-    @OneToMany(mappedBy = "pedido", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "expedicao", fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Pedido> pedidos = new ArrayList<>();
 
-
-    
 }

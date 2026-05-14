@@ -2,8 +2,14 @@ package com.tecdes.smart.app_smart_40.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.tecdes.smart.app_smart_40.model.enums.CorLamina;
+import com.tecdes.smart.app_smart_40.model.enums.PadraoLamina;
+import com.tecdes.smart.app_smart_40.model.enums.PosicaoLamina;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +18,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+
 public class Lamina {
 
     @Id
@@ -20,20 +28,18 @@ public class Lamina {
     private Long id;
 
     @Column(name = "st_cor_lamina", nullable = false)
-    private Integer cor;
+    private CorLamina cor;
     @Column(name = "st_padrao", nullable = false)
-    private Integer padrao = 0; 
+    private PadraoLamina padrao = PadraoLamina.NENHUM; 
 
     @Column(name = "st_posicao", nullable = false)
-    private Integer posicaoNoBloco; 
+    private PosicaoLamina posicaoNoBloco; 
 
     @ManyToOne
     @JoinColumn(name = "id_bloco", nullable = false)
+    @JsonBackReference
     private Bloco bloco;
 
 
-    @ManyToOne
-    @JoinColumn(name="id_estoque")
-    private List<Bloco> blocos;
 
  }

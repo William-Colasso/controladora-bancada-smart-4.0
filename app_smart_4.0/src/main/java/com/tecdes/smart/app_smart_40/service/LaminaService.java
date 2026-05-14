@@ -34,13 +34,13 @@ public class LaminaService {
     }
 
     public void validarRegrasLamina(Lamina lamina) {
-        if (lamina.getCor() == null || lamina.getCor() < 1 || lamina.getCor() > 6) {
+        if (lamina.getCor() == null || lamina.getCor().getValue()< 1 || lamina.getCor().getValue() > 6) {
             throw new RuntimeException("Erro: Cor de lâmina inválida (1-6).");
         }
-        if (lamina.getPosicaoNoBloco() == null || lamina.getPosicaoNoBloco() < 1 || lamina.getPosicaoNoBloco() > 3) {
+        if (lamina.getPosicaoNoBloco() == null || lamina.getPosicaoNoBloco().getValue() < 1 ||  lamina.getPosicaoNoBloco().getValue() > 3) {
             throw new RuntimeException("Erro: Posição da lâmina inválida.");
         }
-        if (lamina.getPadrao() == null || lamina.getPadrao() < 0 || lamina.getPadrao() > 3) {
+        if (lamina.getPadrao().getValue() == -1 || lamina.getPadrao().getValue() < 0 || lamina.getPadrao().getValue() > 3) {
             throw new RuntimeException("Erro: Padrão da lâmina inválido (0-3).");
         }
     }
