@@ -4,13 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Builder.Default;
 
 @Entity
 @Table(name = "T_SMT_EXPEDICAO")
@@ -35,6 +34,7 @@ public class Expedicao {
 
     @OneToMany(mappedBy = "expedicao", fetch = FetchType.LAZY)
     @JsonIgnore
+    @Default
     private List<Pedido> pedidos = new ArrayList<>();
 
 }

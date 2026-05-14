@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
 import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
-import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
 import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Lamina;
