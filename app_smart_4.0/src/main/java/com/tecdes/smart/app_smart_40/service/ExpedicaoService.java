@@ -2,6 +2,7 @@ package com.tecdes.smart.app_smart_40.service;
 
 import com.tecdes.smart.app_smart_40.dto.ExpedicaoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
@@ -21,24 +22,24 @@ public class ExpedicaoService {
 
     public ExpedicaoResponseDTO registrarExpedicao(ExpedicaoRequestDTO dto) {
 
-        if (dto.getIdPedido() == null) {
-            throw new RuntimeException("ID do pedido é obrigatório!");
+        if (dto.pedidoDTO() == null) {
+            throw new RuntimeException("Pedido é obrigatório!");
         }
 
-        Pedido pedido = pedidoRepository.findById(dto.getIdPedido())
-            .orElseThrow(() -> new RuntimeException("Pedido " + dto.getIdPedido() + " não encontrado!"));
+        Pedido pedido = pedidoRepository.findById(dto.pedidoDTO().id())
+                .orElseThrow(() -> new RuntimeException("Pedido " + dto.pedidoDTO().id() + " não encontrado!"));
 
-        if (expedicaoRepository.existsByPedidoIdPedido(dto.getIdPedido())) {
-            throw new RuntimeException("Pedido " + dto.getIdPedido() + " já possui registro na expedição!");
+        if (expedicaoRepository.existsByPedidoIdPedido(dto.pedidoDTO().id())) {
+            throw new RuntimeException("Pedido " + dto.pedidoDTO().id() + " já possui registro na expedição!");
         }
 
-        List<Long> posicoesOcupadas = expedicaoRepository.findAll()
-            .stream()
-            .map(Expedicao::getNrPosicao)
-            .collect(Collectors.toList());
+        List<Integer> posicoesOcupadas = expedicaoRepository.findAll()
+                .stream()
+                .map(Expedicao::getPosicao)
+                .collect(Collectors.toList());
 
-        Long posicaoLivre = null;
-        for (long i = 1; i <= 12; i++) {
+        Integer posicaoLivre = null;
+        for (Integer i = 1; i <= 12; i++) {
             if (!posicoesOcupadas.contains(i)) {
                 posicaoLivre = i;
                 break;
@@ -51,21 +52,21 @@ public class ExpedicaoService {
 
         Expedicao expedicao = new Expedicao();
         expedicao.setPedido(pedido);
-        expedicao.setNrPosicao(posicaoLivre);
+        expedicao.setPosicao(posicaoLivre);
 
         return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
 
     // Chamado internamente pelo PedidoService ao concluir pedido
     public ExpedicaoResponseDTO registrarExpedicao(Pedido pedido) {
-        ExpedicaoRequestDTO dto = new ExpedicaoRequestDTO(pedido.getIdPedido());
+        ExpedicaoRequestDTO dto = new ExpedicaoRequestDTO(PedidoDTO.fromEntity(pedido));
         return registrarExpedicao(dto);
     }
 
     public List<ExpedicaoResponseDTO> listarTodos() {
         return expedicaoRepository.findAll()
-            .stream()
-            .map(ExpedicaoResponseDTO::fromEntity)
-            .collect(Collectors.toList());
+                .stream()
+                .map(ExpedicaoResponseDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 }

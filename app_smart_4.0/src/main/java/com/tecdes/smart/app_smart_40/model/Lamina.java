@@ -1,5 +1,7 @@
 package com.tecdes.smart.app_smart_40.model;
 
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,4 +30,10 @@ public class Lamina {
     @ManyToOne
     @JoinColumn(name = "id_bloco", nullable = false)
     private Bloco bloco;
+
+
+    @ManyToOne
+    @JoinColumn(name="id_estoque")
+    private List<Bloco> blocos;
+
  }

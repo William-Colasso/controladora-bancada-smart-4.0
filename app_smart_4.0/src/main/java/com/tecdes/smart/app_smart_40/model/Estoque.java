@@ -1,5 +1,9 @@
 package com.tecdes.smart.app_smart_40.model;
 
+import java.util.List;
+
+import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,11 +19,16 @@ public class Estoque {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_estoque")
-    private Long idEstoque;
+    private Long id;
 
     @Column(name = "nr_posicao", nullable = false, unique = true)
-    private Byte nrPosicao;
+    private Integer posicao;
 
     @Column(name = "vl_cor_bloco", nullable = false)
-    private Byte vlCorBloco;
+    @Enumerated(EnumType.ORDINAL)
+    private CorBloco corBloco;
+
+
+    @OneToMany(mappedBy = "estoque")
+    private List<Bloco> blocos; 
 }
