@@ -1,14 +1,13 @@
 package com.tecdes.smart.app_smart_40.controller;
 
-import java.util.List;
-
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.tecdes.smart.app_smart_40.model.Estoque;
+import com.tecdes.smart.app_smart_40.dto.EstoqueRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/estoque")
@@ -18,7 +17,17 @@ public class EstoqueController {
     private final EstoqueService estoqueService;
 
     @GetMapping("/disponivel")
-    public List<Estoque> getDisponivel() {
-        return estoqueService.getDisponivel();
+    public ResponseEntity<List<EstoqueResponseDTO>> getDisponivel() {
+        return ResponseEntity.ok(estoqueService.getDisponivel());
+    }
+
+    @PutMapping("/adicionar")
+    public ResponseEntity<EstoqueResponseDTO> adicionarBloco(@RequestBody EstoqueRequestDTO dto) {
+        return ResponseEntity.ok(estoqueService.adicionarBloco(dto));
+    }
+
+    @PutMapping("/remover/{nrPosicao}")
+    public ResponseEntity<EstoqueResponseDTO> removerBloco(@PathVariable Byte nrPosicao) {
+        return ResponseEntity.ok(estoqueService.removerBloco(nrPosicao));
     }
 }
