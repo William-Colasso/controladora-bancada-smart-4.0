@@ -20,6 +20,9 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
 
     List<Estoque> findByCorBlocoAndQuantidadeGreaterThan(CorBloco corBloco, Integer quantidade);
 
-    @Query("SELECT SUM(e.quantidade) FROM Estoque e WHERE e.corBloco = :corBloco")
-    Integer sumQuantidadeByCorBloco(@Param("corBloco") CorBloco corBloco);
+    @Query("SELECT COUNT(e) FROM Estoque e WHERE e.vlCorBloco = :cor")
+    Long contarDisponibilidadeCor(@Param("cor") Integer cor);
+
+    @Query("SELECT e FROM Estoque e WHERE e.vlCorBloco = 0 ORDER BY e.nrPosicao ASC")
+    List<Estoque> findPosicoesVazias();
 }
