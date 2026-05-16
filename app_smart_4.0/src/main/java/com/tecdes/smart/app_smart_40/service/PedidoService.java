@@ -1,15 +1,18 @@
 package com.tecdes.smart.app_smart_40.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
+import com.tecdes.smart.app_smart_40.dto.LaminaDTO;
 import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
-import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Pedido;
+import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
-import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
-import com.tecdes.smart.app_smart_40.repository.LaminaRepository;
+import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -20,8 +23,9 @@ import lombok.AllArgsConstructor;
 public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
-    private final BlocoRepository blocoRepository;
-    private final LaminaRepository laminaRepository;
+    private final EstoqueRepository estoqueRepository;
+    // ADICIONADO: injeção do ExpedicaoService para registrar expedição ao concluir
+    private final ExpedicaoService expedicaoService;
 
     // -------------------------------------------------------------------------
     // CREATE
@@ -45,33 +49,67 @@ public class PedidoService {
                     "Lâminas propostas mal formadas, em posição incorreta ou faltante");
         }
 
-         Pedido pedido = dto.toEntity();
+        Pedido pedido = dto.toEntity();
 
         // garantir relacionamento bidirecional
         pedido.getBlocos().forEach(bloco -> {
-
             bloco.setPedido(pedido);
-
             bloco.getLaminas().forEach(lamina -> {
                 lamina.setBloco(bloco);
             });
         });
 
-
         return PedidoDTO.fromEntity(pedidoRepository.save(pedido));
     }
+
     // -------------------------------------------------------------------------
     // READ
     // -------------------------------------------------------------------------
 
+    // IMPLEMENTADO: valida que cada bloco tem no máximo 3 lâminas
+    // e que não há posições de lâmina duplicadas dentro do mesmo bloco
     private boolean validarLaminas(List<BlocoDTO> blocoDTOs) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'validarLaminas'");
+        for (BlocoDTO bloco : blocoDTOs) {
+            if (bloco.laminas() == null)
+                continue;
+
+            // Máximo 3 lâminas por bloco
+            if (bloco.laminas().size() > 3) {
+                return false;
+            }
+
+            // Posições não podem se repetir no mesmo bloco
+            long posicoesDistintas = bloco.laminas().stream()
+                    .map(LaminaDTO::posicaoNoBloco)
+                    .distinct()
+                    .count();
+
+            if (posicoesDistintas != bloco.laminas().size()) {
+                return false;
+            }
+        }
+        return true;
     }
 
+    // IMPLEMENTADO: verifica se há blocos disponíveis no estoque para cada cor
+    // solicitada
     private boolean blocosSuficientesEmEstoque(List<BlocoDTO> blocos) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'blocosSuficientesEmEstoque'");
+        // Agrupa a quantidade necessária de cada cor solicitada no pedido
+        Map<CorBloco, Long> necessario = blocos.stream()
+                .collect(Collectors.groupingBy(BlocoDTO::cor, Collectors.counting()));
+
+        for (Map.Entry<CorBloco, Long> entry : necessario.entrySet()) {
+            CorBloco cor = entry.getKey();
+            long quantidadeNecessaria = entry.getValue();
+
+            // Conta quantas posições no estoque têm essa cor disponível
+            long disponivelNoEstoque = estoqueRepository.contarDisponibilidadeCor(cor);
+
+            if (disponivelNoEstoque < quantidadeNecessaria) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public List<PedidoDTO> listarTodos() {
@@ -102,7 +140,7 @@ public class PedidoService {
         }
 
         Pedido pedido = dto.toEntity();
-        pedido.setId(id); // garante que vai fazer UPDATE, não INSERT
+        pedido.setId(id);
 
         return PedidoDTO.fromEntity(pedidoRepository.save(pedido));
     }
@@ -128,12 +166,20 @@ public class PedidoService {
     }
 
     public PedidoDTO concluir(Long id) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
 
-        Pedido pedido = pedidoRepository.findById(id).orElseThrow();
+        // ADICIONADO: impede concluir um pedido que já está concluído
+        if (pedido.getStatus() == StatusPedido.CONCLUIDO) {
+            throw new IllegalStateException("Pedido " + id + " já está concluído.");
+        }
+
         pedido.setStatus(StatusPedido.CONCLUIDO);
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        PedidoDTO pedidoDTO = PedidoDTO.fromEntity(pedido);
-        return atualizar(id, pedidoDTO);
+        // ADICIONADO: registrar entrada na expedição ao concluir (regra de negócio)
+        expedicaoService.registrarExpedicao(pedidoSalvo);
 
+        return PedidoDTO.fromEntity(pedidoSalvo);
     }
 }

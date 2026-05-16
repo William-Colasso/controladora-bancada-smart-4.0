@@ -1,7 +1,6 @@
 package com.tecdes.smart.app_smart_40.model;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -9,7 +8,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Builder.Default;
 
 @Entity
 @Table(name = "T_SMT_EXPEDICAO")
@@ -32,9 +30,9 @@ public class Expedicao {
     @JsonIgnore
     private Pedido pedido;
 
-    @OneToMany(mappedBy = "expedicao", fetch = FetchType.LAZY)
-    @JsonIgnore
-    @Default
-    private List<Pedido> pedidos = new ArrayList<>();
+    // ADICIONADO: timestamp de entrada na expedição (exigido pelas regras de
+    // negócio)
+    @Column(name = "dt_entrada_expedicao", nullable = true)
+    private LocalDateTime dataEntradaExpedicao;
 
 }
