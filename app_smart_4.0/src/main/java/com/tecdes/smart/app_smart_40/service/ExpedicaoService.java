@@ -9,6 +9,7 @@ import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,8 +29,9 @@ public class ExpedicaoService {
         Pedido pedido = pedidoRepository.findById(dto.pedidoDTO().id())
                 .orElseThrow(() -> new RuntimeException("Pedido " + dto.pedidoDTO().id() + " não encontrado!"));
 
-        if (expedicaoRepository.existsByPedido(dto.pedidoDTO().toEntity())) {
-            throw new RuntimeException("Pedido " + dto.pedidoDTO().id() + " já possui registro na expedição!");
+        // CORRIGIDO: comparação por ID em vez de entidade não gerenciada
+        if (expedicaoRepository.existsByPedidoId(pedido.getId())) {
+            throw new RuntimeException("Pedido " + pedido.getId() + " já possui registro na expedição!");
         }
 
         List<Integer> posicoesOcupadas = expedicaoRepository.findAll()
@@ -52,6 +54,9 @@ public class ExpedicaoService {
         Expedicao expedicao = new Expedicao();
         expedicao.setPedido(pedido);
         expedicao.setPosicao(posicaoLivre);
+        // ADICIONADO: registrar timestamp de entrada na expedição (exigido pelas regras
+        // de negócio)
+        expedicao.setDataEntradaExpedicao(LocalDateTime.now());
 
         return ExpedicaoDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
