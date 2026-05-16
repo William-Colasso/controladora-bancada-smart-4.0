@@ -12,8 +12,25 @@ import lombok.NoArgsConstructor;
 import lombok.Builder.Default;
 
 @Entity
-@Table(name = "T_SMT_EXPEDICAO")
-@Data
+@Table(
+    name = "T_SMT_EXPEDICAO",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "UN_EXPEDICAO_POSICAO",
+            columnNames = {"nr_posicao"}
+        ),
+        @UniqueConstraint(
+            name = "UN_EXPEDICAO_PEDIDO",
+            columnNames = {"id_pedido"}
+        )
+    },
+    check = {
+        @CheckConstraint(
+            name = "CK_EXPEDICAO_POSICAO",
+            constraint = "nr_posicao BETWEEN 1 AND 12"
+        )
+    }
+)@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
