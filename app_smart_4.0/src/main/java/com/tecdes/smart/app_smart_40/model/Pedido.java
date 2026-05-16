@@ -9,6 +9,7 @@ import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -61,7 +62,7 @@ public class Pedido {
         }
     }
 
-    @OneToMany(mappedBy = "pedido")
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Bloco> blocos;
 
