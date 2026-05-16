@@ -18,11 +18,16 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
 
     List<Estoque> findByCorBloco(CorBloco corBloco);
 
-    List<Estoque> findByCorBlocoAndQuantidadeGreaterThan(CorBloco corBloco, Integer quantidade);
+    // CORRIGIDO: removido findByCorBlocoAndQuantidadeGreaterThan (campo
+    // 'quantidade' não existe)
+    // Substituído por query que conta blocos associados à posição
+    List<Estoque> findByCorBlocoNot(CorBloco corBloco);
 
-    @Query("SELECT COUNT(e) FROM Estoque e WHERE e.vlCorBloco = :cor")
-    Long contarDisponibilidadeCor(@Param("cor") Integer cor);
+    // CORRIGIDO: e.vlCorBloco → e.corBloco (nome do atributo Java)
+    @Query("SELECT COUNT(e) FROM Estoque e WHERE e.corBloco = :cor")
+    Long contarDisponibilidadeCor(@Param("cor") CorBloco cor);
 
-    @Query("SELECT e FROM Estoque e WHERE e.vlCorBloco = 0 ORDER BY e.nrPosicao ASC")
+    // CORRIGIDO: e.vlCorBloco → e.corBloco | e.nrPosicao → e.posicao
+    @Query("SELECT e FROM Estoque e WHERE e.corBloco = com.tecdes.smart.app_smart_40.model.enums.CorBloco.VAZIO ORDER BY e.posicao ASC")
     List<Estoque> findPosicoesVazias();
 }
