@@ -13,8 +13,23 @@ import lombok.NoArgsConstructor;
 import lombok.Builder.Default;
 
 @Entity
-@Table(name = "T_SMT_LAMINA")
-@Data
+@Table(
+    name = "T_SMT_LAMINA",
+    check = {
+        @CheckConstraint(
+            name = "CK_LAMINA_COR",
+            constraint = "st_cor_lamina IN (1, 2, 3, 4, 5, 6)"
+        ),
+        @CheckConstraint(
+            name = "CK_LAMINA_PADRAO",
+            constraint = "st_padrao IN (0, 1, 2, 3)"
+        ),
+        @CheckConstraint(
+            name = "CK_LAMINA_POSICAO",
+            constraint = "st_posicao IN (1, 2, 3)"
+        )
+    }
+)@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
