@@ -19,7 +19,9 @@ public class EstoqueService {
     private final EstoqueRepository estoqueRepository;
 
     public List<EstoqueDTO> getDisponivel() {
-        return estoqueRepository.findByCorBloco(CorBloco.VAZIO)
+        // CORRIGIDO: retorna posições que NÃO estão vazias (cor != VAZIO), conforme
+        // regra de negócio
+        return estoqueRepository.findByCorBlocoNot(CorBloco.VAZIO)
                 .stream()
                 .map(EstoqueDTO::fromEntity)
                 .collect(Collectors.toList());
@@ -52,7 +54,6 @@ public class EstoqueService {
         Estoque pos = estoqueRepository.findByPosicao(dto.posicao())
                 .orElseThrow(() -> new RuntimeException("Posição " + dto.posicao() + " não existe!"));
 
-        // ✅ Verificar se posição já está ocupada
         if (pos.getCorBloco() != CorBloco.VAZIO) {
             throw new RuntimeException("Posição " + dto.posicao() + " já está ocupada!");
         }
@@ -70,10 +71,9 @@ public class EstoqueService {
             throw new RuntimeException("Posição inválida! Deve ser entre 1 e 28.");
         }
 
-        Estoque pos = estoqueRepository.findByPosicao( nrPosicao.intValue())
+        Estoque pos = estoqueRepository.findByPosicao(nrPosicao.intValue())
                 .orElseThrow(() -> new RuntimeException("Posição " + nrPosicao + " não existe!"));
 
-        // ✅ Verificar se posição está vazia
         if (pos.getCorBloco() == CorBloco.VAZIO) {
             throw new RuntimeException("Posição " + nrPosicao + " já está vazia!");
         }
