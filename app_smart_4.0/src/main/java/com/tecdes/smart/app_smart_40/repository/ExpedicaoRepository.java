@@ -12,6 +12,9 @@ import java.util.Optional;
 public interface ExpedicaoRepository extends JpaRepository<Expedicao, Long> {
 
     Optional<Expedicao> findByPedido(Pedido idPedido);
-
     boolean existsByPedido(Pedido idPedido);
+
+    Optional<Expedicao> findFirstByPedidoIsNull();
+    long countByPedidoIsNull();
+
 }
