@@ -18,7 +18,7 @@ public record PedidoDTO(
     CorTampa corTampa,
     LocalDateTime dataCriacao,
     LocalDateTime dataEntradaExpedicao,
-    List<Bloco> blocos,
+    List<BlocoDTO> blocos,
     Expedicao expedicao
 ) {
     public static PedidoDTO fromEntity(Pedido pedido) {
@@ -30,7 +30,7 @@ public record PedidoDTO(
             pedido.getCorTampa(),
             pedido.getDataCriacao(),
             pedido.getDataEntradaExpedicao(),
-            pedido.getBlocos(),
+            pedido.getBlocos().stream().map(bloco -> BlocoDTO.fromEntity(bloco)).toList(),
             pedido.getExpedicao()
         );
     }
@@ -44,7 +44,7 @@ public record PedidoDTO(
             .corTampa(this.corTampa)
             .dataCriacao(this.dataCriacao != null ? this.dataCriacao : LocalDateTime.now())
             .dataEntradaExpedicao(this.dataEntradaExpedicao)
-            .blocos(this.blocos)
+            .blocos(this.blocos.stream().map(BlocoDTO::toEntity).toList())
             .expedicao(this.expedicao)
             .build();
     }
