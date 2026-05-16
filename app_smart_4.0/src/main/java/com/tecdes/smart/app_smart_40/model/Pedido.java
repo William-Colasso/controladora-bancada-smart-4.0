@@ -66,8 +66,9 @@ public class Pedido {
     @JsonManagedReference
     private List<Bloco> blocos;
 
+    // CORRIGIDO: nullable = true — pedido começa sem expedição
     @ManyToOne
-    @JoinColumn(name = "id_expedicao", nullable = false)
+    @JoinColumn(name = "id_expedicao", nullable = true)
     @JsonIgnore
     private Expedicao expedicao;
 
