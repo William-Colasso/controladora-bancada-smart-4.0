@@ -9,6 +9,8 @@ import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -19,6 +21,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,7 +31,29 @@ import lombok.Setter;
 @Setter
 @Getter
 @Builder
-@Table(name = "T_SMT_PEDIDO")
+@Table(
+    name = "T_SMT_PEDIDO",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "UN_PEDIDO_ORDEM_PRODUCAO",
+            columnNames = {"nr_ordem_producao"}
+        )
+    },
+    check = {
+        @CheckConstraint(
+            name = "CK_PEDIDO_STATUS",
+            constraint = "vl_status IN (1, 2, 3)"
+        ),
+        @CheckConstraint(
+            name = "CK_PEDIDO_TIPO",
+            constraint = "tp_pedido IN (1, 2, 3)"
+        ),
+        @CheckConstraint(
+            name = "CK_PEDIDO_COR_TAMPA",
+            constraint = "vl_cor_tampa IN (1, 2, 3)"
+        )
+    }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -61,12 +86,13 @@ public class Pedido {
         }
     }
 
-    @OneToMany(mappedBy = "pedido")
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<Bloco> blocos;
 
+    // CORRIGIDO: nullable = true — pedido começa sem expedição
     @ManyToOne
-    @JoinColumn(name = "id_expedicao", nullable = false)
+    @JoinColumn(name = "id_expedicao", nullable = true)
     @JsonIgnore
     private Expedicao expedicao;
 

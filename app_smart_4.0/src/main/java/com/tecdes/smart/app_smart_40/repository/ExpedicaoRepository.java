@@ -11,7 +11,14 @@ import java.util.Optional;
 @Repository
 public interface ExpedicaoRepository extends JpaRepository<Expedicao, Long> {
 
-    Optional<Expedicao> findByPedido(Pedido idPedido);
+    Optional<Expedicao> findByPedido(Pedido pedido);
 
-    boolean existsByPedido(Pedido idPedido);
+    // ADICIONADO: verificar por ID evita comparação com entidade sem contexto
+    // gerenciado
+    boolean existsByPedidoId(Long pedidoId);
+
+    Optional<Expedicao> findFirstByPedidoIsNull();
+
+    long countByPedidoIsNull();
+
 }
