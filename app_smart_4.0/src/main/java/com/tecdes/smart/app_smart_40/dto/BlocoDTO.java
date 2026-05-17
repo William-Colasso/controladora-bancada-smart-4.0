@@ -6,14 +6,14 @@ import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 
 public record BlocoDTO(
-        PedidoDTO pedidoDTO,
+        Long id,
         EstoqueDTO estoque,
         CorBloco cor,
         List<LaminaDTO> laminas) {
 
     public static BlocoDTO fromEntity(Bloco bloco) {
         return new BlocoDTO(
-                PedidoDTO.fromEntity(bloco.getPedido()),
+                bloco.getId(),
                 EstoqueDTO.fromEntity(bloco.getEstoque()),
                 bloco.getCor(),
                 bloco.getLaminas().stream().map(LaminaDTO::fromEntity).toList());
@@ -21,7 +21,7 @@ public record BlocoDTO(
 
     public static Bloco toEntity(BlocoDTO blocoDTO) {
         return Bloco.builder()
-                .pedido(blocoDTO.pedidoDTO.toEntity())
+                .id(blocoDTO.id())
                 .estoque(EstoqueDTO.toEntity(blocoDTO.estoque))
                 .cor(blocoDTO.cor)
                 .laminas(blocoDTO.laminas.stream().map(LaminaDTO::toEntity).toList())

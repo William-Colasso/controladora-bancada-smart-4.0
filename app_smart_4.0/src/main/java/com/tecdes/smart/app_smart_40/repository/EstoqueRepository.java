@@ -3,7 +3,10 @@ package com.tecdes.smart.app_smart_40.repository;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -30,4 +33,14 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
     // CORRIGIDO: e.vlCorBloco → e.corBloco | e.nrPosicao → e.posicao
     @Query("SELECT e FROM Estoque e WHERE e.corBloco = com.tecdes.smart.app_smart_40.model.enums.CorBloco.VAZIO ORDER BY e.posicao ASC")
     List<Estoque> findPosicoesVazias();
+
+    @Modifying
+    @Transactional
+    @Query("""
+            UPDATE  Estoque e
+            SET e.corBloco = 0
+            WHERE e.id IN :ids
+            """)
+    int retirarDoEstoque(
+            @Param("ids") List<Long> ids);
 }
