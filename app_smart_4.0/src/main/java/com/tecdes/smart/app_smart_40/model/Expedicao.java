@@ -47,9 +47,6 @@ public class Expedicao {
     @JsonIgnore
     private Pedido pedido;
 
-    // ADICIONADO: timestamp de entrada na expedição (exigido pelas regras de
-    // negócio)
-    @Column(name = "dt_entrada_expedicao", nullable = true)
-    private LocalDateTime dataEntradaExpedicao;
+
 
 }
