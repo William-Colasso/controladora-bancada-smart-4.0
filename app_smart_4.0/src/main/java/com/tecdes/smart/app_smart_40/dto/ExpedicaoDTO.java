@@ -13,7 +13,6 @@ public record ExpedicaoDTO(
         PedidoDTO pedidoDTO,
         // ADICIONADO: timestamp de entrada na expedição (exigido pelas regras de
         // negócio)
-        LocalDateTime dataEntradaExpedicao,
         List<PedidoDTO> pedidos) {
 
     public static ExpedicaoDTO fromEntity(Expedicao expedicao) {
@@ -21,9 +20,17 @@ public record ExpedicaoDTO(
                 expedicao.getId(),
                 expedicao.getPosicao(),
                 expedicao.getPedido() != null ? PedidoDTO.fromEntity(expedicao.getPedido()) : null,
-                expedicao.getDataEntradaExpedicao(),
-                // CORRIGIDO: Expedicao não tem mais lista de pedidos (removido da entidade)
                 List.of());
+    }
+
+    public static Expedicao toEntity(ExpedicaoDTO dto) {
+        Expedicao expedicao = new Expedicao();
+        expedicao.setId(dto.id());
+        expedicao.setPosicao(dto.posicao());
+        if (dto.pedidoDTO() != null) {
+            expedicao.setPedido(dto.pedidoDTO().toEntity());
+        }
+        return expedicao;
     }
 
 }

@@ -9,17 +9,15 @@ import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 public record EstoqueDTO(
         Long id,
         Integer posicao,
-        CorBloco corBloco,
-        List<Bloco> blocos) {
+        CorBloco corBloco) {
     public static EstoqueDTO fromEntity(Estoque estoque) {
         return new EstoqueDTO(
                 estoque.getId(),
                 estoque.getPosicao(),
-                estoque.getCorBloco(),
-                estoque.getBlocos());
+                estoque.getCorBloco());
     }
 
     public static Estoque toEntity(EstoqueDTO estoqueDTO) {
-        return new Estoque(estoqueDTO.id(), estoqueDTO.posicao(), estoqueDTO.corBloco(), estoqueDTO.blocos);
+        return new Estoque(estoqueDTO.id(), estoqueDTO.posicao(), estoqueDTO.corBloco(), null);
     }
 }

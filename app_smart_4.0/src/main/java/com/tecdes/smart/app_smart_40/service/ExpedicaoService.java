@@ -56,24 +56,26 @@ public class ExpedicaoService {
         expedicao.setPosicao(posicaoLivre);
         // ADICIONADO: registrar timestamp de entrada na expedição (exigido pelas regras
         // de negócio)
-        expedicao.setDataEntradaExpedicao(LocalDateTime.now());
-
+  
         return ExpedicaoDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
 
-    // Chamado internamente pelo PedidoService ao concluir pedido
-    public ExpedicaoDTO registrarExpedicao(Pedido pedido) {
-        ExpedicaoDTO dto = ExpedicaoDTO
-                .builder()
-                .pedidoDTO(PedidoDTO.fromEntity(pedido))
-                .build();
-        return registrarExpedicao(dto);
-    }
+   
 
     public List<ExpedicaoDTO> listarTodos() {
         return expedicaoRepository.findAll()
                 .stream()
                 .map(ExpedicaoDTO::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+
+    public boolean existePosicaoLivre(){
+        return expedicaoRepository.countByPedidoIsNull() > 0;
+    }
+
+
+    public ExpedicaoDTO primeiraExpedicaoLivre(){
+        return ExpedicaoDTO.fromEntity(expedicaoRepository.findFirstByPedidoIsNull().get());
     }
 }

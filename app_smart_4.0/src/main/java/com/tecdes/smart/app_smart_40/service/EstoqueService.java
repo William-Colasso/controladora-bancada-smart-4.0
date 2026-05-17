@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
 import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
@@ -80,5 +81,11 @@ public class EstoqueService {
 
         pos.setCorBloco(CorBloco.VAZIO);
         return EstoqueDTO.fromEntity(estoqueRepository.save(pos));
+    }
+
+      public int retirarEstoque(List<BlocoDTO> blocosDTOs) {
+        List<Long> blocos = blocosDTOs.stream().map(blocoDTOs -> blocoDTOs.estoque().id()).toList();
+        blocos.forEach(bloco -> System.out.println(bloco));
+        return estoqueRepository.retirarDoEstoque(blocos);
     }
 }
