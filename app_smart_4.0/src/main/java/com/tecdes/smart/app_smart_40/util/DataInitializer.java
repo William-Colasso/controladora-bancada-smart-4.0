@@ -26,7 +26,7 @@ public class DataInitializer implements CommandLineRunner {
         if (estoqueRepository.count() == 0) {
             System.out.println(">> Estoque vazio. Inicializando...");
             estoqueRepository.saveAll(List.of(
-                    Estoque.builder().posicao(1).corBloco(CorBloco.VAZIO).build(),
+                    Estoque.builder().posicao(1).corBloco(CorBloco.AZUL).build(),
                     Estoque.builder().posicao(2).corBloco(CorBloco.VAZIO).build(),
                     Estoque.builder().posicao(3).corBloco(CorBloco.VAZIO).build(),
                     Estoque.builder().posicao(4).corBloco(CorBloco.VAZIO).build(),

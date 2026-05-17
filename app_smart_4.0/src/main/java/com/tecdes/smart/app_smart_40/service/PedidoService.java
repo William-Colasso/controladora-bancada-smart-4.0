@@ -1,5 +1,7 @@
 package com.tecdes.smart.app_smart_40.service;
 
+import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -7,8 +9,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
+import com.tecdes.smart.app_smart_40.dto.ExpedicaoDTO;
 import com.tecdes.smart.app_smart_40.dto.LaminaDTO;
 import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
+import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
@@ -22,10 +26,12 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class PedidoService {
 
+    private final EstoqueService estoqueService;
     private final PedidoRepository pedidoRepository;
     private final EstoqueRepository estoqueRepository;
     // ADICIONADO: injeção do ExpedicaoService para registrar expedição ao concluir
     private final ExpedicaoService expedicaoService;
+    private final BlocoService blocoService;
 
     // -------------------------------------------------------------------------
     // CREATE
@@ -49,8 +55,11 @@ public class PedidoService {
                     "Lâminas propostas mal formadas, em posição incorreta ou faltante");
         }
 
-        Pedido pedido = dto.toEntity();
+        if (!expedicaoService.existePosicaoLivre()) {
+            throw new IllegalArgumentException("Não existe posição de expedição disponível");
+        }
 
+        Pedido pedido = dto.toEntity();
         // garantir relacionamento bidirecional
         pedido.getBlocos().forEach(bloco -> {
             bloco.setPedido(pedido);
@@ -59,7 +68,16 @@ public class PedidoService {
             });
         });
 
-        return PedidoDTO.fromEntity(pedidoRepository.save(pedido));
+        ExpedicaoDTO expedicaoDTO = expedicaoService.primeiraExpedicaoLivre();
+        Expedicao expedicao = ExpedicaoDTO.toEntity(expedicaoDTO);
+        pedido.setExpedicao(expedicao);
+        expedicao.setPedido(pedido);
+
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        PedidoDTO pedidoDTO = PedidoDTO.fromEntity(pedidoSalvo);
+        estoqueService.retirarEstoque(pedidoDTO.blocos());
+
+        return pedidoDTO;
     }
 
     // -------------------------------------------------------------------------
@@ -175,10 +193,8 @@ public class PedidoService {
         }
 
         pedido.setStatus(StatusPedido.CONCLUIDO);
+        pedido.setDataEntradaExpedicao(LocalDateTime.now());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
-
-        // ADICIONADO: registrar entrada na expedição ao concluir (regra de negócio)
-        expedicaoService.registrarExpedicao(pedidoSalvo);
 
         return PedidoDTO.fromEntity(pedidoSalvo);
     }

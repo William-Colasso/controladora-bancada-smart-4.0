@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.service;
 
+import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,18 +18,23 @@ import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
 @Service
 public class BlocoService {
 
+    private final EstoqueRepository estoqueRepository;
+
     @Autowired
     private BlocoRepository blocoRepository;
 
     @Autowired
     private LaminaService laminaService;
 
+    BlocoService(EstoqueRepository estoqueRepository) {
+        this.estoqueRepository = estoqueRepository;
+    }
+
     @Transactional
-    public BlocoDTO salvarBloco(BlocoDTO dto, Integer tipoPedido) {
-        validarRegrasDeOuro(dto, tipoPedido);
+    public BlocoDTO salvarBloco(BlocoDTO dto) {
+        validarRegrasDeOuro(dto);
 
         Bloco bloco = new Bloco();
-        bloco.setPedido(dto.pedidoDTO().toEntity());
         bloco.setEstoque(EstoqueDTO.toEntity(dto.estoque()));
         bloco.setCor(dto.cor());
 
@@ -48,13 +54,13 @@ public class BlocoService {
         Bloco blocoSalvo = blocoRepository.save(bloco);
 
         return new BlocoDTO(
-                PedidoDTO.fromEntity(blocoSalvo.getPedido()),
+                blocoSalvo.getId(),
                 EstoqueDTO.fromEntity(blocoSalvo.getEstoque()),
                 blocoSalvo.getCor(),
                 dto.laminas());
     }
 
-    private void validarRegrasDeOuro(BlocoDTO dto, Integer tipoPedido) {
+    private void validarRegrasDeOuro(BlocoDTO dto) {
         if (dto.laminas() != null && dto.laminas().size() > 3) {
             throw new RuntimeException("Erro: O bloco excede o limite permitido de 3 lâminas.");
         }
@@ -67,4 +73,6 @@ public class BlocoService {
             throw new RuntimeException("Erro: Posição de estoque inválida ou não informada.");
         }
     }
+
+  
 }
