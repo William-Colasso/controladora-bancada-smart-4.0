@@ -5,8 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
-import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
+import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
@@ -19,23 +20,23 @@ public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
 
-    public List<EstoqueDTO> getDisponivel() {
+    public List<EstoqueResponseDTO> getDisponivel() {
         // CORRIGIDO: retorna posições que NÃO estão vazias (cor != VAZIO), conforme
         // regra de negócio
         return estoqueRepository.findByCorBlocoNot(CorBloco.VAZIO)
                 .stream()
-                .map(EstoqueDTO::fromEntity)
+                .map(EstoqueResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    public List<EstoqueDTO> getTodos() {
+    public List<EstoqueResponseDTO> getTodos() {
         return estoqueRepository.findAll()
                 .stream()
-                .map(EstoqueDTO::fromEntity)
+                .map(EstoqueResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    public EstoqueDTO adicionarBloco(EstoqueDTO dto) {
+    public EstoqueResponseDTO adicionarBloco(EstoqueRequestDTO dto) {
         if (dto.posicao() == null) {
             throw new RuntimeException("Posição é obrigatória!");
         }
@@ -60,10 +61,10 @@ public class EstoqueService {
         }
 
         pos.setCorBloco(dto.corBloco());
-        return EstoqueDTO.fromEntity(estoqueRepository.save(pos));
+        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
     }
 
-    public EstoqueDTO removerBloco(Byte nrPosicao) {
+    public EstoqueResponseDTO removerBloco(Byte nrPosicao) {
         if (nrPosicao == null) {
             throw new RuntimeException("Posição é obrigatória!");
         }
@@ -80,10 +81,10 @@ public class EstoqueService {
         }
 
         pos.setCorBloco(CorBloco.VAZIO);
-        return EstoqueDTO.fromEntity(estoqueRepository.save(pos));
+        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
     }
 
-      public int retirarEstoque(List<BlocoDTO> blocosDTOs) {
+    public int retirarEstoque(List<BlocoResponseDTO> blocosDTOs) {
         List<Long> blocos = blocosDTOs.stream().map(blocoDTOs -> blocoDTOs.estoque().id()).toList();
         blocos.forEach(bloco -> System.out.println(bloco));
         return estoqueRepository.retirarDoEstoque(blocos);

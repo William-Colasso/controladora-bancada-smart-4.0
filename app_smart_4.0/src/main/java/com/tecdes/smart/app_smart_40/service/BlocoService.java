@@ -1,6 +1,5 @@
 package com.tecdes.smart.app_smart_40.service;
 
-import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,9 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
-import com.tecdes.smart.app_smart_40.dto.EstoqueDTO;
-import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
+import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
@@ -18,24 +16,17 @@ import com.tecdes.smart.app_smart_40.repository.BlocoRepository;
 @Service
 public class BlocoService {
 
-    private final EstoqueRepository estoqueRepository;
-
     @Autowired
     private BlocoRepository blocoRepository;
 
     @Autowired
     private LaminaService laminaService;
 
-    BlocoService(EstoqueRepository estoqueRepository) {
-        this.estoqueRepository = estoqueRepository;
-    }
-
     @Transactional
-    public BlocoDTO salvarBloco(BlocoDTO dto) {
+    public BlocoResponseDTO salvarBloco(BlocoRequestDTO dto) {
         validarRegrasDeOuro(dto);
 
         Bloco bloco = new Bloco();
-        bloco.setEstoque(EstoqueDTO.toEntity(dto.estoque()));
         bloco.setCor(dto.cor());
 
         if (dto.laminas() != null) {
@@ -53,24 +44,16 @@ public class BlocoService {
 
         Bloco blocoSalvo = blocoRepository.save(bloco);
 
-        return new BlocoDTO(
-                blocoSalvo.getId(),
-                EstoqueDTO.fromEntity(blocoSalvo.getEstoque()),
-                blocoSalvo.getCor(),
-                dto.laminas());
+        return BlocoResponseDTO.fromEntity(blocoSalvo);
     }
 
-    private void validarRegrasDeOuro(BlocoDTO dto) {
+    private void validarRegrasDeOuro(BlocoRequestDTO dto) {
         if (dto.laminas() != null && dto.laminas().size() > 3) {
             throw new RuntimeException("Erro: O bloco excede o limite permitido de 3 lâminas.");
         }
 
         if (dto.cor() == null || dto.cor().getValue() < 0 || dto.cor().getValue() > 3) {
             throw new RuntimeException("Erro: Cor do bloco inválida para a produção.");
-        }
-
-        if (dto.estoque() == null || dto.estoque().id() <= 0) {
-            throw new RuntimeException("Erro: Posição de estoque inválida ou não informada.");
         }
     }
 
