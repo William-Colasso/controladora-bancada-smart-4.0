@@ -1,4 +1,4 @@
-package com.tecdes.smart.app_smart_40.dto;
+package com.tecdes.smart.app_smart_40.dto.response;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,18 +9,17 @@ import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
 
-public record PedidoDTO(
-        Long id,
+public record PedidoResponseDTO(Long id,
         Integer ordemProducao,
         StatusPedido status,
         TipoPedido tipoPedido,
         CorTampa corTampa,
         LocalDateTime dataCriacao,
         LocalDateTime dataEntradaExpedicao,
-        List<BlocoDTO> blocos,
+        List<BlocoResponseDTO> blocos,
         Expedicao expedicao) {
-    public static PedidoDTO fromEntity(Pedido pedido) {
-        return new PedidoDTO(
+    public static PedidoResponseDTO fromEntity(Pedido pedido) {
+        return new PedidoResponseDTO(
                 pedido.getId(),
                 pedido.getOrdemProducao(),
                 pedido.getStatus(),
@@ -28,7 +27,7 @@ public record PedidoDTO(
                 pedido.getCorTampa(),
                 pedido.getDataCriacao(),
                 pedido.getDataEntradaExpedicao(),
-                pedido.getBlocos().stream().map(bloco -> BlocoDTO.fromEntity(bloco)).toList(),
+                pedido.getBlocos().stream().map(bloco -> BlocoResponseDTO.fromEntity(bloco)).toList(),
                 pedido.getExpedicao());
     }
 
@@ -41,7 +40,7 @@ public record PedidoDTO(
                 .corTampa(this.corTampa)
                 .dataCriacao(this.dataCriacao != null ? this.dataCriacao : LocalDateTime.now())
                 .dataEntradaExpedicao(this.dataEntradaExpedicao)
-                .blocos(this.blocos.stream().map(BlocoDTO::toEntity).toList())
+                .blocos(this.blocos().stream().map(BlocoResponseDTO::toEntity).toList())
                 .expedicao(this.expedicao)
                 .build();
     }
