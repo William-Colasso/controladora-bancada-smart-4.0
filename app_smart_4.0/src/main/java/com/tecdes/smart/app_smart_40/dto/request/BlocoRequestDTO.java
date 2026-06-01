@@ -13,7 +13,7 @@ public record BlocoRequestDTO(CorBloco cor, AndarBloco andar, List<LaminaRequest
                 bloco.getCor(),
                 bloco.getAndar(),
                 bloco.getLaminas().stream()
-                        .map(l -> new LaminaRequestDTO(l.getCor(), l.getPadrao(), l.getPosicaoNoBloco())).toList());
+                        .map(l -> new LaminaRequestDTO(l.getCor(), l.getPadrao(), l.getPosicao())).toList());
     }
 
     public static Bloco toEntity(BlocoRequestDTO blocoDTO) {

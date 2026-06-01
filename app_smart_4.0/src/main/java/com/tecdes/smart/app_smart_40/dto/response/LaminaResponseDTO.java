@@ -14,14 +14,14 @@ public record LaminaResponseDTO(
         return new LaminaResponseDTO(
                 lamina.getCor(),
                 lamina.getPadrao(),
-                lamina.getPosicaoNoBloco());
+                lamina.getPosicao());
     }
 
     public Lamina toEntity() {
         return Lamina.builder()
                 .cor(this.cor)
                 .padrao(this.padrao)
-                .posicaoNoBloco(this.posicaoNoBloco)
+                .posicao(this.posicaoNoBloco)
                 .build();
     }
 }
