@@ -5,30 +5,31 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import jakarta.persistence.EnumeratedValue;
 
-public enum CorTampa {
-    PRETO(1),
-    VERMELHO(2),
-    AZUL(3);
+public enum AndarBloco {
+    PRIMEIRO(1),
+    SEGUNDO(2),
+    TERCEIRO(3);
 
     @EnumeratedValue
     private final int value;
 
-    CorTampa(int value) {
+    AndarBloco(int value) {
         this.value = value;
     }
 
     @JsonValue
     public int getValue() {
-        return value;
+        return this.value;
     }
 
     @JsonCreator
-    public static CorTampa fromValue(int value) {
-        for (CorTampa c : CorTampa.values()) {
-            if (c.getValue() == value) {
-                return c;
+    public static AndarBloco fromValue(int value) {
+        for (AndarBloco a : AndarBloco.values()) {
+            if (a.getValue() == value) {
+                return a;
             }
         }
-        throw new IllegalArgumentException("Cor de tampa inválida: " + value);
+        throw new IllegalArgumentException("Andar inválido: " + value);
     }
+
 }
