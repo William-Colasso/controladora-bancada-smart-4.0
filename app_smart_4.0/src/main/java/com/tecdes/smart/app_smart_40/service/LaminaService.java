@@ -20,7 +20,7 @@ public class LaminaService {
         Lamina lamina = new Lamina();
         lamina.setCor(dto.cor());
         lamina.setPadrao(dto.padrao());
-        lamina.setPosicaoNoBloco(dto.posicaoNoBloco());
+        lamina.setPosicao(dto.posicao());
 
         validarRegrasLamina(lamina);
 
@@ -33,7 +33,7 @@ public class LaminaService {
         if (lamina.getCor() == null || lamina.getCor().getValue()< 1 || lamina.getCor().getValue() > 6) {
             throw new RuntimeException("Erro: Cor de lâmina inválida (1-6).");
         }
-        if (lamina.getPosicaoNoBloco() == null || lamina.getPosicaoNoBloco().getValue() < 1 ||  lamina.getPosicaoNoBloco().getValue() > 3) {
+        if (lamina.getPosicao() == null || lamina.getPosicao().getValue() < 1 ||  lamina.getPosicao().getValue() > 3) {
             throw new RuntimeException("Erro: Posição da lâmina inválida.");
         }
         if (lamina.getPadrao().getValue() == -1 || lamina.getPadrao().getValue() < 0 || lamina.getPadrao().getValue() > 3) {

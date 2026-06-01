@@ -8,13 +8,13 @@ import com.tecdes.smart.app_smart_40.model.enums.PosicaoLamina;
 public record LaminaRequestDTO(
         CorLamina cor,
         PadraoLamina padrao,
-        PosicaoLamina posicaoNoBloco) {
+        PosicaoLamina posicao) {
 
     public Lamina toEntity() {
         return Lamina.builder()
                 .cor(this.cor)
                 .padrao(this.padrao)
-                .posicaoNoBloco(this.posicaoNoBloco)
+                .posicao(this.posicao)
                 .build();
     }
 }

@@ -34,7 +34,7 @@ public class BlocoService {
                 Lamina lamina = new Lamina();
                 lamina.setCor(lDTO.cor());
                 lamina.setPadrao(lDTO.padrao());
-                lamina.setPosicaoNoBloco(lDTO.posicaoNoBloco());
+                lamina.setPosicao(lDTO.posicao());
                 lamina.setBloco(bloco);
                 laminaService.validarRegrasLamina(lamina);
                 return lamina;

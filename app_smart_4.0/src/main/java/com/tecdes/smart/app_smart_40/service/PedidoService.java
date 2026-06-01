@@ -106,7 +106,7 @@ public class PedidoService {
 
             // Posições não podem se repetir no mesmo bloco
             long posicoesDistintas = bloco.laminas().stream()
-                    .map(LaminaRequestDTO::posicaoNoBloco)
+                    .map(LaminaRequestDTO::posicao)
                     .distinct()
                     .count();
 
