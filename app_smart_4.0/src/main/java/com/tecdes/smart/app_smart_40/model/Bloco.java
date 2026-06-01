@@ -5,6 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.tecdes.smart.app_smart_40.model.enums.AndarBloco;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 
 import jakarta.persistence.CascadeType;
@@ -19,6 +20,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 //import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,6 +53,9 @@ public class Bloco {
 
     @Column(name = "st_cor_bloco", nullable = false)
     private CorBloco cor;
+
+    @Transient
+    private AndarBloco andar;
 
     @OneToMany(mappedBy = "bloco", cascade = CascadeType.ALL)
     @JsonManagedReference

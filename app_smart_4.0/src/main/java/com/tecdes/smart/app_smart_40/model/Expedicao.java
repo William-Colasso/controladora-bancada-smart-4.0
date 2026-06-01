@@ -1,6 +1,6 @@
 package com.tecdes.smart.app_smart_40.model;
 
-import java.time.LocalDateTime;
+
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

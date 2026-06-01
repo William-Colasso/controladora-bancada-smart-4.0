@@ -19,7 +19,8 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
 
     Optional<Estoque> findByPosicao(Integer posicao);
 
-    List<Estoque> findByCorBloco(CorBloco corBloco);
+    List<Estoque> findByCorBloco(CorBloco corbloco);
+    Estoque findFirstByCorBloco(CorBloco corBloco);
 
     // CORRIGIDO: removido findByCorBlocoAndQuantidadeGreaterThan (campo
     // 'quantidade' não existe)
