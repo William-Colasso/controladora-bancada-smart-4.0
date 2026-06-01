@@ -19,9 +19,9 @@ public class ExpedicaoService {
     private final ExpedicaoRepository expedicaoRepository;
     private final PedidoRepository pedidoRepository;
 
-   
-
-   
+    public ExpedicaoResponseDTO atualizarExpedicao(Expedicao expedicao) {
+        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
+    }
 
     public List<ExpedicaoResponseDTO> listarTodos() {
         return expedicaoRepository.findAll()
@@ -30,13 +30,11 @@ public class ExpedicaoService {
                 .collect(Collectors.toList());
     }
 
-
-    public boolean existePosicaoLivre(){
+    public boolean existePosicaoLivre() {
         return expedicaoRepository.countByPedidoIsNull() > 0;
     }
 
-
-    public ExpedicaoResponseDTO primeiraExpedicaoLivre(){
+    public ExpedicaoResponseDTO primeiraExpedicaoLivre() {
         return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoIsNull().get());
     }
 }

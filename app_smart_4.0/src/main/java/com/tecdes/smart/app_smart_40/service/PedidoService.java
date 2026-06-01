@@ -80,8 +80,8 @@ public class PedidoService {
         expedicao.setPedido(pedido);
         pedido.setStatus(StatusPedido.PENDENTE);
         System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
-
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        expedicaoService.atualizarExpedicao(expedicao);
         PedidoResponseDTO pedidoDTO = PedidoResponseDTO.fromEntity(pedidoSalvo);
         estoqueService.retirarEstoque(pedidoDTO.blocos());
 
