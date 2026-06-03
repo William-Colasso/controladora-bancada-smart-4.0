@@ -22,6 +22,11 @@ public class BlocoService {
     @Autowired
     private LaminaService laminaService;
 
+
+    public List<BlocoResponseDTO> getAll(){
+        return blocoRepository.findAll().stream().map(bloco -> BlocoResponseDTO.fromEntity(bloco)).toList();
+    }
+
     @Transactional
     public BlocoResponseDTO salvarBloco(BlocoRequestDTO dto) {
         validarRegrasDeOuro(dto);

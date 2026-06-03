@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Novo Pedido — SMART 4.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" th:href="@{/css/pedido.css}">
+
+</head>
+
+<body>
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    const CORES_LAMINAS = /*[[${coresLaminas}]]*/[];
+    const PADROES_LAMINA = /*[[${padroes}]]*/[];
+    const POSICOES_LAMINA = /*[[${posicoes}]]*/[];
+    /*]]>*/
+
+
+  </script>
+  <script th:src="@{/js/pedido.js}"></script>
+
+
+  <!-- ═══════════════════════════════════ MAIN ════════ -->
+  <main>
+
+    <!-- ── STEP 01 · Dados do Pedido ─────────────────── -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-step">01</div>
+        <div class="panel-label">DADOS DO PEDIDO</div>
+      </div>
+      <div class="panel-body">
+        <div class="field-grid">
+
+          <div class="field">
+            <label class="field-lbl" for="tipo-pedido">Tipo de Pedido</label>
+            <select id="tipo-pedido" class="field-ctrl">
+              <option th:each="tipo : ${tiposPedido}" th:value="${tipo.value}" th:text="${tipo.name()}">
+              </option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-lbl" for="cor-tampa">Cor da Tampa</label>
+            <select id="cor-tampa" class="field-ctrl">
+              <option th:each="cor : ${coresTampa}" th:value="${cor.value}" th:text="${cor.name()}">
+              </option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 02 · Blocos e Lâminas ────────────────── -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-step">02</div>
+        <div class="panel-label">CONFIGURAÇÃO DOS BLOCOS</div>
+      </div>
+      <div class="panel-body" style="padding: 20px;">
+        <div id="blocos-container">
+
+          <!--
+          Os três blocos são sempre renderizados pelo Thymeleaf.
+          O JavaScript ativa/desativa os blocos de acordo com o tipoPedido selecionado.
+        -->
+
+          <!-- BLOCO 1 – sempre ativo -->
+          <div class="bloco-card" id="bloco-1">
+            <div class="bloco-head">
+              <div class="bloco-badge">B-01</div>
+              <div class="bloco-title">BLOCO 01</div>
+            </div>
+            <div class="bloco-body">
+
+              <div class="field">
+                <label class="field-lbl">Cor do Bloco</label>
+                <select class="field-ctrl cor-bloco-sel">
+                  <!--
+                  coresBlocos = CorBloco[] filtrado (sem VAZIO)
+                -->
+                  <option th:each="cor : ${coresBlocos}" th:value="${cor.value}" th:text="${cor.name()}">
+                  </option>
+                </select>
+              </div>
+
+              <div class="laminas-bar">
+                <span class="laminas-lbl">Lâminas</span>
+                <button class="btn-add-lam" onclick="addLamina(this)">+ LÂMINA (0/3)</button>
+              </div>
+              <div class="lam-col-headers">
+                <div class="lam-col-hdr">Cor</div>
+                <div class="lam-col-hdr">Padrão</div>
+                <div class="lam-col-hdr">Posição</div>
+                <div></div>
+              </div>
+              <div class="laminas-list">
+                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
+              </div>
+
+            </div>
+          </div><!-- /bloco-1 -->
+
+          <!-- BLOCO 2 – ativo apenas para DUPLO / TRIPLO -->
+          <div class="bloco-card inactive" id="bloco-2">
+            <div class="bloco-head">
+              <div class="bloco-badge">B-02</div>
+              <div class="bloco-title">BLOCO 02</div>
+            </div>
+            <div class="bloco-body">
+
+              <div class="field">
+                <label class="field-lbl">Cor do Bloco</label>
+                <select class="field-ctrl cor-bloco-sel">
+                  <option th:each="cor : ${coresBlocos}" th:value="${cor.value}" th:text="${cor.name()}">
+                  </option>
+                </select>
+              </div>
+
+              <div class="laminas-bar">
+                <span class="laminas-lbl">Lâminas</span>
+                <button class="btn-add-lam" onclick="addLamina(this)">+ LÂMINA (0/3)</button>
+              </div>
+              <div class="lam-col-headers">
+                <div class="lam-col-hdr">Cor</div>
+                <div class="lam-col-hdr">Padrão</div>
+                <div class="lam-col-hdr">Posição</div>
+                <div></div>
+              </div>
+              <div class="laminas-list">
+                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
+              </div>
+
+            </div>
+          </div><!-- /bloco-2 -->
+
+          <!-- BLOCO 3 – ativo apenas para TRIPLO -->
+          <div class="bloco-card inactive" id="bloco-3">
+            <div class="bloco-head">
+              <div class="bloco-badge">B-03</div>
+              <div class="bloco-title">BLOCO 03</div>
+            </div>
+            <div class="bloco-body">
+
+              <div class="field">
+                <label class="field-lbl">Cor do Bloco</label>
+                <select class="field-ctrl cor-bloco-sel">
+                  <option th:each="cor : ${coresBlocos}" th:value="${cor.value}" th:text="${cor.name()}">
+                  </option>
+                </select>
+              </div>
+
+              <div class="laminas-bar">
+                <span class="laminas-lbl">Lâminas</span>
+                <button class="btn-add-lam" onclick="addLamina(this)">+ LÂMINA (0/3)</button>
+              </div>
+              <div class="lam-col-headers">
+                <div class="lam-col-hdr">Cor</div>
+                <div class="lam-col-hdr">Padrão</div>
+                <div class="lam-col-hdr">Posição</div>
+                <div></div>
+              </div>
+              <div class="laminas-list">
+                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
+              </div>
+
+            </div>
+          </div><!-- /bloco-3 -->
+
+        </div><!-- /blocos-container -->
+      </div>
+    </div>
+
+    <!-- ── Actions ────────────────────────────────────── -->
+    <div class="submit-row">
+      <button class="btn-submit" id="btn-submit" onclick="enviarPedido()">
+        ENVIAR PEDIDO
+      </button>
+      <button class="btn-clear" onclick="limparForm()">LIMPAR FORM</button>
+    </div>
+
+    <!-- ── Response Panel ────────────────────────────── -->
+    <div id="resp-panel">
+      <div class="resp-head">
+        <div class="resp-dot"></div>
+        <span id="resp-title">RESPOSTA</span>
+      </div>
+      <div class="resp-body">
+        <pre id="resp-body"></pre>
+      </div>
+    </div>
+
+  </main><!-- /main -->
+
+
+
+</body>
+
+</html>
