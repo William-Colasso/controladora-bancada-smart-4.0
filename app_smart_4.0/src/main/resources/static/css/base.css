@@ -1,0 +1,213 @@
+/* ============================================================
+   SMART 4.0 — Base & Reset
+   ============================================================ */
+@import url('./vars.css');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+
+img {
+  max-width: 100%;
+  height: auto;
+  pointer-events: none;
+  display: block;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+/* ============================================================
+   NAVBAR — Compartilhada por todas as páginas
+   ============================================================ */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 60px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--color-text);
+  transition: opacity var(--transition);
+}
+.navbar__brand:hover { opacity: 0.8; }
+
+.navbar__logo {
+  width: 32px;
+  height: 32px;
+}
+
+.navbar__subtitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-muted);
+  margin-top: 1px;
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.nav-btn--danger:hover { color: var(--color-red); }
+.nav-btn--refresh:hover { color: var(--color-accent); }
+
+/* ============================================================
+   LAYOUT PRINCIPAL
+   ============================================================ */
+.page-wrapper {
+  min-height: calc(100vh - 60px);
+  padding: 28px 32px;
+}
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.card__body {
+  padding: 20px;
+}
+
+/* ============================================================
+   BADGE / PILL
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.badge--blue   { background: rgba(43,146,213,0.15); color: var(--color-accent); }
+.badge--green  { background: rgba(90,179,0,0.15);   color: var(--color-green); }
+.badge--yellow { background: rgba(254,206,0,0.15);  color: var(--color-yellow); }
+.badge--red    { background: rgba(252,5,24,0.15);   color: var(--color-red); }
+.badge--dim    { background: var(--color-surface-2); color: var(--color-muted); }
+
+/* ============================================================
+   SPINNER
+   ============================================================ */
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   TOAST NOTIFICATION
+   ============================================================ */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: toastIn 200ms ease forwards;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+}
+.toast--success { border-left: 3px solid var(--color-green); }
+.toast--error   { border-left: 3px solid var(--color-red); }
+.toast--info    { border-left: 3px solid var(--color-accent); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
