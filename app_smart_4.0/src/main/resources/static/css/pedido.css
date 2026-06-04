@@ -16,7 +16,7 @@ body {
 /* ─── Header ─── */
 header {
   background: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid #ddd; 
   padding: 15px 20px;
   display: flex;
   justify-content: space-between;
