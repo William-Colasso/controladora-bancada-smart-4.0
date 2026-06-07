@@ -26,9 +26,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -83,7 +84,7 @@ public class PageController {
          */
         @GetMapping("/pedidos")
         public String pedidos() {
-                return "Pedidos/pedidos";
+                return "pedidos/pedidos";
         }
 
         /**
@@ -96,16 +97,21 @@ public class PageController {
                 // ---- Estoque ----
                 List<EstoqueResponseDTO> estoque = estoqueService.getTodos();
 
-                // Contagem por cor para as estatísticas iniciais
-                Map<CorBloco, Long> estoqueStats = new EnumMap<>(CorBloco.class);
-
-                Map<String, Long> stats = new java.util.HashMap<>();
+                Map<String, Integer> estoqueStats = new java.util.HashMap<>();
                 for (CorBloco cor : CorBloco.values()) {
-                        long count = estoque.stream()
+                        Long count = estoque.stream()
                                         .filter(e -> e.corBloco() == cor)
                                         .count();
-                        stats.put(cor.name(), count);
+                        estoqueStats.put(cor.name(), count.intValue());
                 }
+                estoqueStats.entrySet()
+                                .stream()
+                                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                                .collect(Collectors.toMap(
+                                                Map.Entry::getKey,
+                                                Map.Entry::getValue,
+                                                (a, b) -> a,
+                                                LinkedHashMap::new));
 
                 // ---- Expedição ----
                 List<ExpedicaoResponseDTO> expedicao = expedicaoService.listarTodos();
@@ -117,13 +123,18 @@ public class PageController {
                 String estoqueJson = toJson(estoque);
                 String expedicaoJson = toJson(expedicao);
 
+                /// ----- Loggs
+                System.out.println("Estoque stats:" + toJson(estoqueStats));
+                System.out.println("Estoque JSON: " + estoqueJson);
+                System.out.println("Expedição JSON: " + expedicaoJson);
+
                 // ---- Model ----
                 model.addAttribute("estoqueJson", estoqueJson);
                 model.addAttribute("expedicaoJson", expedicaoJson);
-                model.addAttribute("estoqueStats", stats);
+                model.addAttribute("estoqueStats", estoqueStats);
                 model.addAttribute("expedicaoOcupadas", expOcupadas);
 
-                return "Dashboard/dashboard";
+                return "dashboard/dashboard";
         }
 
         // -------------------------------------------------------------------------

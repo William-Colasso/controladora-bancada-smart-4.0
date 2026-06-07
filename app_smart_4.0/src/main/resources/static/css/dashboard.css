@@ -1,7 +1,7 @@
 /* ============================================================
    SMART 4.0 — Dashboard: Estoque + Expedição
    ============================================================ */
-@import url('./base.css');
+@import url("./base.css");
 
 /* ---- Layout principal do dashboard ---- */
 .dashboard {
@@ -14,8 +14,12 @@
 }
 
 /* Seção Estoque ocupa coluna esquerda, Expedição coluna direita */
-.section--estoque   { grid-column: 1; }
-.section--expedicao { grid-column: 2; }
+.section--estoque {
+  grid-column: 1;
+}
+.section--expedicao {
+  grid-column: 2;
+}
 
 /* ---- Cabeçalho de seção ---- */
 .section-header {
@@ -65,11 +69,11 @@
 }
 
 .blocos-grid--estoque {
-  grid-template-columns: repeat(7, 1fr);  /* 28 posições: 4 linhas × 7 colunas */
+  grid-template-columns: repeat(7, 1fr); /* 28 posições: 4 linhas × 7 colunas */
 }
 
 .blocos-grid--expedicao {
-  grid-template-columns: repeat(4, 1fr);  /* 12 posições: 3 linhas × 4 colunas */
+  grid-template-columns: repeat(4, 1fr); /* 12 posições: 3 linhas × 4 colunas */
 }
 
 /* ---- Bloco individual ---- */
@@ -101,24 +105,45 @@
 .bloco--estoque:hover {
   transform: scale(1.08);
   z-index: 2;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .bloco--selected {
   border-color: var(--color-yellow) !important;
-  box-shadow: 0 0 0 2px var(--color-yellow), 0 4px 16px rgba(0,0,0,0.4) !important;
+  box-shadow:
+    0 0 0 2px var(--color-yellow),
+    0 4px 16px rgba(0, 0, 0, 0.4) !important;
   transform: scale(1.06);
   z-index: 3;
 }
 
 /* Variantes de cor */
-.bloco--vazio    { background: var(--color-surface-2);  color: var(--color-dim); }
-.bloco--preto    { background: #1a1a1a; color: #888; border-color: #333; }
-.bloco--vermelho { background: rgba(252,5,24,0.18); color: var(--color-red); border-color: rgba(252,5,24,0.35); }
-.bloco--azul     { background: rgba(43,146,213,0.18); color: var(--color-accent); border-color: rgba(43,146,213,0.35); }
+.bloco--vazio {
+  background: var(--color-surface-2);
+  color: var(--color-dim);
+}
+.bloco--preto {
+  background: #1a1a1a;
+  color: #888;
+  border-color: #333;
+}
+.bloco--vermelho {
+  background: rgba(252, 5, 24, 0.18);
+  color: var(--color-red);
+  border-color: rgba(252, 5, 24, 0.35);
+}
+.bloco--azul {
+  background: rgba(43, 146, 213, 0.18);
+  color: var(--color-accent);
+  border-color: rgba(43, 146, 213, 0.35);
+}
 
 /* Bloco de expedição com pedido */
-.bloco--ocupado  { background: rgba(90,179,0,0.15); color: var(--color-green); border-color: rgba(90,179,0,0.3); }
+.bloco--ocupado {
+  background: rgba(90, 179, 0, 0.15);
+  color: var(--color-green);
+  border-color: rgba(90, 179, 0, 0.3);
+}
 
 .bloco__pos {
   font-size: 9px;
@@ -165,20 +190,35 @@
   height: 28px;
   border-radius: var(--radius-sm);
   border: 2px solid transparent;
-  transition: transform var(--transition), border-color var(--transition);
+  transition:
+    transform var(--transition),
+    border-color var(--transition);
   position: relative;
 }
-.color-btn:hover { transform: scale(1.15); }
-.color-btn--active { border-color: white; transform: scale(1.15); }
+.color-btn:hover {
+  transform: scale(1.15);
+}
+.color-btn--active {
+  border-color: white;
+  transform: scale(1.15);
+}
 
-.color-btn--preto    { background: #333; }
-.color-btn--vermelho { background: var(--color-red); }
-.color-btn--azul     { background: var(--color-accent); }
-.color-btn--vazio    {
+.color-btn--preto {
+  background: #333;
+}
+.color-btn--vermelho {
+  background: var(--color-red);
+}
+.color-btn--azul {
+  background: var(--color-accent);
+}
+.color-btn--vazio {
   background: var(--color-surface);
   border-color: var(--color-border-2);
 }
-.color-btn--vazio.color-btn--active { border-color: var(--color-muted); }
+.color-btn--vazio.color-btn--active {
+  border-color: var(--color-muted);
+}
 
 .color-toolbar__divider {
   width: 1px;
@@ -197,11 +237,22 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: opacity var(--transition), transform var(--transition);
+  transition:
+    opacity var(--transition),
+    transform var(--transition);
 }
-.apply-btn:hover   { opacity: 0.85; transform: translateY(-1px); }
-.apply-btn:active  { transform: translateY(0); }
-.apply-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+.apply-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.apply-btn:active {
+  transform: translateY(0);
+}
+.apply-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .selection-info {
   font-family: var(--font-mono);
@@ -248,12 +299,29 @@
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 16px;
+  display: flex; /* <- isso resolve */
 }
+
 .ocupacao-bar__fill {
   height: 100%;
-  background: var(--color-accent);
-  border-radius: 2px;
   transition: width 500ms ease;
+  /* sem border-radius aqui — overflow: hidden no pai já cuida das pontas */
+}
+
+.fill-vazio {
+  background-color: var(--cor-vazio);
+}
+
+.fill-vermelho {
+  background-color: var(--cor-vermelho);
+}
+
+.fill-preto {
+  background-color: var(--cor-preto);
+}
+
+.fill-azul {
+  background-color: var(--cor-azul);
 }
 
 /* ---- Expedição — bloco com pedido ---- */
@@ -284,8 +352,13 @@
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 /* ============================================================
@@ -305,8 +378,17 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard { padding: 16px; gap: 16px; }
-  .blocos-grid--estoque   { grid-template-columns: repeat(4, 1fr); }
-  .blocos-grid--expedicao { grid-template-columns: repeat(4, 1fr); }
-  .color-toolbar { flex-wrap: wrap; }
+  .dashboard {
+    padding: 16px;
+    gap: 16px;
+  }
+  .blocos-grid--estoque {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .blocos-grid--expedicao {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .color-toolbar {
+    flex-wrap: wrap;
+  }
 }
