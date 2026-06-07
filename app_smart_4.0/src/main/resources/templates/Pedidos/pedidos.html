@@ -28,7 +28,7 @@
 <body>
 
   <!-- Navbar -->
-  <div th:replace="~{fragments/smart40Fragments :: navbar('Pedidos', '/Dashboard')}"></div>
+  <div th:replace="~{fragments/smart40Fragments :: navbar('Pedidos', '/dashboard')}"></div>
 
   <!-- ============================================================
        CONTEÚDO PRINCIPAL
@@ -39,7 +39,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">
-          Pedidos <span>// Smart 4.0</span>
+          Pedidos <span> Smart 4.0</span>
         </h1>
         <p class="page-subtitle">
           Visualize e acompanhe todos os pedidos, seus blocos, tampas e lâminas.
@@ -51,7 +51,7 @@
           <div class="refresh-dot"></div>
           <span>Atualização automática</span>
         </div>
-        <a th:href="@{/Dashboard}" class="apply-btn"
+        <a th:href="@{/dashboard}" class="apply-btn"
            style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
           <i class="fa-solid fa-table-cells-large" style="font-size:10px"></i>
           Dashboard
@@ -148,7 +148,7 @@
        SCRIPTS
        ============================================================ -->
   <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
-  <script th:src="@{/javascript/pedidos.js}"></script>
+  <script th:src="@{/js/pedidos.js}"></script>
 
 </body>
 </html>
