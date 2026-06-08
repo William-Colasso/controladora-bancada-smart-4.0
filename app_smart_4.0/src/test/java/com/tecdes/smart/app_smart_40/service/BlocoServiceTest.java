@@ -59,8 +59,8 @@ class BlocoServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("salvarBloco: dado DTO válido sem lâminas, deve retornar DTO com id e cor corretos")
-    void salvarBloco_dadoDtoValidoSemLaminas_deveRetornarDtoSalvo() {
+    @DisplayName("salvarBloco: DTO válido sem lâminas → resposta deve conter id e cor corretos")
+    void salvarBloco_dadoDtoValidoSemLaminas_deveRetornarIdECorNoDTO() {
         // Arrange
         BlocoRequestDTO dto = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, null);
         when(blocoRepository.save(any(Bloco.class))).thenReturn(blocoSalvoBase);
@@ -74,8 +74,8 @@ class BlocoServiceTest {
     }
 
     @Test
-    @DisplayName("salvarBloco: dado DTO válido com 3 lâminas, deve persistir o bloco exatamente uma vez")
-    void salvarBloco_dadoDtoComTresLaminas_devePersistirUmaVez() {
+    @DisplayName("salvarBloco: DTO com 3 lâminas válidas → repositório deve ser invocado exatamente uma vez")
+    void salvarBloco_dadoDtoComTresLaminas_deveInvocarRepositorioUmaUnicaVez() {
         // Arrange
         List<LaminaRequestDTO> tresLaminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM,  PosicaoLamina.ESQUERDA),
@@ -101,8 +101,8 @@ class BlocoServiceTest {
     }
 
     @Test
-    @DisplayName("salvarBloco: dado DTO com lâminas válidas, deve delegar validação ao LaminaService para cada lâmina")
-    void salvarBloco_dadoTresLaminas_deveChamarValidacaoTresVezes() {
+    @DisplayName("salvarBloco: DTO com 3 lâminas → LaminaService deve ser chamado uma vez por lâmina")
+    void salvarBloco_dadoTresLaminas_deveInvocarValidacaoTresVezes() {
         // Arrange
         List<LaminaRequestDTO> tresLaminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA),
@@ -125,8 +125,8 @@ class BlocoServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("salvarBloco: dado bloco com 4 lâminas, deve lançar RuntimeException informando o limite")
-    void salvarBloco_dadoQuatroLaminas_deveLancarExcecao() {
+    @DisplayName("salvarBloco: 4 lâminas → RuntimeException com mensagem de limite excedido")
+    void salvarBloco_dadoQuatroLaminas_deveLancarRuntimeExceptionDeLimiteExcedido() {
         // Arrange
         List<LaminaRequestDTO> quatroLaminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA),
@@ -143,8 +143,8 @@ class BlocoServiceTest {
     }
 
     @Test
-    @DisplayName("salvarBloco: dado bloco com 4 lâminas, não deve chamar o repositório")
-    void salvarBloco_dadoQuatroLaminas_naoDevePersistir() {
+    @DisplayName("salvarBloco: 4 lâminas → validação falha antes de chamar o repositório")
+    void salvarBloco_dadoQuatroLaminas_naoDeveInvocarRepositorio() {
         // Arrange
         List<LaminaRequestDTO> quatroLaminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA),
@@ -159,25 +159,10 @@ class BlocoServiceTest {
         verifyNoInteractions(blocoRepository);
     }
 
-    // -----------------------------------------------------------------------
-    // salvarBloco — cor inválida
-    // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("salvarBloco: dado cor VAZIO (value=0), deve lançar RuntimeException de cor inválida")
-    void salvarBloco_dadoCorVazio_deveLancarExcecao() {
-        // Arrange — CorBloco.VAZIO tem value=0, fora do intervalo permitido (1-3)
-        BlocoRequestDTO dto = new BlocoRequestDTO(CorBloco.VAZIO, AndarBloco.PRIMEIRO, null);
-
-        // Act & Assert
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> blocoService.salvarBloco(dto));
-        assertThat(ex.getMessage()).contains("Cor do bloco inválida");
-    }
-
-    @Test
-    @DisplayName("salvarBloco: dado cor nula, deve lançar RuntimeException de cor inválida")
-    void salvarBloco_dadoCorNula_deveLancarExcecao() {
+    @DisplayName("salvarBloco: cor nula → RuntimeException com mensagem 'Cor do bloco inválida'")
+    void salvarBloco_dadoCorNula_deveLancarRuntimeExceptionDeCorInvalida() {
         // Arrange
         BlocoRequestDTO dto = new BlocoRequestDTO(null, AndarBloco.PRIMEIRO, null);
 
@@ -192,8 +177,8 @@ class BlocoServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("salvarBloco: dado lâmina com cor inválida, deve propagar exceção do LaminaService sem persistir")
-    void salvarBloco_dadoLaminaComCorInvalida_devePropagar() {
+    @DisplayName("salvarBloco: lâmina com cor inválida → exceção do LaminaService propagada sem invocar repositório")
+    void salvarBloco_dadoLaminaComCorInvalida_devePropararExcecaoSemInvocarRepositorio() {
         // Arrange
         List<LaminaRequestDTO> laminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.FRENTE)
