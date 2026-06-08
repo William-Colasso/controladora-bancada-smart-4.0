@@ -46,8 +46,8 @@ class LaminaServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("salvar: dado DTO válido, deve retornar DTO com os dados da lâmina salva")
-    void salvar_dadoDtoValido_deveRetornarDtoSalvo() {
+    @DisplayName("salvar: DTO válido → resposta deve conter cor, padrão e posição corretos")
+    void salvar_dadoDtoValido_deveRetornarCorPadraoEPosicaoNoDTO() {
         // Arrange
         LaminaRequestDTO dto = new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.CASA, PosicaoLamina.FRENTE);
         when(laminaRepository.save(any(Lamina.class))).thenReturn(laminaRetornadaDoRepositorio);
@@ -62,8 +62,8 @@ class LaminaServiceTest {
     }
 
     @Test
-    @DisplayName("salvar: dado DTO válido, deve chamar o repositório exatamente uma vez")
-    void salvar_dadoDtoValido_devePersistirUmaVez() {
+    @DisplayName("salvar: DTO válido → repositório deve ser invocado exatamente uma vez")
+    void salvar_dadoDtoValido_deveInvocarRepositorioUmaUnicaVez() {
         // Arrange
         LaminaRequestDTO dto = new LaminaRequestDTO(CorLamina.AZUL, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA);
         when(laminaRepository.save(any(Lamina.class))).thenReturn(laminaRetornadaDoRepositorio);
@@ -80,8 +80,8 @@ class LaminaServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("validarRegrasLamina: dado lâmina com todos os campos válidos, não deve lançar exceção")
-    void validarRegrasLamina_dadoLaminaValida_naoDeveLancarExcecao() {
+    @DisplayName("validarRegrasLamina: campos cor, padrão e posição válidos → nenhuma exceção lançada")
+    void validarRegrasLamina_dadoTodosCamposValidos_naoDeveLancarExcecao() {
         // Arrange
         Lamina lamina = Lamina.builder()
                 .cor(CorLamina.BRANCO)
@@ -98,8 +98,8 @@ class LaminaServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("validarRegrasLamina: dado cor nula, deve lançar RuntimeException de cor inválida")
-    void validarRegrasLamina_dadoCorNula_deveLancarExcecao() {
+    @DisplayName("validarRegrasLamina: cor nula → RuntimeException com mensagem 'Cor de lâmina inválida'")
+    void validarRegrasLamina_dadoCorNula_deveLancarRuntimeExceptionDeCorInvalida() {
         // Arrange
         Lamina lamina = Lamina.builder()
                 .cor(null)
@@ -118,8 +118,8 @@ class LaminaServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("validarRegrasLamina: dado posição nula, deve lançar RuntimeException de posição inválida")
-    void validarRegrasLamina_dadoPosicaoNula_deveLancarExcecao() {
+    @DisplayName("validarRegrasLamina: posição nula → RuntimeException com mensagem 'Posição da lâmina inválida'")
+    void validarRegrasLamina_dadoPosicaoNula_deveLancarRuntimeExceptionDePosicaoInvalida() {
         // Arrange
         Lamina lamina = Lamina.builder()
                 .cor(CorLamina.VERDE)
@@ -138,7 +138,7 @@ class LaminaServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("validarRegrasLamina: dado padrão nulo, deve lançar NullPointerException — gap: falta null-check no service")
+    @DisplayName("validarRegrasLamina: padrão nulo → NullPointerException (gap: ausência de null-check no service)")
     void validarRegrasLamina_dadoPadraoNulo_deveLancarNullPointerException() {
         // Arrange — PadraoLamina nulo dispara NPE antes da mensagem amigável
         // porque o código chama lamina.getPadrao().getValue() sem null-check
@@ -158,8 +158,8 @@ class LaminaServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @DisplayName("salvar: dado cor nula, não deve chamar o repositório")
-    void salvar_dadoCorNula_naoDevePersistir() {
+    @DisplayName("salvar: cor nula → validação falha antes de chamar o repositório")
+    void salvar_dadoCorNula_naoDeveInvocarRepositorio() {
         // Arrange
         LaminaRequestDTO dto = new LaminaRequestDTO(null, PadraoLamina.NENHUM, PosicaoLamina.FRENTE);
 
@@ -169,8 +169,8 @@ class LaminaServiceTest {
     }
 
     @Test
-    @DisplayName("salvar: dado posição nula, não deve chamar o repositório")
-    void salvar_dadoPosicaoNula_naoDevePersistir() {
+    @DisplayName("salvar: posição nula → validação falha antes de chamar o repositório")
+    void salvar_dadoPosicaoNula_naoDeveInvocarRepositorio() {
         // Arrange
         LaminaRequestDTO dto = new LaminaRequestDTO(CorLamina.AZUL, PadraoLamina.NENHUM, null);
 
