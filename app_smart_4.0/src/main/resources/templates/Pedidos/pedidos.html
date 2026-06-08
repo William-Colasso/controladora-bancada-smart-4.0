@@ -5,7 +5,6 @@
   Responsabilidade do SERVIDOR (Thymeleaf):
     — Renderizar o esqueleto da página (cabeçalho, filtros, tabela vazia)
     — NÃO renderizar dados dos pedidos (delegado inteiramente ao JS)
-    — Isso garante que filtros e detalhes funcionem sem reload de página
 
   Responsabilidade do CLIENTE (pedidos.js):
     — Buscar /api/pedidos no DOMContentLoaded
@@ -27,8 +26,8 @@
 
 <body>
 
-  <!-- Navbar -->
-  <div th:replace="~{fragments/smart40Fragments :: navbar('Pedidos', '/dashboard')}"></div>
+  <!-- Navbar — activePage='pedidos' marca o link ativo -->
+  <div th:replace="~{fragments/smart40Fragments :: navbar('pedidos')}"></div>
 
   <!-- ============================================================
        CONTEÚDO PRINCIPAL
@@ -38,30 +37,21 @@
     <!-- Cabeçalho da página -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">
-          Pedidos <span> Smart 4.0</span>
-        </h1>
+        <h1 class="page-title">Pedidos <span>Smart 4.0</span></h1>
         <p class="page-subtitle">
           Visualize e acompanhe todos os pedidos, seus blocos, tampas e lâminas.
         </p>
       </div>
 
-      <div style="display:flex;align-items:center;gap:12px">
-        <div class="refresh-indicator">
-          <div class="refresh-dot"></div>
-          <span>Atualização automática</span>
-        </div>
-        <a th:href="@{/dashboard}" class="apply-btn"
-           style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
-          <i class="fa-solid fa-table-cells-large" style="font-size:10px"></i>
-          Dashboard
-        </a>
+      <!-- Indicador de auto-refresh — botão "Dashboard" removido (está na navbar) -->
+      <div class="refresh-indicator">
+        <div class="refresh-dot"></div>
+        <span>Atualização automática</span>
       </div>
     </div>
 
     <!-- ============================================================
          FILTROS POR STATUS
-         (o JS troca a classe .filter-btn--active e re-renderiza)
          ============================================================ -->
     <div class="filters">
       <button type="button" class="filter-btn filter-btn--active" data-filter="TODOS">
@@ -82,7 +72,6 @@
 
     <!-- ============================================================
          TABELA DE PEDIDOS
-         A <thead> é estática (servidor). O <tbody> é preenchido pelo JS.
          ============================================================ -->
     <div class="pedidos-table-wrapper">
       <table class="pedidos-table">
@@ -99,11 +88,6 @@
           </tr>
         </thead>
         <tbody id="pedidosTableBody">
-
-          <!--
-            Linha de loading exibida enquanto o JS ainda não chegou.
-            O JS remove esta linha após o primeiro fetch completar.
-          -->
           <tr id="loadingRow">
             <td colspan="8" style="padding:40px;text-align:center">
               <div style="display:flex;align-items:center;justify-content:center;gap:12px;color:var(--color-muted)">
@@ -112,15 +96,12 @@
               </div>
             </td>
           </tr>
-
         </tbody>
       </table>
     </div>
 
     <!-- ============================================================
          PAINEL DE DETALHES DO PEDIDO
-         Oculto por padrão; exibido pelo JS ao clicar em uma linha.
-         O conteúdo é 100% gerado pelo JS (renderDetailPanel).
          ============================================================ -->
     <div class="details-panel" id="detailPanel" style="display:none">
 
@@ -142,7 +123,6 @@
     </div>
 
   </main>
-
 
   <!-- ============================================================
        SCRIPTS

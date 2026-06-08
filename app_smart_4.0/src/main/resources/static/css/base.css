@@ -44,7 +44,7 @@ button {
 .navbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0;
   padding: 0 24px;
   height: 60px;
   background-color: var(--color-surface);
@@ -54,6 +54,7 @@ button {
   z-index: 100;
 }
 
+/* ── Marca (logo + nome) ── */
 .navbar__brand {
   display: flex;
   align-items: center;
@@ -64,6 +65,7 @@ button {
   letter-spacing: -0.5px;
   color: var(--color-text);
   transition: opacity var(--transition);
+  flex-shrink: 0;
 }
 .navbar__brand:hover { opacity: 0.8; }
 
@@ -80,10 +82,78 @@ button {
   margin-top: 1px;
 }
 
+/* ── Navegação primária (centro) ── */
+.navbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 auto; /* empurra para o centro */
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+.nav-link i {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.nav-link:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+/* Link ativo — página atual */
+.nav-link--active {
+  background: var(--color-surface-2);
+  color: var(--color-text) !important;
+  position: relative;
+}
+.nav-link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;          /* alinha com a borda inferior da navbar */
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-accent);
+}
+
+/* CTA: Novo Pedido — destaque sutil */
+.nav-link--cta {
+  border: 1px solid var(--color-border);
+}
+.nav-link--cta:hover {
+  border-color: rgba(43, 146, 213, 0.35);
+  background: var(--color-accent-lo);
+  color: var(--color-accent) !important;
+}
+.nav-link--cta.nav-link--active {
+  border-color: rgba(43, 146, 213, 0.35);
+  background: var(--color-accent-lo);
+  color: var(--color-accent) !important;
+}
+.nav-link--cta.nav-link--active::after {
+  background: var(--color-accent);
+}
+
+/* ── Ações utilitárias (direita) ── */
 .navbar__actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .nav-btn {
@@ -102,6 +172,23 @@ button {
 }
 .nav-btn--danger:hover { color: var(--color-red); }
 .nav-btn--refresh:hover { color: var(--color-accent); }
+
+/* ── Responsividade da navbar ── */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 16px;
+  }
+  .nav-link span {
+    display: none; /* apenas ícones em telas pequenas */
+  }
+  .nav-link {
+    padding: 6px 10px;
+    gap: 0;
+  }
+  .navbar__subtitle {
+    display: none;
+  }
+}
 
 /* ============================================================
    LAYOUT PRINCIPAL
