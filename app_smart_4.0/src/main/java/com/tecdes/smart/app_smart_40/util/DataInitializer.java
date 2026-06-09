@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.util;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -25,43 +26,24 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
+        // 1. INICIALIZAÇÃO DO ESTOQUE
         if (estoqueRepository.count() == 0) {
             System.out.println(">> Estoque vazio. Inicializando...");
 
-            estoqueRepository.saveAll(List.of(
-                    Estoque.builder().posicao(1).build(),
-                    Estoque.builder().posicao(2).build(),
-                    Estoque.builder().posicao(3).build(),
-                    Estoque.builder().posicao(4).build(),
-                    Estoque.builder().posicao(5).build(),
-                    Estoque.builder().posicao(6).build(),
-                    Estoque.builder().posicao(7).build(),
-                    Estoque.builder().posicao(8).build(),
-                    Estoque.builder().posicao(9).build(),
-                    Estoque.builder().posicao(10).build(),
-                    Estoque.builder().posicao(11).build(),
-                    Estoque.builder().posicao(12).build(),
-                    Estoque.builder().posicao(13).build(),
-                    Estoque.builder().posicao(14).build(),
-                    Estoque.builder().posicao(15).build(),
-                    Estoque.builder().posicao(16).build(),
-                    Estoque.builder().posicao(17).build(),
-                    Estoque.builder().posicao(18).build(),
-                    Estoque.builder().posicao(19).build(),
-                    Estoque.builder().posicao(20).build(),
-                    Estoque.builder().posicao(21).build(),
-                    Estoque.builder().posicao(22).build(),
-                    Estoque.builder().posicao(23).build(),
-                    Estoque.builder().posicao(24).build(),
-                    Estoque.builder().posicao(25).build(),
-                    Estoque.builder().posicao(26).build(),
-                    Estoque.builder().posicao(27).build(),
-                    Estoque.builder().posicao(28).build()));
-
+            List<Estoque> novosEstoques = new ArrayList<>();
+            // Loop de 1 a 28 para criar as posições
+            for (int i = 1; i <= 28; i++) {
+                novosEstoques.add(Estoque.builder()
+                        .posicao(i)
+                        .corBloco(CorBloco.VAZIO) // Valor padrão para evitar o erro null
+                        .build());
+            }
+            
+            estoqueRepository.saveAll(novosEstoques);
             System.out.println(">> Estoque inicializado.");
         }
 
-        // Redistribui as cores em toda inicialização
+        // 2. REDISTRIBUIÇÃO DAS CORES (Executa sempre)
         List<Estoque> estoques = estoqueRepository.findAll()
                 .stream()
                 .sorted(Comparator.comparing(Estoque::getPosicao))
@@ -79,26 +61,23 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         estoqueRepository.saveAll(estoques);
-
         System.out.println(">> Cores do estoque redistribuídas.");
 
+
+        // 3. INICIALIZAÇÃO DA EXPEDIÇÃO
         if (expedicaoRepository.count() == 0) {
             System.out.println(">> Expedicao vazia. Inicializando...");
 
-            expedicaoRepository.saveAll(List.of(
-                    Expedicao.builder().posicao(1).build(),
-                    Expedicao.builder().posicao(2).build(),
-                    Expedicao.builder().posicao(3).build(),
-                    Expedicao.builder().posicao(4).build(),
-                    Expedicao.builder().posicao(5).build(),
-                    Expedicao.builder().posicao(6).build(),
-                    Expedicao.builder().posicao(7).build(),
-                    Expedicao.builder().posicao(8).build(),
-                    Expedicao.builder().posicao(9).build(),
-                    Expedicao.builder().posicao(10).build(),
-                    Expedicao.builder().posicao(11).build(),
-                    Expedicao.builder().posicao(12).build()));
+            List<Expedicao> novasExpedicoes = new ArrayList<>();
+            // Loop de 1 a 12 para criar as expedições
+            for (int i = 1; i <= 12; i++) {
+                novasExpedicoes.add(Expedicao.builder()
+                        .posicao(i)
+                        // .outraPropriedade("valorPadrao") -> Se Expedicao tiver campo obrigatório, coloque aqui!
+                        .build());
+            }
 
+            expedicaoRepository.saveAll(novasExpedicoes);
             System.out.println(">> Expedicao inicializada.");
         } else {
             System.out.println(">> Expedicao já contém dados. Pulando.");

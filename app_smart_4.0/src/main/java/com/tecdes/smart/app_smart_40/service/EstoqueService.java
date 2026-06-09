@@ -56,10 +56,6 @@ public class EstoqueService {
         Estoque pos = estoqueRepository.findByPosicao(dto.posicao())
                 .orElseThrow(() -> new RuntimeException("Posição " + dto.posicao() + " não existe!"));
 
-        if (pos.getCorBloco() != CorBloco.VAZIO) {
-            throw new RuntimeException("Posição " + dto.posicao() + " já está ocupada!");
-        }
-
         pos.setCorBloco(dto.corBloco());
         return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
     }
