@@ -48,7 +48,7 @@ public class Lamina {
     private PadraoLamina padrao = PadraoLamina.NENHUM; 
 
     @Column(name = "st_posicao", nullable = false)
-    private PosicaoLamina posicaoNoBloco; 
+    private PosicaoLamina posicao; 
 
     @ManyToOne
     @JoinColumn(name = "id_bloco", nullable = false)

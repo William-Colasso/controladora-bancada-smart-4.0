@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.util;
 
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private EstoqueRepository estoqueRepository;
+
     @Autowired
     private ExpedicaoRepository expedicaoRepository;
 
@@ -25,42 +27,64 @@ public class DataInitializer implements CommandLineRunner {
 
         if (estoqueRepository.count() == 0) {
             System.out.println(">> Estoque vazio. Inicializando...");
+
             estoqueRepository.saveAll(List.of(
-                    Estoque.builder().posicao(1).corBloco(CorBloco.AZUL).build(),
-                    Estoque.builder().posicao(2).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(3).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(4).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(5).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(6).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(7).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(8).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(9).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(10).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(11).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(12).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(13).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(14).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(15).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(16).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(17).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(18).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(19).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(20).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(21).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(22).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(23).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(24).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(25).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(26).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(27).corBloco(CorBloco.VAZIO).build(),
-                    Estoque.builder().posicao(28).corBloco(CorBloco.VAZIO).build()));
+                    Estoque.builder().posicao(1).build(),
+                    Estoque.builder().posicao(2).build(),
+                    Estoque.builder().posicao(3).build(),
+                    Estoque.builder().posicao(4).build(),
+                    Estoque.builder().posicao(5).build(),
+                    Estoque.builder().posicao(6).build(),
+                    Estoque.builder().posicao(7).build(),
+                    Estoque.builder().posicao(8).build(),
+                    Estoque.builder().posicao(9).build(),
+                    Estoque.builder().posicao(10).build(),
+                    Estoque.builder().posicao(11).build(),
+                    Estoque.builder().posicao(12).build(),
+                    Estoque.builder().posicao(13).build(),
+                    Estoque.builder().posicao(14).build(),
+                    Estoque.builder().posicao(15).build(),
+                    Estoque.builder().posicao(16).build(),
+                    Estoque.builder().posicao(17).build(),
+                    Estoque.builder().posicao(18).build(),
+                    Estoque.builder().posicao(19).build(),
+                    Estoque.builder().posicao(20).build(),
+                    Estoque.builder().posicao(21).build(),
+                    Estoque.builder().posicao(22).build(),
+                    Estoque.builder().posicao(23).build(),
+                    Estoque.builder().posicao(24).build(),
+                    Estoque.builder().posicao(25).build(),
+                    Estoque.builder().posicao(26).build(),
+                    Estoque.builder().posicao(27).build(),
+                    Estoque.builder().posicao(28).build()));
+
             System.out.println(">> Estoque inicializado.");
-        } else {
-            System.out.println(">> Estoque já contém dados. Pulando.");
         }
+
+        // Redistribui as cores em toda inicialização
+        List<Estoque> estoques = estoqueRepository.findAll()
+                .stream()
+                .sorted(Comparator.comparing(Estoque::getPosicao))
+                .toList();
+
+        CorBloco[] cores = {
+                CorBloco.VAZIO,
+                CorBloco.PRETO,
+                CorBloco.VERMELHO,
+                CorBloco.AZUL
+        };
+
+        for (int i = 0; i < estoques.size(); i++) {
+            estoques.get(i).setCorBloco(cores[i % cores.length]);
+        }
+
+        estoqueRepository.saveAll(estoques);
+
+        System.out.println(">> Cores do estoque redistribuídas.");
 
         if (expedicaoRepository.count() == 0) {
             System.out.println(">> Expedicao vazia. Inicializando...");
+
             expedicaoRepository.saveAll(List.of(
                     Expedicao.builder().posicao(1).build(),
                     Expedicao.builder().posicao(2).build(),
@@ -74,6 +98,7 @@ public class DataInitializer implements CommandLineRunner {
                     Expedicao.builder().posicao(10).build(),
                     Expedicao.builder().posicao(11).build(),
                     Expedicao.builder().posicao(12).build()));
+
             System.out.println(">> Expedicao inicializada.");
         } else {
             System.out.println(">> Expedicao já contém dados. Pulando.");
