@@ -6,7 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
+import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
 
 import lombok.AllArgsConstructor;
@@ -20,19 +21,19 @@ public class PedidoController {
 
     // GET /api/pedidos
     @GetMapping
-    public ResponseEntity<List<PedidoDTO>> listarTodos() {
+    public ResponseEntity<List<PedidoResponseDTO>> listarTodos() {
         return ResponseEntity.ok(pedidoService.listarTodos());
     }
 
     // POST /api/pedidos
     @PostMapping
-    public ResponseEntity<PedidoDTO> criar(@RequestBody PedidoDTO dto) {
+    public ResponseEntity<PedidoResponseDTO> criar(@RequestBody PedidoRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.criar(dto));
     }
 
     // PUT /api/pedidos/{id}/status
     @PutMapping("/{id}/status")
-    public ResponseEntity<PedidoDTO> concluir(@PathVariable Long id) {
+    public ResponseEntity<PedidoResponseDTO> concluir(@PathVariable Long id) {
         return ResponseEntity.ok(pedidoService.concluir(id));
     }
 
