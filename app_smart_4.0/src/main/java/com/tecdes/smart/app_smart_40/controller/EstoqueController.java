@@ -1,6 +1,5 @@
 package com.tecdes.smart.app_smart_40.controller;
 
-
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
@@ -31,4 +30,14 @@ public class EstoqueController {
     public ResponseEntity<EstoqueResponseDTO> removerBloco(@PathVariable Byte nrPosicao) {
         return ResponseEntity.ok(estoqueService.removerBloco(nrPosicao));
     }
+
+    /**
+     * Todas as 28 posições, independente da cor.
+     * Usado pelo dashboard para renderizar o grid completo.
+     */
+    @GetMapping("/todos")
+    public ResponseEntity<List<EstoqueResponseDTO>> getTodos() {
+        return ResponseEntity.ok(estoqueService.getTodos());
+    }
+
 }
