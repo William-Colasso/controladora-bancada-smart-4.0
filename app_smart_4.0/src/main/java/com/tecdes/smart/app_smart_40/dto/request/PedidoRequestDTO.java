@@ -15,6 +15,7 @@ public record PedidoRequestDTO(TipoPedido tipoPedido,
                 .tipoPedido(this.tipoPedido)
                 .corTampa(this.corTampa)
                 .dataCriacao(LocalDateTime.now())
+                
                 .blocos(this.blocos.stream().map(BlocoRequestDTO::toEntity).toList())
                 .build();
     }
