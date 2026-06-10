@@ -20,6 +20,7 @@ import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
+import com.tecdes.smart.app_smart_40.exception.EstoqueInsuficienteException;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
@@ -49,7 +50,7 @@ public class PedidoService {
         List<BlocoRequestDTO> blocoDTOs = dto.blocos();
 
         if (!blocosSuficientesEmEstoque(blocoDTOs)) {
-            throw new IllegalArgumentException(
+            throw new EstoqueInsuficienteException(
                     "Cores requisitadas não se encontram presentes");
         }
 
