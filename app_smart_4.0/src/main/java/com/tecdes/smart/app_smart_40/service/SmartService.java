@@ -14,16 +14,22 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-
+import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
+import com.tecdes.smart.app_smart_40.model.Estoque;
+import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.model.Pedido;
+import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
+import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
+import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import com.tecdes.smart.app_smart_40.service.clp.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.PlcConnector;
 
-
+import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -34,41 +40,79 @@ import lombok.Setter;
 @Getter
 public class SmartService {
 
+    private final PedidoService pedidoService;
+
     private final PlcConnectionService plcConnectionService;
 
     private final PedidoRepository pedidoRepository;
-
+    private final ExpedicaoService expedicaoService;
+    private final EstoqueRepository estoqueRepository;
+    private final EstoqueService estoqueService;
     private static final int TOTAL_SHORTS = 30;
     private static final int TOTAL_BYTES = TOTAL_SHORTS * 2;
 
-    private String ipClp = "10.74.1";
+    private String ipClp = "10.74.241.10";
 
-    public void enviarParaProducao(PedidoResponseDTO pedidoRequest) {
-        Pedido pedido = pedidoRepository.findByOrdemProducao(pedidoRequest.ordemProducao()).get(0);
+    @Transactional
+    public void enviarParaProducao(Long idPedido) {
+        Pedido pedido = pedidoRepository.findById(idPedido).orElseThrow();
 
+        // ── 1. Reserva posição de expedição ──────────────────────────────
+        // CORRIGIDO: expedicao já foi vinculada no criar() — não buscar nova aqui.
+        // Se a expedição ainda não foi vinculada (pedido PENDENTE), vincula agora.
+        if (pedido.getExpedicao() == null) {
+            Expedicao expedicao = expedicaoService.primeiraExpedicaoLivre().toEntity();
+            pedido.setExpedicao(expedicao);
+            expedicao.setPedido(pedido);
+            expedicaoService.atualizarExpedicao(expedicao);
+        }
+
+        // ── 2. Muda status ────────────────────────────────────────────────
+        pedido.setStatus(StatusPedido.PRODUCAO);
+
+        // ── 3. Garante estoque vinculado a cada bloco ─────────────────────
+        // CORRIGIDO: findFirstByCorBloco sem ORDER BY é não-determinístico.
+        // Usa a posição já salva no bloco — só preenche se estiver nula.
+        pedido.getBlocos().forEach(bloco -> {
+            if (bloco.getEstoque() == null) {
+                Estoque estoque = estoqueRepository.findFirstByCorBloco(bloco.getCor());
+                bloco.setEstoque(estoque);
+                estoque.setCorBloco(CorBloco.VAZIO);
+                estoqueRepository.save(estoque);
+            }
+        });
+
+        // ── 4. Salva o pedido atualizado ──────────────────────────────────
+        // CORRIGIDO: era pedidoService.atualizar() que recriava a entidade
+        // sem pedido nos blocos → PropertyValueException.
+        // Agora salva diretamente a entidade gerenciada pelo JPA.
+        pedidoRepository.save(pedido);
+
+        // ── 5. Serializa e envia ao CLP ───────────────────────────────────
         byte[] buffer = converterParaBytes(pedido);
-
         printHex(buffer);
-        // 2. Obter a conexão única via seu Service
+
+        // CORRIGIDO: disconnect() era chamado antes do null-check,
+        // causando NullPointerException se a conexão nunca foi aberta.
         PlcConnector connector = plcConnectionService.getConnection(ipClp);
 
         if (connector != null) {
             try {
-                // 3. Escrever bloco de bytes no CLP (ex: a partir da DB19, offset 2)
                 connector.writeBlock(9, 2, 60, buffer);
                 System.out.println("Dados enviados para o CLP: " + ipClp);
-                enviarTampa(pedidoRequest.corTampa().getValue());
+                enviarTampa(pedido.getCorTampa().getValue());
                 iniciarExecucaoPedido(ipClp);
-
             } catch (Exception ex) {
                 System.err.println("Erro ao enviar dados para o CLP: " + ex.getMessage());
             }
+        } else {
+            System.err.println("CLP não disponível: " + ipClp);
         }
     }
 
     private void escreverBloco(Bloco bloco, ByteBuffer buffer) {
         buffer.putShort((short) bloco.getCor().getValue()); // Cor_Andar
-        buffer.putShort((short) bloco.getCor().getValue()); // Posicao_Estoque_Andar
+        buffer.putShort((short) bloco.getEstoque().getPosicao().intValue()); // Posicao_Estoque_Andar
 
         List<Lamina> laminas = bloco.getLaminas();
 
@@ -167,7 +211,7 @@ public class SmartService {
     }
 
     public void enviarTampa(int tampa) {
-        // System.out.println("\n\nSELETOR DE TAMPAS INSTALADO NA BANCADA\n\n");
+        System.out.println("\n\nSELETOR DE TAMPAS INSTALADO NA BANCADA\n\n");
         // Passo 2) Selecionar a tampa via POST
         try {
             RestTemplate apiSeletorTampa = new RestTemplate();
