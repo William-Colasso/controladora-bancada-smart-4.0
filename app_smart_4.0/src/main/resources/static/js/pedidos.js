@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const ID = startBtn.dataset.id;
       startBtn.classList.add('started');
 
-      fetch("http://localhost:8088/api/pedidos/" + ID, { method: "POST" })
+      Api.post(`/api/pedidos/${ID}`)
         .then(res => res.json())
         .then(data => alert(data))
         .catch(err => console.error('[Start] erro:', err));

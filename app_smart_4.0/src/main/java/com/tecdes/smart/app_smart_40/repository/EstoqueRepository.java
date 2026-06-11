@@ -37,11 +37,7 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
 
     @Modifying
     @Transactional
-    @Query("""
-            UPDATE  Estoque e
-            SET e.corBloco = 0
-            WHERE e.id IN :ids
-            """)
+    @Query("UPDATE Estoque e SET e.corBloco = com.tecdes.smart.app_smart_40.model.enums.CorBloco.VAZIO WHERE e.id IN :ids")
     int retirarDoEstoque(
             @Param("ids") List<Long> ids);
 }

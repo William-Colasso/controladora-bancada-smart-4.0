@@ -48,13 +48,8 @@ public class PedidoController {
 
     @PostMapping("/{id}")
     public ResponseEntity<String> enviarParaProducao(@PathVariable Long id) {
-        PedidoResponseDTO pedido = pedidoService.buscarPorId(id);
-        List<BlocoRequestDTO> blocos = pedido.blocos().stream().map(bloco -> BlocoResponseDTO.toEntity(bloco))
-                .map(blocoE -> BlocoRequestDTO.fromEntity(blocoE)).toList();
-        
-        System.out.println("Pedido mucho loko pra production"+pedido);
-        smartService.enviarParaProducao(pedido);
-        pedidoService.atualizar(id, new PedidoRequestDTO(pedido.tipoPedido(), pedido.corTampa(), blocos));
+
+        smartService.enviarParaProducao(id);
         
         return ResponseEntity.status(201).body(new String("OK")); // todo
     }
