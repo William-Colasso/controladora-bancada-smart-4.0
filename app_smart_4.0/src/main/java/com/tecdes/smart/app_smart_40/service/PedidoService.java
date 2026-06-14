@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
+import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
@@ -19,6 +20,7 @@ import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
+import com.tecdes.smart.app_smart_40.exception.EstoqueInsuficienteException;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
@@ -48,7 +50,7 @@ public class PedidoService {
         List<BlocoRequestDTO> blocoDTOs = dto.blocos();
 
         if (!blocosSuficientesEmEstoque(blocoDTOs)) {
-            throw new IllegalArgumentException(
+            throw new EstoqueInsuficienteException(
                     "Cores requisitadas não se encontram presentes");
         }
 
@@ -68,22 +70,16 @@ public class PedidoService {
             bloco.getLaminas().forEach(lamina -> {
                 lamina.setBloco(bloco);
             });
-            Estoque estoque = estoqueRepository.findFirstByCorBloco(bloco.getCor());
-            bloco.setEstoque(estoque);
+           
         });
 
         pedido.setOrdemProducao(pedidoRepository.proximaOrdemProducao());
 
-        ExpedicaoResponseDTO expedicaoResponseDTO = expedicaoService.primeiraExpedicaoLivre();
-        Expedicao expedicao = expedicaoResponseDTO.toEntity();
-        pedido.setExpedicao(expedicao);
-        expedicao.setPedido(pedido);
         pedido.setStatus(StatusPedido.PENDENTE);
         System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
-        expedicaoService.atualizarExpedicao(expedicao);
         PedidoResponseDTO pedidoDTO = PedidoResponseDTO.fromEntity(pedidoSalvo);
-        estoqueService.retirarEstoque(pedidoDTO.blocos());
+        
 
         return pedidoDTO;
     }
@@ -148,7 +144,7 @@ public class PedidoService {
     public PedidoResponseDTO buscarPorId(Long id) {
         return pedidoRepository.findById(id)
                 .map(PedidoResponseDTO::fromEntity)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
     }
 
     // -------------------------------------------------------------------------
@@ -157,7 +153,7 @@ public class PedidoService {
 
     public PedidoResponseDTO atualizar(Long id, PedidoRequestDTO dto) {
         if (!pedidoRepository.existsById(id)) {
-            throw new EntityNotFoundException("Pedido não encontrado: " + id);
+            throw new PedidoNotFoundException("Pedido não encontrado: " + id);
         }
 
         if (!validarTipoPedidoRequest(dto)) {
@@ -177,7 +173,7 @@ public class PedidoService {
 
     public void deletar(Long id) {
         if (!pedidoRepository.existsById(id)) {
-            throw new EntityNotFoundException("Pedido não encontrado: " + id);
+            throw new PedidoNotFoundException("Pedido não encontrado: " + id);
         }
 
         pedidoRepository.deleteById(id);
@@ -193,7 +189,7 @@ public class PedidoService {
 
     public PedidoResponseDTO concluir(Long id) {
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
 
         // ADICIONADO: impede concluir um pedido que já está concluído
         if (pedido.getStatus() == StatusPedido.CONCLUIDO) {

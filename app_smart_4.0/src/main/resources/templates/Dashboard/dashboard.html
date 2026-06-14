@@ -1,0 +1,235 @@
+<!doctype html>
+<!--
+  dashboard.html
+  =============================================================
+  Responsabilidade do SERVIDOR (Thymeleaf):
+    — Renderizar a estrutura HTML do dashboard
+    — Injetar dados iniciais via campos hidden (evita flash vazio)
+    — Pré-calcular estatísticas para a renderização inicial
+
+  Responsabilidade do CLIENTE (dashboard.js):
+    — Atualizar os grids a cada polling
+    — Gerenciar seleção de blocos e envio de mutações à API
+    — Nunca reload de página; tudo é SPA-like
+
+  Controller esperado: DashboardController
+    Model attributes:
+      - estoqueJson       : String (JSON serializado de List<EstoqueDTO>)
+      - expedicaoJson     : String (JSON serializado de List<ExpedicaoDTO>)
+      - estoqueStats      : Map<CorBloco, Long>  (contagem por cor)
+      - expedicaoOcupadas : int
+  =============================================================
+-->
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Dashboard — Smart 4.0</title>
+    <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}" />
+  </head>
+
+  <body>
+    <!-- Navbar — activePage='dashboard' marca o link ativo -->
+    <div th:replace="~{fragments/smart40Fragments :: navbar('dashboard')}"></div>
+
+    <!--
+      Dados iniciais injetados pelo servidor para evitar flash vazio.
+      O JS lê esses valores no DOMContentLoaded e os usa para renderizar
+      os grids antes do primeiro polling completar.
+    -->
+    <input type="hidden" id="initialEstoque"  th:value="${estoqueJson}" />
+    <input type="hidden" id="initialExpedicao" th:value="${expedicaoJson}" />
+
+    <!-- ============================================================
+         GRID PRINCIPAL DO DASHBOARD
+         ============================================================ -->
+    <div class="dashboard">
+
+      <!-- ============================================================
+           COLUNA ESQUERDA — Estoque (28 posições, interativo)
+           ============================================================ -->
+      <section class="section--estoque">
+
+        <!-- Cabeçalho -->
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <h2>Estoque</h2>
+            </div>
+          </div>
+          <div class="refresh-indicator">
+            <div class="refresh-dot"></div>
+            <span>Ao vivo</span>
+          </div>
+        </div>
+
+        <!-- Estatísticas textuais (atualizadas pelo JS) -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#1a1a1a;border:1px solid #555"></div>
+            <span class="stat-label">Preto</span>
+            <span class="stat-value" id="statPreto"
+                  th:text="${estoqueStats?.get('PRETO') ?: 0}"></span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#fc0518"></div>
+            <span class="stat-label">Vermelho</span>
+            <span class="stat-value" id="statVermelho"
+                  th:text="${estoqueStats?.get('VERMELHO') ?: 0}"></span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#2b92d5"></div>
+            <span class="stat-label">Azul</span>
+            <span class="stat-value" id="statAzul"
+                  th:text="${estoqueStats?.get('AZUL') ?: 0}"></span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
+            <span class="stat-label">Vazio</span>
+            <span class="stat-value" id="statVazio"
+                  th:text="${estoqueStats?.get('VAZIO') ?: 0}"></span>
+          </div>
+        </div>
+
+        <!-- Stacked bar — uma barra, quatro segmentos -->
+        <div class="ocupacao-bar">
+          <div class="ocupacao-bar__fill fill-preto"
+               th:style="${'width:' + ((estoqueStats?.get('PRETO') ?: 0) * 100 / 28) + '%;'}"></div>
+          <div class="ocupacao-bar__fill fill-vermelho"
+               th:style="${'width:' + ((estoqueStats?.get('VERMELHO') ?: 0) * 100 / 28) + '%;'}"></div>
+          <div class="ocupacao-bar__fill fill-azul"
+               th:style="${'width:' + ((estoqueStats?.get('AZUL') ?: 0) * 100 / 28) + '%;'}"></div>
+          <div class="ocupacao-bar__fill fill-vazio"
+               th:style="${'width:' + ((estoqueStats?.get('VAZIO') ?: 0) * 100 / 28) + '%;'}"></div>
+        </div>
+
+        <!-- Toolbar de seleção e paleta de cores -->
+        <div class="color-toolbar">
+          <span class="color-toolbar__label">Cor</span>
+
+          <button type="button" class="color-btn color-btn--preto"
+                  data-color="1" title="Preto"></button>
+          <button type="button" class="color-btn color-btn--vermelho"
+                  data-color="2" title="Vermelho"></button>
+          <button type="button" class="color-btn color-btn--azul"
+                  data-color="3" title="Azul"></button>
+          <button type="button" class="color-btn color-btn--vazio"
+                  data-color="0" title="Esvaziar"></button>
+
+          <div class="color-toolbar__divider"></div>
+
+          <span class="selection-info" id="selectionInfo">Nenhum selecionado</span>
+
+          <button type="button" class="apply-btn" id="applyColorBtn" disabled>
+            Aplicar
+          </button>
+        </div>
+
+        <!-- Grid de blocos — preenchido pelo JS -->
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title">Posições 1 – 28</span>
+            <span class="section-meta">Clique para selecionar · Selecione cor · Aplique</span>
+          </div>
+          <div class="card__body">
+            <div class="blocos-grid blocos-grid--estoque" id="estoqueGrid">
+              <th:block th:each="i : ${#numbers.sequence(1, 28)}">
+                <div class="bloco bloco--estoque bloco--vazio skeleton"
+                     th:id="'bloco-est-' + ${i}">
+                  <span class="bloco__pos" th:text="${i}"></span>
+                </div>
+              </th:block>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================================
+           COLUNA DIREITA — Expedição (12 posições, somente leitura)
+           ============================================================ -->
+      <section class="section--expedicao">
+
+        <!-- Cabeçalho -->
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon" style="background:rgba(90,179,0,0.12);color:#5ab300">
+              <i class="fa-solid fa-truck-ramp-box"></i>
+            </div>
+            <div>
+              <h2>Expedição</h2>
+            </div>
+          </div>
+          <div class="refresh-indicator">
+            <div class="refresh-dot"></div>
+            <span>Ao vivo</span>
+          </div>
+        </div>
+
+        <!-- Estatísticas de expedição -->
+        <div class="stats-bar">
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#5ab300"></div>
+            <span class="stat-label">Ocupadas</span>
+            <span class="stat-value" id="expOcupado"
+                  th:text="${expedicaoOcupadas ?: 0}">0</span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
+            <span class="stat-label">de</span>
+            <span class="stat-value" id="expTotal">12</span>
+          </div>
+        </div>
+
+        <!-- Barra de ocupação -->
+        <div class="ocupacao-bar">
+          <div class="ocupacao-bar__fill" id="expFill"
+               th:style="${'background:#5ab300;width:' + ((expedicaoOcupadas ?: 0) * 100 / 12) + '%'}"></div>
+        </div>
+
+        <!-- Legenda (expedição é somente leitura) -->
+        <div class="color-toolbar" style="justify-content:flex-start;gap:12px">
+          <span class="color-toolbar__label">Legenda</span>
+          <div class="stat-item">
+            <div class="stat-dot" style="background:rgba(90,179,0,0.5)"></div>
+            <span class="stat-label">Com pedido</span>
+          </div>
+          <div class="stat-item">
+            <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
+            <span class="stat-label">Vazio</span>
+          </div>
+          <span class="selection-info" style="margin-left:auto;color:var(--color-muted);font-size:10px">
+            Somente visualização
+          </span>
+        </div>
+
+        <!-- Grid de expedição — preenchido pelo JS -->
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title">Posições 1 – 12</span>
+            <span class="section-meta">Atualização automática</span>
+          </div>
+          <div class="card__body">
+            <div class="blocos-grid blocos-grid--expedicao" id="expedicaoGrid">
+              <th:block th:each="i : ${#numbers.sequence(1, 12)}">
+                <div class="bloco bloco--vazio skeleton" th:id="'bloco-exp-' + ${i}">
+                  <span class="bloco__pos" th:text="${i}"></span>
+                </div>
+              </th:block>
+            </div>
+          </div>
+        </div>
+        <!-- Link "Ver pedidos" removido — navegação feita pela navbar -->
+
+      </section>
+    </div><!-- /.dashboard -->
+
+    <!-- ============================================================
+         SCRIPTS
+         ============================================================ -->
+    <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
+    <script th:src="@{/js/dashboard.js}"></script>
+  </body>
+</html>
