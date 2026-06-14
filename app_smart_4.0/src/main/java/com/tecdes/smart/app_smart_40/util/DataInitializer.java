@@ -38,31 +38,31 @@ public class DataInitializer implements CommandLineRunner {
                         .corBloco(CorBloco.VAZIO) // Valor padrão para evitar o erro null
                         .build());
             }
-            
+
             estoqueRepository.saveAll(novosEstoques);
             System.out.println(">> Estoque inicializado.");
         }
-
-        // 2. REDISTRIBUIÇÃO DAS CORES (Executa sempre)
-        List<Estoque> estoques = estoqueRepository.findAll()
-                .stream()
-                .sorted(Comparator.comparing(Estoque::getPosicao))
-                .toList();
-
-        CorBloco[] cores = {
-                CorBloco.VAZIO,
-                CorBloco.PRETO,
-                CorBloco.VERMELHO,
-                CorBloco.AZUL
-        };
-
-        for (int i = 0; i < estoques.size(); i++) {
-            estoques.get(i).setCorBloco(cores[i % cores.length]);
-        }
-
-        estoqueRepository.saveAll(estoques);
-        System.out.println(">> Cores do estoque redistribuídas.");
-
+        /*
+         * // 2. REDISTRIBUIÇÃO DAS CORES (Executa sempre)
+         * List<Estoque> estoques = estoqueRepository.findAll()
+         * .stream()
+         * .sorted(Comparator.comparing(Estoque::getPosicao))
+         * .toList();
+         * 
+         * CorBloco[] cores = {
+         * CorBloco.VAZIO,
+         * CorBloco.PRETO,
+         * CorBloco.VERMELHO,
+         * CorBloco.AZUL
+         * };
+         * 
+         * for (int i = 0; i < estoques.size(); i++) {
+         * estoques.get(i).setCorBloco(cores[i % cores.length]);
+         * }
+         * 
+         * estoqueRepository.saveAll(estoques);
+         * System.out.println(">> Cores do estoque redistribuídas.");
+         */
 
         // 3. INICIALIZAÇÃO DA EXPEDIÇÃO
         if (expedicaoRepository.count() == 0) {
@@ -73,7 +73,8 @@ public class DataInitializer implements CommandLineRunner {
             for (int i = 1; i <= 12; i++) {
                 novasExpedicoes.add(Expedicao.builder()
                         .posicao(i)
-                        // .outraPropriedade("valorPadrao") -> Se Expedicao tiver campo obrigatório, coloque aqui!
+                        // .outraPropriedade("valorPadrao") -> Se Expedicao tiver campo obrigatório,
+                        // coloque aqui!
                         .build());
             }
 
