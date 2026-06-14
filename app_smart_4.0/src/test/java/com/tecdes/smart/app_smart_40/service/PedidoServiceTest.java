@@ -29,9 +29,6 @@ import jakarta.persistence.EntityNotFoundException;
 public class PedidoServiceTest {
 
     @Mock
-    private EstoqueService estoqueService;
-
-    @Mock
     private PedidoRepository pedidoRepository;
 
     @Mock
@@ -53,12 +50,8 @@ public class PedidoServiceTest {
         // Arrange
         PedidoRequestDTO dto = buildPedidoRequestDTOSimples();
         Pedido pedidoEntidade = buildPedidoEntidade(1L, TipoPedido.SIMPLES, StatusPedido.PENDENTE);
-        ExpedicaoResponseDTO expedicaoDTO = buildExpedicaoResponseDTO();
-        Expedicao expedicao = buildExpedicao();
 
         when(expedicaoService.existePosicaoLivre()).thenReturn(true);
-        when(expedicaoService.primeiraExpedicaoLivre()).thenReturn(expedicaoDTO);
-        when(estoqueRepository.findFirstByCorBloco(CorBloco.PRETO)).thenReturn(null);
         when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
         when(pedidoRepository.proximaOrdemProducao()).thenReturn(1);
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedidoEntidade);
@@ -71,9 +64,9 @@ public class PedidoServiceTest {
         assertEquals(1L, resultado.id());
         assertEquals(TipoPedido.SIMPLES, resultado.tipoPedido());
         assertEquals(StatusPedido.PENDENTE, resultado.status());
+        // criar() apenas valida e persiste o pedido (status PENDENTE). A reserva de
+        // expedição e a baixa de estoque ocorrem em SmartService.enviarParaProducao().
         verify(pedidoRepository, times(1)).save(any(Pedido.class));
-        verify(expedicaoService, times(1)).atualizarExpedicao(any(Expedicao.class));
-        verify(estoqueService, times(1)).retirarEstoque(any());
     }
 
     @Test
@@ -82,11 +75,8 @@ public class PedidoServiceTest {
         // Arrange
         PedidoRequestDTO dto = buildPedidoRequestDTODuplo();
         Pedido pedidoEntidade = buildPedidoEntidade(2L, TipoPedido.DUPLO, StatusPedido.PENDENTE);
-        ExpedicaoResponseDTO expedicaoDTO = buildExpedicaoResponseDTO();
 
         when(expedicaoService.existePosicaoLivre()).thenReturn(true);
-        when(expedicaoService.primeiraExpedicaoLivre()).thenReturn(expedicaoDTO);
-        when(estoqueRepository.findFirstByCorBloco(any(CorBloco.class))).thenReturn(null);
         when(estoqueRepository.contarDisponibilidadeCor(any(CorBloco.class))).thenReturn(2L);
         when(pedidoRepository.proximaOrdemProducao()).thenReturn(2);
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedidoEntidade);
@@ -108,11 +98,8 @@ public class PedidoServiceTest {
         // Arrange
         PedidoRequestDTO dto = buildPedidoRequestDTOTriplo();
         Pedido pedidoEntidade = buildPedidoEntidade(3L, TipoPedido.TRIPLO, StatusPedido.PENDENTE);
-        ExpedicaoResponseDTO expedicaoDTO = buildExpedicaoResponseDTO();
 
         when(expedicaoService.existePosicaoLivre()).thenReturn(true);
-        when(expedicaoService.primeiraExpedicaoLivre()).thenReturn(expedicaoDTO);
-        when(estoqueRepository.findFirstByCorBloco(any(CorBloco.class))).thenReturn(null);
         when(estoqueRepository.contarDisponibilidadeCor(any(CorBloco.class))).thenReturn(3L);
         when(pedidoRepository.proximaOrdemProducao()).thenReturn(3);
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(pedidoEntidade);
