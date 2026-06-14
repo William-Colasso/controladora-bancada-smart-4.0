@@ -6,11 +6,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
+import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
+import com.tecdes.smart.app_smart_40.service.SmartService;
 
 import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -18,6 +25,8 @@ import lombok.AllArgsConstructor;
 public class PedidoController {
 
     private final PedidoService pedidoService;
+    private final SmartService smartService;
+
 
     // GET /api/pedidos
     @GetMapping
@@ -36,5 +45,22 @@ public class PedidoController {
     public ResponseEntity<PedidoResponseDTO> concluir(@PathVariable Long id) {
         return ResponseEntity.ok(pedidoService.concluir(id));
     }
+
+    @PostMapping("/{id}")
+    public ResponseEntity<String> enviarParaProducao(@PathVariable Long id) {
+
+        smartService.enviarParaProducao(id);
+        
+        return ResponseEntity.status(201).body(new String("OK")); // todo
+    }
+
+    @PostMapping("/clp/{ipClp}")
+    public ResponseEntity<String> setIpClp(@PathVariable String ipClp) {
+        smartService.setIpClp(ipClp);
+        
+        return ResponseEntity.ok(smartService.getIpClp());
+    }
+    
+
 
 }
