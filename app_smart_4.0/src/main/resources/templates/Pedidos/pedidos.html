@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!--
+  pedidos.html
+  =============================================================
+  Responsabilidade do SERVIDOR (Thymeleaf):
+    — Renderizar o esqueleto da página (cabeçalho, filtros, tabela vazia)
+    — NÃO renderizar dados dos pedidos (delegado inteiramente ao JS)
+
+  Responsabilidade do CLIENTE (pedidos.js):
+    — Buscar /api/pedidos no DOMContentLoaded
+    — Filtrar por status na memória (sem novo request)
+    — Abrir painel de detalhes inline ao clicar em uma linha
+    — Polling a cada 5s para manter a lista atualizada
+
+  Controller esperado: PedidosViewController
+    (sem model attributes necessários — dados são 100% via API REST)
+  =============================================================
+-->
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <title>Pedidos — Smart 4.0</title>
+  <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+  <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
+</head>
+
+<body>
+
+  <!-- Navbar — activePage='pedidos' marca o link ativo -->
+  <div th:replace="~{fragments/smart40Fragments :: navbar('pedidos')}"></div>
+
+  <!-- ============================================================
+       CONTEÚDO PRINCIPAL
+       ============================================================ -->
+  <main class="pedidos-page">
+
+    <!-- Cabeçalho da página -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Pedidos <span>Smart 4.0</span></h1>
+        <p class="page-subtitle">
+          Visualize e acompanhe todos os pedidos, seus blocos, tampas e lâminas.
+        </p>
+      </div>
+
+      <!-- Indicador de auto-refresh — botão "Dashboard" removido (está na navbar) -->
+      <div class="refresh-indicator">
+        <div class="refresh-dot"></div>
+        <span>Atualização automática</span>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         FILTROS POR STATUS
+         ============================================================ -->
+    <div class="filters">
+      <button type="button" class="filter-btn filter-btn--active" data-filter="TODOS">
+        Todos
+      </button>
+      <button type="button" class="filter-btn" data-filter="PENDENTE">
+        <span class="badge badge--yellow" style="margin-right:4px">●</span>Pendente
+      </button>
+      <button type="button" class="filter-btn" data-filter="PRODUCAO">
+        <span class="badge badge--blue" style="margin-right:4px">●</span>Produção
+      </button>
+      <button type="button" class="filter-btn" data-filter="CONCLUIDO">
+        <span class="badge badge--green" style="margin-right:4px">●</span>Concluído
+      </button>
+
+      <span class="filters__count" id="pedidosCount">… pedidos</span>
+    </div>
+
+    <!-- ============================================================
+         TABELA DE PEDIDOS
+         ============================================================ -->
+    <div class="pedidos-table-wrapper">
+      <table class="pedidos-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Ordem Prod.</th>
+            <th>Status</th>
+            <th>Tipo</th>
+            <th>Tampa</th>
+            <th>Blocos</th>
+            <th>Criado em</th>
+            <th>Entrada Exp.</th>
+            <th>Produzir</th>
+          </tr>
+        </thead>
+        <tbody id="pedidosTableBody">
+          <tr id="loadingRow">
+            <td colspan="8" style="padding:40px;text-align:center">
+              <div style="display:flex;align-items:center;justify-content:center;gap:12px;color:var(--color-muted)">
+                <div class="spinner"></div>
+                <span style="font-family:var(--font-mono);font-size:11px">Carregando pedidos…</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ============================================================
+         PAINEL DE DETALHES DO PEDIDO
+         ============================================================ -->
+    <div class="details-panel" id="detailPanel" style="display:none">
+
+      <div class="details-panel__header">
+        <span class="details-panel__title">
+          <i class="fa-solid fa-circle-info" style="margin-right:8px;color:var(--color-accent)"></i>
+          Detalhes do pedido
+        </span>
+        <button type="button" class="details-panel__close" id="detailClose"
+                title="Fechar detalhes">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="details-panel__body" id="detailBody">
+        <!-- Preenchido dinamicamente por pedidos.js -->
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
+  <script th:src="@{/js/pedidos.js}"></script>
+
+</body>
+</html>

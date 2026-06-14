@@ -62,7 +62,7 @@ public class Bloco {
     private List<Lamina> laminas;
 
     @ManyToOne
-    @JoinColumn(name = "id_estoque", nullable = false)
+    @JoinColumn(name = "id_estoque", nullable = true)
     @JsonIgnore
     private Estoque estoque;
 }

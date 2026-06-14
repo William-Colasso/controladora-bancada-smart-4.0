@@ -1,0 +1,394 @@
+/* ============================================================
+   SMART 4.0 — Dashboard: Estoque + Expedição
+   ============================================================ */
+@import url("./base.css");
+
+/* ---- Layout principal do dashboard ---- */
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 20px;
+  min-height: calc(100vh - 60px);
+  padding: 24px;
+}
+
+/* Seção Estoque ocupa coluna esquerda, Expedição coluna direita */
+.section--estoque {
+  grid-column: 1;
+}
+.section--expedicao {
+  grid-column: 2;
+}
+
+/* ---- Cabeçalho de seção ---- */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title h2 {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.section-title .section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-lo);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.section-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted);
+}
+
+/* ---- Grid de blocos ---- */
+.blocos-grid {
+  display: grid;
+  gap: 6px;
+}
+
+.blocos-grid--estoque {
+  grid-template-columns: repeat(6, 1fr); /* 28 posições: 4 linhas × 7 colunas */
+}
+
+.blocos-grid--expedicao {
+  grid-template-columns: repeat(4, 1fr); /* 12 posições: 3 linhas × 4 colunas */
+}
+
+/* ---- Bloco individual ---- */
+.bloco {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition:
+    transform var(--transition),
+    box-shadow var(--transition),
+    border-color var(--transition);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  overflow: hidden;
+  cursor: default;
+}
+
+/* Blocos de estoque são clicáveis */
+.bloco--estoque {
+  cursor: pointer;
+}
+
+.bloco--estoque:hover {
+  transform: scale(1.08);
+  z-index: 2;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+.bloco--selected {
+  border-color: var(--color-yellow) !important;
+  box-shadow:
+    0 0 0 2px var(--color-yellow),
+    0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  transform: scale(1.06);
+  z-index: 3;
+}
+
+/* Variantes de cor */
+.bloco--vazio {
+  background: var(--color-surface-2);
+  color: var(--color-dim);
+}
+.bloco--preto {
+  background: #1a1a1a;
+  color: #888;
+  border-color: #333;
+}
+.bloco--vermelho {
+  background: rgba(252, 5, 24, 0.18);
+  color: var(--color-red);
+  border-color: rgba(252, 5, 24, 0.35);
+}
+.bloco--azul {
+  background: rgba(43, 146, 213, 0.18);
+  color: var(--color-accent);
+  border-color: rgba(43, 146, 213, 0.35);
+}
+
+/* Bloco de expedição com pedido */
+.bloco--ocupado {
+  background: rgba(90, 179, 0, 0.15);
+  color: var(--color-green);
+  border-color: rgba(90, 179, 0, 0.3);
+}
+
+.bloco__pos {
+  font-size: 9px;
+  opacity: 0.5;
+  line-height: 1;
+}
+
+.bloco__label {
+  font-size: 8px;
+  opacity: 0.7;
+  line-height: 1;
+  margin-top: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+/* ---- Paleta de cores (toolbar de ação) ---- */
+.color-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+}
+
+.color-toolbar__label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  flex-shrink: 0;
+}
+
+.color-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  transition:
+    transform var(--transition),
+    border-color var(--transition);
+  position: relative;
+}
+.color-btn:hover {
+  transform: scale(1.15);
+}
+.color-btn--active {
+  border-color: white;
+  transform: scale(1.15);
+}
+
+.color-btn--preto {
+  background: #333;
+}
+.color-btn--vermelho {
+  background: var(--color-red);
+}
+.color-btn--azul {
+  background: var(--color-accent);
+}
+.color-btn--vazio {
+  background: var(--color-surface);
+  border-color: var(--color-border-2);
+}
+.color-btn--vazio.color-btn--active {
+  border-color: var(--color-muted);
+}
+
+.color-toolbar__divider {
+  width: 1px;
+  height: 22px;
+  background: var(--color-border);
+}
+
+.apply-btn {
+  margin-left: auto;
+  padding: 6px 14px;
+  background: var(--color-accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    opacity var(--transition),
+    transform var(--transition);
+}
+.apply-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.apply-btn:active {
+  transform: translateY(0);
+}
+.apply-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.selection-info {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted);
+  padding: 0 4px;
+}
+
+/* ---- Estatísticas (mini chart textual) ---- */
+.stats-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.stat-label {
+  color: var(--color-muted);
+}
+
+/* ---- Ocupação bar ---- */
+.ocupacao-bar {
+  height: 4px;
+  background: var(--color-surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  display: flex; /* <- isso resolve */
+}
+
+.ocupacao-bar__fill {
+  height: 100%;
+  transition: width 500ms ease;
+  /* sem border-radius aqui — overflow: hidden no pai já cuida das pontas */
+}
+
+.fill-vazio {
+  background-color: var(--cor-vazio);
+}
+
+.fill-vermelho {
+  background-color: var(--cor-vermelho);
+}
+
+.fill-preto {
+  background-color: var(--cor-preto);
+}
+
+.fill-azul {
+  background-color: var(--cor-azul);
+}
+
+/* ---- Expedição — bloco com pedido ---- */
+.exp-bloco__op {
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+/* ---- Auto-refresh status ---- */
+.refresh-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-muted);
+}
+
+.refresh-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* ============================================================
+   RESPONSIVIDADE
+   ============================================================ */
+@media (max-width: 1200px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+  .section--estoque,
+  .section--expedicao {
+    grid-column: 1;
+  }
+  .blocos-grid--estoque {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 16px;
+    gap: 16px;
+  }
+  .blocos-grid--estoque {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .blocos-grid--expedicao {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .color-toolbar {
+    flex-wrap: wrap;
+  }
+}
