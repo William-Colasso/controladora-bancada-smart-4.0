@@ -1,0 +1,220 @@
+/* ============================================================
+   SMART 4.0 — Tela Inicial (home)
+   Usa os tokens de vars.css (importado por base.css via headDeps).
+   ============================================================ */
+
+.home-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.home-hero {
+  text-align: center;
+}
+
+.home-hero__title {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.home-hero__title span {
+  color: var(--color-accent);
+}
+
+.home-hero__subtitle {
+  margin-top: 8px;
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+/* ── Cartões de ação ──────────────────────────────────────── */
+.home-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition), border-color var(--transition),
+              box-shadow var(--transition);
+}
+
+.action-card__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent-lo);
+  color: var(--color-accent);
+  font-size: 1.25rem;
+}
+
+.action-card__title {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.action-card__desc {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  flex: 1;
+}
+
+.action-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.action-card__cta i {
+  transition: transform var(--transition);
+}
+
+/* Cartão de destaque (Novo Pedido) — borda de acento */
+.action-card--cta {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+/* Estado de hover/foco dos cartões de ação.
+   Feedback visual quando o usuário passa o mouse OU navega por teclado
+   (:focus-visible) sobre um .action-card — usando os tokens disponíveis
+   (--color-accent, --shadow-glow, --transition, etc.).
+   Dica: as regras acima já preparam transições em .action-card e em
+   .action-card__cta i, então dá para coordenar o movimento da seta com
+   o realce do cartão. */
+.action-card:hover,
+.action-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+  outline: none;
+}
+
+.action-card:hover .action-card__cta i,
+.action-card:focus-visible .action-card__cta i {
+  transform: translateX(4px);
+}
+
+/* ── Status da bancada ────────────────────────────────────── */
+.home-status {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px 24px;
+}
+
+.home-status__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.home-status__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.home-status__title i {
+  color: var(--color-accent);
+}
+
+/* ── Conexão com o CLP ────────────────────────────────────── */
+.home-status__connect {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.home-status__input {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.home-status__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-lo);
+}
+
+.home-status__connect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  background: var(--color-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.home-status__connect-btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.home-status__connect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Espaço reservado — fundo sem conteúdo por enquanto */
+.home-status__stage {
+  min-height: 320px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border-2);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(43,146,213,0.06), transparent 60%),
+    var(--color-bg);
+}
+
+/* ── Responsivo ───────────────────────────────────────────── */
+@media (max-width: 820px) {
+  .home-actions { grid-template-columns: 1fr; }
+}
