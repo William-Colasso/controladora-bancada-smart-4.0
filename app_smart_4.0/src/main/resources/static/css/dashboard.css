@@ -69,7 +69,7 @@
 }
 
 .blocos-grid--estoque {
-  grid-template-columns: repeat(7, 1fr); /* 28 posições: 4 linhas × 7 colunas */
+  grid-template-columns: repeat(6, 1fr); /* 28 posições: 4 linhas × 7 colunas */
 }
 
 .blocos-grid--expedicao {

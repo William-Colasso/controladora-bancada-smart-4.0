@@ -70,22 +70,16 @@ public class PedidoService {
             bloco.getLaminas().forEach(lamina -> {
                 lamina.setBloco(bloco);
             });
-            Estoque estoque = estoqueRepository.findFirstByCorBloco(bloco.getCor());
-            bloco.setEstoque(estoque);
+           
         });
 
         pedido.setOrdemProducao(pedidoRepository.proximaOrdemProducao());
 
-        ExpedicaoResponseDTO expedicaoResponseDTO = expedicaoService.primeiraExpedicaoLivre();
-        Expedicao expedicao = expedicaoResponseDTO.toEntity();
-        pedido.setExpedicao(expedicao);
-        expedicao.setPedido(pedido);
         pedido.setStatus(StatusPedido.PENDENTE);
         System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
-        expedicaoService.atualizarExpedicao(expedicao);
         PedidoResponseDTO pedidoDTO = PedidoResponseDTO.fromEntity(pedidoSalvo);
-        estoqueService.retirarEstoque(pedidoDTO.blocos());
+        
 
         return pedidoDTO;
     }
