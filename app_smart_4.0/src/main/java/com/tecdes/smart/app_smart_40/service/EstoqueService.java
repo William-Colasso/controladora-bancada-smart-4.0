@@ -77,11 +77,5 @@ public class EstoqueService {
         return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
     }
 
-    public int retirarEstoque(List<BlocoResponseDTO> blocosDTOs) {
-        List<Long> blocos = blocosDTOs.stream()
-                .map(b -> b.estoque().id())
-                .toList();
-        blocos.forEach(bloco -> System.out.println(bloco));
-        return estoqueRepository.retirarDoEstoque(blocos);
-    }
+
 }
