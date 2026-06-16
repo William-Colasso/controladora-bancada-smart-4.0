@@ -1,7 +1,4 @@
-/**
- * home.js
- * Lógica da tela inicial — conexão com o CLP via IP informado pelo usuário.
- */
+import { Toast } from '../core/toast.js';
 
 function setClpBadge(status, label, icon) {
   const badge = document.getElementById('clp-status-badge');
@@ -22,10 +19,9 @@ async function conectarClp() {
   btn.disabled = true;
   setClpBadge('dim', 'Conectando...', 'fa-circle-notch fa-spin');
 
-  // TODO(human): chamar POST /api/pedidos/clp/{ip} e, de acordo com o
-  // resultado, chamar setClpBadge('green', 'OK', 'fa-circle-check') em caso
-  // de sucesso ou setClpBadge('red', 'Erro', 'fa-circle-xmark') em caso de
-  // falha (resposta não-OK ou exceção de rede). Lembre-se de usar
-  // encodeURIComponent(ip) na URL e de reabilitar o botão (btn.disabled =
-  // false) ao final, mesmo em caso de erro.
+  // TODO(human): POST /api/pedidos/clp/{encodeURIComponent(ip)}; em sucesso
+  // setClpBadge('green','OK','fa-circle-check'), em falha 'red'/'fa-circle-xmark';
+  // reabilitar btn ao final.
 }
+
+document.getElementById('btn-conectar-clp').addEventListener('click', conectarClp);
