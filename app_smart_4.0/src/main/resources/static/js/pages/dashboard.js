@@ -131,7 +131,7 @@ function carregarDadosIniciais() {
 
 async function fetchTudo() {
   const [estoque, expedicao] = await Promise.all([
-    Api.get('/api/estoque/todos'),
+    Api.get('/api/estoque'),
     Api.get('/api/expedicao'),
   ]);
   return { estoque: estoque || [], expedicao: expedicao || [] };
