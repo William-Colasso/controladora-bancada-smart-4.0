@@ -1,42 +1,8 @@
-/* ============================================================
-   SMART 4.0 — Pedidos: Listagem & Detalhes
-   ============================================================ */
-@import url('./base.css');
-
-/* ---- Layout da página ---- */
 .pedidos-page {
   padding: 24px 32px;
   min-height: calc(100vh - 60px);
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.page-title {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: var(--color-text);
-}
-
-.page-title span {
-  color: var(--color-accent);
-}
-
-.page-subtitle {
-  font-size: 13px;
-  color: var(--color-muted);
-  margin-top: 4px;
-}
-
-/* ---- Filtros ---- */
 .filters {
   display: flex;
   align-items: center;
@@ -59,12 +25,10 @@
   transition: background var(--transition), color var(--transition), border-color var(--transition);
   cursor: pointer;
 }
-
 .filter-btn:hover {
   border-color: var(--color-border-2);
   color: var(--color-text);
 }
-
 .filter-btn--active {
   background: var(--color-accent-lo);
   border-color: var(--color-accent);
@@ -78,7 +42,6 @@
   color: var(--color-muted);
 }
 
-/* ---- Tabela de pedidos ---- */
 .pedidos-table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--color-border);
@@ -109,18 +72,9 @@
   cursor: pointer;
   transition: background var(--transition);
 }
-
-.pedidos-table tbody tr:last-child {
-  border-bottom: none;
-}
-
-.pedidos-table tbody tr:hover {
-  background: var(--color-surface-2);
-}
-
-.pedidos-table tbody tr.row--selected {
-  background: var(--color-accent-lo);
-}
+.pedidos-table tbody tr:last-child { border-bottom: none; }
+.pedidos-table tbody tr:hover { background: var(--color-surface-2); }
+.pedidos-table tbody tr.row--selected { background: var(--color-accent-lo); }
 
 .pedidos-table td {
   padding: 14px 16px;
@@ -128,7 +82,6 @@
   font-size: 13px;
   color: var(--color-text);
 }
-
 .pedidos-table td:first-child {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -136,7 +89,6 @@
   color: var(--color-muted);
 }
 
-/* ---- Chips de tipo ---- */
 .tipo-chip {
   display: inline-flex;
   align-items: center;
@@ -151,23 +103,19 @@
   background: var(--color-surface-2);
   color: var(--color-muted);
 }
-
 .tipo-chip--simples {
   background: rgba(90, 179, 0, 0.12);
   color: var(--color-green);
 }
-
 .tipo-chip--duplo {
   background: rgba(43, 146, 213, 0.12);
   color: var(--color-accent);
 }
-
 .tipo-chip--triplo {
   background: rgba(254, 206, 0, 0.12);
   color: var(--color-yellow);
 }
 
-/* ---- Mini blocos na tabela ---- */
 .blocos-preview {
   display: flex;
   gap: 4px;
@@ -180,24 +128,11 @@
   border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
+.mini-bloco--preto { background: var(--color-preto-line); }
+.mini-bloco--vermelho { background: rgba(252, 5, 24, 0.6); }
+.mini-bloco--azul { background: rgba(43, 146, 213, 0.6); }
+.mini-bloco--vazio { background: var(--color-surface-2); }
 
-.mini-bloco--preto {
-  background: #333;
-}
-
-.mini-bloco--vermelho {
-  background: rgba(252, 5, 24, 0.6);
-}
-
-.mini-bloco--azul {
-  background: rgba(43, 146, 213, 0.6);
-}
-
-.mini-bloco--vazio {
-  background: var(--color-surface-2);
-}
-
-/* ---- Painel de detalhes ---- */
 .details-panel {
   margin-top: 20px;
   border: 1px solid var(--color-border);
@@ -235,17 +170,13 @@
   transition: background var(--transition), color var(--transition);
   cursor: pointer;
 }
-
 .details-panel__close:hover {
   background: var(--color-border);
   color: var(--color-text);
 }
 
-.details-panel__body {
-  padding: 24px;
-}
+.details-panel__body { padding: 24px; }
 
-/* ---- Info grid no painel de detalhes ---- */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -277,7 +208,6 @@
   color: var(--color-text);
 }
 
-/* ---- Tampa visual ---- */
 .tampa-visual {
   display: flex;
   align-items: center;
@@ -291,7 +221,6 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* ---- Blocos detalhados ---- */
 .blocos-detail-title {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -330,18 +259,9 @@
   height: 24px;
   border-radius: 2px;
 }
-
-.bloco-color-bar--preto {
-  background: #555;
-}
-
-.bloco-color-bar--vermelho {
-  background: var(--color-red);
-}
-
-.bloco-color-bar--azul {
-  background: var(--color-accent);
-}
+.bloco-color-bar--preto { background: var(--color-bar-preto); }
+.bloco-color-bar--vermelho { background: var(--color-red); }
+.bloco-color-bar--azul { background: var(--color-accent); }
 
 .bloco-detail-card__name {
   font-family: var(--font-mono);
@@ -379,40 +299,18 @@
   border-radius: 2px;
   flex-shrink: 0;
 }
-
-.lamina-swatch--VERMELHO {
-  background: var(--color-red);
-}
-
-.lamina-swatch--AZUL {
-  background: var(--color-accent);
-}
-
-.lamina-swatch--AMARELO {
-  background: var(--color-yellow);
-}
-
-.lamina-swatch--VERDE {
-  background: var(--color-green);
-}
-
-.lamina-swatch--PRETO {
-  background: #333;
-}
-
-.lamina-swatch--BRANCO {
-  background: #ddd;
-}
+.lamina-swatch--VERMELHO { background: var(--color-red); }
+.lamina-swatch--AZUL { background: var(--color-accent); }
+.lamina-swatch--AMARELO { background: var(--color-yellow); }
+.lamina-swatch--VERDE { background: var(--color-green); }
+.lamina-swatch--PRETO { background: var(--color-preto-line); }
+.lamina-swatch--BRANCO { background: var(--color-branco); }
 
 .lamina-cor {
   font-weight: 600;
   color: var(--color-text);
 }
-
-.lamina-padrao {
-  color: var(--color-muted);
-}
-
+.lamina-padrao { color: var(--color-muted); }
 .lamina-pos {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -428,7 +326,6 @@
   padding: 6px 0;
 }
 
-/* ---- Empty state ---- */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -451,7 +348,6 @@
   letter-spacing: 0.08em;
 }
 
-/* ---- Loading skeleton ---- */
 .skeleton {
   background: linear-gradient(90deg,
       var(--color-surface-2) 25%,
@@ -461,91 +357,45 @@
   animation: skeleton-shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
 }
-
 @keyframes skeleton-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
-
-/* ============================================================
-   RESPONSIVIDADE
-   ============================================================ */
-@media (max-width: 1100px) {
-  .info-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .pedidos-page {
-    padding: 16px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .blocos-detail-list {
-    flex-direction: column;
-  }
-
-  .bloco-detail-card {
-    max-width: 100%;
-  }
-}
-
 
 .pedido-start-button {
-
-
   width: 4rem;
   aspect-ratio: 1/1;
   max-height: 4rem;
   border: 2px solid transparent;
   border-radius: 1rem;
-  background-color: #5ab300;
+  background-color: var(--color-green);
   transition: all ease-out 0.5s;
-  transition: 'scale' ease-in-out .1s;
-  box-shadow: 1px 1px 10px 1px#5ab300;
+  box-shadow: 1px 1px 10px 1px var(--color-green);
   box-sizing: border-box;
-
 }
-
-.pedido-start-button::before {
-  content: "▶";
-}
-
-.pedido-start-button:hover {
-  scale: 1.1;
-}
-
-
+.pedido-start-button::before { content: "▶"; }
+.pedido-start-button:hover { scale: 1.1; }
 .pedido-start-button:active {
   scale: 1;
   opacity: 0.9;
 }
-
 .pedido-start-button.started {
-  background-color: #fece00;
-  box-shadow: 1px 1px 10px 1px #fece00;
+  background-color: var(--color-yellow);
+  box-shadow: 1px 1px 10px 1px var(--color-yellow);
   background-image: url("https://usagif.com/wp-content/uploads/loading-25.gif");
   background-size: 60%;
   background-repeat: no-repeat;
   background-position: center;
 }
+.pedido-start-button.started::before { content: ""; }
 
-.pedido-start-button.started::before {
-  content: "";
-  /* limpa o ▶ */
+@media (max-width: 1100px) {
+  .info-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .pedidos-page { padding: 16px; }
+  .info-grid { grid-template-columns: 1fr 1fr; }
+  .blocos-detail-list { flex-direction: column; }
+  .bloco-detail-card { max-width: 100%; }
 }

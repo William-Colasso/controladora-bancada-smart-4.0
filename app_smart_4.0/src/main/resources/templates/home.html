@@ -78,7 +78,7 @@
       <div class="home-status__connect">
         <input type="text" id="ip-clp" class="home-status__input"
                placeholder="IP do CLP (ex: 10.74.241.10)" />
-        <button type="button" id="btn-conectar-clp" class="home-status__connect-btn" onclick="conectarClp()">
+        <button type="button" id="btn-conectar-clp" class="btn btn--primary">
           <i class="fa-solid fa-plug"></i> Conectar
         </button>
         <span id="clp-status-badge" class="badge badge--dim">
@@ -92,8 +92,7 @@
 
   </main>
 
-  <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
-  <script th:src="@{/js/home.js}"></script>
+  <script type="module" th:src="@{/js/pages/home.js}"></script>
 
 </body>
 </html>
