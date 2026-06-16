@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+  <div th:fragment="blocoCard(numero, inactive)"
+       class="bloco-card"
+       th:classappend="${inactive} ? 'inactive' : ''"
+       th:id="'bloco-' + ${numero}">
+    <div class="bloco-head">
+      <span class="bloco-badge" th:text="'B-0' + ${numero}">B-01</span>
+      <span class="bloco-title" th:text="'Bloco 0' + ${numero}">Bloco 01</span>
+    </div>
+    <div class="bloco-body">
+      <div class="field">
+        <label class="field-lbl">Cor do Bloco</label>
+        <select class="field-ctrl cor-bloco-sel">
+          <option th:each="cor : ${coresBlocos}"
+                  th:value="${cor.value}"
+                  th:text="${cor.name()}"></option>
+        </select>
+      </div>
+      <div class="laminas-bar">
+        <span class="laminas-lbl">Lâminas</span>
+        <button type="button" class="btn-add-lam">+ Lâmina (0/3)</button>
+      </div>
+      <div class="lam-col-headers">
+        <div class="lam-col-hdr">Cor</div>
+        <div class="lam-col-hdr">Padrão</div>
+        <div class="lam-col-hdr">Posição</div>
+        <div></div>
+      </div>
+      <div class="laminas-list">
+        <div class="empty-lam">Nenhuma lâmina adicionada.</div>
+      </div>
+    </div>
+  </div>
+
+  <div th:fragment="statItem(label, dotStyle, valueId, value)" class="stat-item">
+    <div class="stat-dot" th:style="${dotStyle}"></div>
+    <span class="stat-label" th:text="${label}"></span>
+    <span class="stat-value" th:id="${valueId}" th:text="${value}"></span>
+  </div>
+
+</body>
+</html>
