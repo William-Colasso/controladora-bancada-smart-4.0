@@ -6,9 +6,12 @@ function setClpBadge(status, label, icon) {
   badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
 }
 
-async function conectarClp() {
-  const input = document.getElementById('ip-clp');
-  const btn = document.getElementById('btn-conectar-clp');
+async function conectarClp(button) {
+
+  
+  const divpai = button.parentElement;
+  const input = divpai.querySelector('input.ip-clp');
+  const btn = button;
   const ip = input.value.trim();
 
   if (!ip) {
@@ -24,4 +27,6 @@ async function conectarClp() {
   // reabilitar btn ao final.
 }
 
-document.getElementById('btn-conectar-clp').addEventListener('click', conectarClp);
+document.querySelectorAll('.btn-conectar-clp').forEach((button) => {
+  button.addEventListener('click', () => conectarClp(button));
+})
