@@ -13,7 +13,7 @@
     — Montar e enviar o payload REST para /api/pedidos
   =============================================================
 -->
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
 
 <head>
   <title>Novo Pedido — Smart 4.0</title>
@@ -23,12 +23,13 @@
 
 <body>
 
-  <!-- Enums injetados pelo Thymeleaf para uso no JS -->
   <script th:inline="javascript">
     /*<![CDATA[*/
-    const CORES_LAMINAS   = /*[[${coresLaminas}]]*/ [];
-    const PADROES_LAMINA  = /*[[${padroes}]]*/ [];
-    const POSICOES_LAMINA = /*[[${posicoes}]]*/ [];
+    window.SMART_ENUMS = {
+      coresLaminas: /*[[${coresLaminas}]]*/ [],
+      padroes:      /*[[${padroes}]]*/ [],
+      posicoes:     /*[[${posicoes}]]*/ [],
+    };
     /*]]>*/
   </script>
 
@@ -82,111 +83,19 @@
       </div>
       <div class="form-step__body">
         <div id="blocos-container">
-
-          <!-- BLOCO 1 — sempre ativo -->
-          <div class="bloco-card" id="bloco-1">
-            <div class="bloco-head">
-              <span class="bloco-badge">B-01</span>
-              <span class="bloco-title">Bloco 01</span>
-            </div>
-            <div class="bloco-body">
-              <div class="field">
-                <label class="field-lbl">Cor do Bloco</label>
-                <select class="field-ctrl cor-bloco-sel">
-                  <option th:each="cor : ${coresBlocos}"
-                          th:value="${cor.value}"
-                          th:text="${cor.name()}"></option>
-                </select>
-              </div>
-              <div class="laminas-bar">
-                <span class="laminas-lbl">Lâminas</span>
-                <button type="button" class="btn-add-lam" onclick="addLamina(this)">+ Lâmina (0/3)</button>
-              </div>
-              <div class="lam-col-headers">
-                <div class="lam-col-hdr">Cor</div>
-                <div class="lam-col-hdr">Padrão</div>
-                <div class="lam-col-hdr">Posição</div>
-                <div></div>
-              </div>
-              <div class="laminas-list">
-                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- BLOCO 2 — ativo para DUPLO / TRIPLO -->
-          <div class="bloco-card inactive" id="bloco-2">
-            <div class="bloco-head">
-              <span class="bloco-badge">B-02</span>
-              <span class="bloco-title">Bloco 02</span>
-            </div>
-            <div class="bloco-body">
-              <div class="field">
-                <label class="field-lbl">Cor do Bloco</label>
-                <select class="field-ctrl cor-bloco-sel">
-                  <option th:each="cor : ${coresBlocos}"
-                          th:value="${cor.value}"
-                          th:text="${cor.name()}"></option>
-                </select>
-              </div>
-              <div class="laminas-bar">
-                <span class="laminas-lbl">Lâminas</span>
-                <button type="button" class="btn-add-lam" onclick="addLamina(this)">+ Lâmina (0/3)</button>
-              </div>
-              <div class="lam-col-headers">
-                <div class="lam-col-hdr">Cor</div>
-                <div class="lam-col-hdr">Padrão</div>
-                <div class="lam-col-hdr">Posição</div>
-                <div></div>
-              </div>
-              <div class="laminas-list">
-                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- BLOCO 3 — ativo apenas para TRIPLO -->
-          <div class="bloco-card inactive" id="bloco-3">
-            <div class="bloco-head">
-              <span class="bloco-badge">B-03</span>
-              <span class="bloco-title">Bloco 03</span>
-            </div>
-            <div class="bloco-body">
-              <div class="field">
-                <label class="field-lbl">Cor do Bloco</label>
-                <select class="field-ctrl cor-bloco-sel">
-                  <option th:each="cor : ${coresBlocos}"
-                          th:value="${cor.value}"
-                          th:text="${cor.name()}"></option>
-                </select>
-              </div>
-              <div class="laminas-bar">
-                <span class="laminas-lbl">Lâminas</span>
-                <button type="button" class="btn-add-lam" onclick="addLamina(this)">+ Lâmina (0/3)</button>
-              </div>
-              <div class="lam-col-headers">
-                <div class="lam-col-hdr">Cor</div>
-                <div class="lam-col-hdr">Padrão</div>
-                <div class="lam-col-hdr">Posição</div>
-                <div></div>
-              </div>
-              <div class="laminas-list">
-                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
-              </div>
-            </div>
-          </div>
-
-        </div><!-- /blocos-container -->
+          <th:block th:each="n : ${#numbers.sequence(1, 3)}"
+                    th:replace="~{fragments/components :: blocoCard(${n}, ${n > 1})}"></th:block>
+        </div>
       </div>
     </div><!-- /step 02 -->
 
     <!-- Ações -->
     <div class="submit-row">
-      <button type="button" class="btn-submit" id="btn-submit" onclick="enviarPedido()">
+      <button type="button" class="btn btn--primary" id="btn-submit">
         <i class="fa-solid fa-paper-plane" style="margin-right:6px;font-size:10px"></i>
         Enviar Pedido
       </button>
-      <button type="button" class="btn-clear" onclick="limparForm()">Limpar</button>
+      <button type="button" class="btn btn--ghost" id="btn-clear">Limpar</button>
     </div>
 
     <!-- Painel de resposta -->
@@ -202,8 +111,7 @@
 
   </main>
 
-  <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
-  <script th:src="@{/js/formulario.js}"></script>
+  <script type="module" th:src="@{/js/pages/formulario.js}"></script>
 
 </body>
 </html>

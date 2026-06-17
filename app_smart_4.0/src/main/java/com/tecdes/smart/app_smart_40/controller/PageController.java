@@ -40,6 +40,16 @@ public class PageController {
         private final ExpedicaoService expedicaoService;
         private final ObjectMapper objectMapper;
 
+        /**
+         * GET /
+         * Tela inicial: ponto de entrada da aplicação. Apenas navegação para as
+         * demais telas + painel (vazio por enquanto) de status da bancada.
+         */
+        @GetMapping("/")
+        public String home() {
+                return "home";
+        }
+
         @GetMapping("/formulario")
         public String formulario(Model model) {
 

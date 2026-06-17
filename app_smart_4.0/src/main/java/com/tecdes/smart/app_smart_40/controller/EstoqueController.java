@@ -35,7 +35,7 @@ public class EstoqueController {
      * Todas as 28 posições, independente da cor.
      * Usado pelo dashboard para renderizar o grid completo.
      */
-    @GetMapping("/todos")
+    @GetMapping("")
     public ResponseEntity<List<EstoqueResponseDTO>> getTodos() {
         return ResponseEntity.ok(estoqueService.getTodos());
     }

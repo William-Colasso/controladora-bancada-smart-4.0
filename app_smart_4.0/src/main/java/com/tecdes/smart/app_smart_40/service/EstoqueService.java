@@ -5,14 +5,16 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
+import com.tecdes.smart.app_smart_40.exception.EstoqueInsuficienteException;
 import com.tecdes.smart.app_smart_40.exception.PosicaoEstoqueNotFoundException;
+import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -77,11 +79,32 @@ public class EstoqueService {
         return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
     }
 
-    public int retirarEstoque(List<BlocoResponseDTO> blocosDTOs) {
-        List<Long> blocos = blocosDTOs.stream()
-                .map(b -> b.estoque().id())
-                .toList();
-        blocos.forEach(bloco -> System.out.println(bloco));
-        return estoqueRepository.retirarDoEstoque(blocos);
+    /**
+     * Vincula uma posição de estoque ao bloco e dá baixa nela (marca como VAZIO).
+     *
+     * <p>É idempotente: se o bloco já tem estoque vinculado, não faz nada — assim
+     * reenviar um pedido à produção não consome estoque duas vezes.
+     *
+     * <p>BLINDAGEM: a posição pode ter sido esgotada por outro pedido entre a
+     * checagem otimista de {@code PedidoService.criar()} e este momento
+     * (overselling); por isso o null-check lança {@link EstoqueInsuficienteException}
+     * com a cor faltante (mapeada para HTTP 422 pelo GlobalExceptionHandler).
+     */
+    @Transactional
+    public void vincularEDarBaixa(Bloco bloco) {
+        if (bloco.getEstoque() != null) {
+            return;
+        }
+
+        Estoque estoque = estoqueRepository.findFirstByCorBloco(bloco.getCor());
+        if (estoque == null) {
+            throw new EstoqueInsuficienteException(
+                    "Sem estoque disponível para a cor " + bloco.getCor());
+        }
+
+        bloco.setEstoque(estoque);
+        estoque.setCorBloco(CorBloco.VAZIO);
+        estoqueRepository.save(estoque);
     }
+
 }

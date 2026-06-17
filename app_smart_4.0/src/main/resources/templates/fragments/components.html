@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+  <div th:fragment="blocoCard(numero, inactive)" class="bloco-card" th:classappend="${inactive} ? 'inactive' : ''"
+    th:id="'bloco-' + ${numero}">
+    <div class="bloco-head">
+      <span class="bloco-badge" th:text="'B-0' + ${numero}">B-01</span>
+      <span class="bloco-title" th:text="'Bloco 0' + ${numero}">Bloco 01</span>
+    </div>
+    <div class="bloco-body">
+      <div class="field">
+        <label class="field-lbl">Cor do Bloco</label>
+        <select class="field-ctrl cor-bloco-sel">
+          <option th:each="cor : ${coresBlocos}" th:value="${cor.value}" th:text="${cor.name()}"></option>
+        </select>
+      </div>
+      <div class="laminas-bar">
+        <span class="laminas-lbl">Lâminas</span>
+        <button type="button" class="btn-add-lam">+ Lâmina (0/3)</button>
+      </div>
+      <div class="lam-col-headers">
+        <div class="lam-col-hdr">Cor</div>
+        <div class="lam-col-hdr">Padrão</div>
+        <div class="lam-col-hdr">Posição</div>
+        <div></div>
+      </div>
+      <div class="laminas-list">
+        <div class="empty-lam">Nenhuma lâmina adicionada.</div>
+      </div>
+    </div>
+  </div>
+
+  <div th:fragment="statItem(label, dotStyle, valueId, value)" class="stat-item">
+    <div class="stat-dot" th:style="${dotStyle}"></div>
+    <span class="stat-label" th:text="${label}"></span>
+    <span class="stat-value" th:id="${valueId}" th:text="${value}"></span>
+  </div>
+
+  <div id="bancada-status" th:fragment="bancada-component">
+    <img id="bancada-status-base" th:src="@{/img/bancada/Smart40.png}" alt="Imagem da bancada 4.0 realista">
+    <img id="bancada-status-estoque"  th:src="@{/img/bancada/Smart40-Est_off.png}" alt="Barra demonstrando o status da estação de Estoque">
+    <img id="bancada-status-producao"  th:src="@{/img/bancada/Smart40-Pro_off.png}" alt="Barra demonstrando o status da estação de Produção">
+    <img id="bancada-status-montagem"  th:src="@{/img/bancada/Smart40-Mon_off.png}" alt="Barra demonstrando o status da estação de Montagem">
+    <img id="bancada-status-expedicao"  th:src="@{/img/bancada/Smart40-Exp_off.png}" alt="Barra demonstrando o status da estação de Expedição">
+
+    <img id="bancada-status-estoque-func"   class="bancada-status-func" alt="Funcionamento da estação de Estoque"   hidden>
+    <img id="bancada-status-producao-func"  class="bancada-status-func" alt="Funcionamento da estação de Produção"  hidden>
+    <img id="bancada-status-montagem-func"  class="bancada-status-func" alt="Funcionamento da estação de Montagem"  hidden>
+    <img id="bancada-status-expedicao-func" class="bancada-status-func" alt="Funcionamento da estação de Expedição" hidden>
+
+  </div>
+
+</body>
+
+</html>
