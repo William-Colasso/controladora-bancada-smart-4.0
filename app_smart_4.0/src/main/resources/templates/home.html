@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!--
+  home.html
+  =============================================================
+  Tela inicial / landing da aplicação.
+    — Cards de navegação para Dashboard, Pedidos e Novo Pedido
+    — Painel "Status da Bancada": apenas um fundo reservado por
+      enquanto (visualização futura da bancada física)
+
+  Controller: PageController#home()  (sem model attributes)
+  =============================================================
+-->
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <title>Início — Smart 4.0</title>
+  <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+  <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+
+<body>
+
+  <!-- Navbar — activePage='home' (nenhum link da navbar fica ativo) -->
+  <div th:replace="~{fragments/smart40Fragments :: navbar('home')}"></div>
+
+  <main class="home-page">
+
+    <!-- ============================================================
+         HERO
+         ============================================================ -->
+    <header class="home-hero">
+      <h1 class="home-hero__title">Bem-vindo ao <span>Smart 4.0</span></h1>
+      <p class="home-hero__subtitle">
+        Selecione uma ação para começar ou acompanhe o status da bancada.
+      </p>
+    </header>
+
+    <!-- ============================================================
+         AÇÕES — cartões de navegação
+         ============================================================ -->
+    <section class="home-actions" aria-label="Ações disponíveis">
+
+      <a th:href="@{/dashboard}" class="action-card">
+        <span class="action-card__icon"><i class="fa-solid fa-table-cells-large"></i></span>
+        <h2 class="action-card__title">Dashboard</h2>
+        <p class="action-card__desc">Visão geral de estoque e expedição em tempo real.</p>
+        <span class="action-card__cta">Abrir <i class="fa-solid fa-arrow-right"></i></span>
+      </a>
+
+      <a th:href="@{/pedidos}" class="action-card">
+        <span class="action-card__icon"><i class="fa-solid fa-list-check"></i></span>
+        <h2 class="action-card__title">Pedidos</h2>
+        <p class="action-card__desc">Acompanhe os pedidos, seus blocos, tampas e lâminas.</p>
+        <span class="action-card__cta">Abrir <i class="fa-solid fa-arrow-right"></i></span>
+      </a>
+
+      <a th:href="@{/formulario}" class="action-card action-card--cta">
+        <span class="action-card__icon"><i class="fa-solid fa-plus"></i></span>
+        <h2 class="action-card__title">Novo Pedido</h2>
+        <p class="action-card__desc">Monte um novo pedido e envie-o para a produção.</p>
+        <span class="action-card__cta">Criar <i class="fa-solid fa-arrow-right"></i></span>
+      </a>
+
+    </section>
+
+    <!-- ============================================================
+         STATUS DA BANCADA — apenas fundo reservado por enquanto
+         ============================================================ -->
+    <section class="home-status" aria-label="Status da bancada">
+      <div class="home-status__header">
+        <h2 class="home-status__title">
+          <i class="fa-solid fa-industry"></i> Status da Bancada
+        </h2>
+        <span class="badge badge--dim">Em breve</span>
+      </div>
+
+      <!-- Conexão com o CLP -->
+      <div class="home-status__connect">
+        <div class="clp-ip-input" id="estoque-clp-ip">
+          <h3>Estoque: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.10)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+        <div class="clp-ip-input" id="processo-clp-ip">
+          <h3>Processo: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.20)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+        <div class="clp-ip-input" id="montagem-clp-ip">
+          <h3>Montagem: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.30)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+        <div class="clp-ip-input" id="expedicao-clp-ip">
+          <h3>Expedição: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.40)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+      </div>
+
+      <!-- Espaço reservado para a visualização futura da bancada física -->
+      <div class="home-status__stage">
+        <div th:replace="~{fragments/components :: bancada-component}"></div>
+      </div>
+
+      <button style="margin: auto;margin-top: 1rem; display: block; flex: 1;" class="btn btn--primary">Ir para página de status completa</button>
+    </section>
+
+  </main>
+
+  <script type="module" th:src="@{/js/pages/home.js}"></script>
+
+</body>
+
+</html>

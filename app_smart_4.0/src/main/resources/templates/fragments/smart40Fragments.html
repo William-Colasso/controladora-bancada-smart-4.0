@@ -44,7 +44,7 @@
   <nav class="navbar" th:fragment="navbar(activePage)">
 
     <!-- ── Marca ──────────────────────────────────────────────── -->
-    <a th:href="@{/dashboard}" class="navbar__brand">
+    <a th:href="@{/}" class="navbar__brand">
       <img th:src="@{/img/Smart_4.0.png}" alt="Smart 4.0" class="navbar__logo" />
       <div>
         <div>Smart 4.0</div>
@@ -104,9 +104,7 @@
        FRAGMENT: scriptDeps
        Scripts comuns. Coloque antes de </body> em todas as páginas.
   ================================================================ -->
-  <th:block th:fragment="scriptDeps">
-    <script th:src="@{/js/smart40-utils.js}"></script>
-  </th:block>
+  <th:block th:fragment="scriptDeps"></th:block>
 
 </body>
 </html>

@@ -31,10 +31,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PedidoService {
 
-    private final EstoqueService estoqueService;
     private final PedidoRepository pedidoRepository;
     private final EstoqueRepository estoqueRepository;
-    // ADICIONADO: injeção do ExpedicaoService para registrar expedição ao concluir
+    // Usado apenas para a checagem otimista de disponibilidade em criar();
+    // a reserva/baixa de expedição em si acontece em SmartService.enviarParaProducao().
     private final ExpedicaoService expedicaoService;
     // -------------------------------------------------------------------------
     // CREATE
@@ -49,6 +49,10 @@ public class PedidoService {
 
         List<BlocoRequestDTO> blocoDTOs = dto.blocos();
 
+        // CHECAGEM OTIMISTA: aqui só validamos disponibilidade — a reserva real de
+        // estoque e expedição acontece em SmartService.enviarParaProducao(). Logo,
+        // entre criar() e o envio à produção outro pedido pode esgotar o recurso
+        // (overselling); essa falha tardia é tratada lá com EstoqueInsuficienteException.
         if (!blocosSuficientesEmEstoque(blocoDTOs)) {
             throw new EstoqueInsuficienteException(
                     "Cores requisitadas não se encontram presentes");

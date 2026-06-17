@@ -67,30 +67,10 @@
 
         <!-- Estatísticas textuais (atualizadas pelo JS) -->
         <div class="stats-bar">
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#1a1a1a;border:1px solid #555"></div>
-            <span class="stat-label">Preto</span>
-            <span class="stat-value" id="statPreto"
-                  th:text="${estoqueStats?.get('PRETO') ?: 0}"></span>
-          </div>
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#fc0518"></div>
-            <span class="stat-label">Vermelho</span>
-            <span class="stat-value" id="statVermelho"
-                  th:text="${estoqueStats?.get('VERMELHO') ?: 0}"></span>
-          </div>
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#2b92d5"></div>
-            <span class="stat-label">Azul</span>
-            <span class="stat-value" id="statAzul"
-                  th:text="${estoqueStats?.get('AZUL') ?: 0}"></span>
-          </div>
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
-            <span class="stat-label">Vazio</span>
-            <span class="stat-value" id="statVazio"
-                  th:text="${estoqueStats?.get('VAZIO') ?: 0}"></span>
-          </div>
+          <th:block th:replace="~{fragments/components :: statItem('Preto', 'background:#1a1a1a;border:1px solid #555', 'statPreto', ${estoqueStats?.get('PRETO') ?: 0})}"></th:block>
+          <th:block th:replace="~{fragments/components :: statItem('Vermelho', 'background:#fc0518', 'statVermelho', ${estoqueStats?.get('VERMELHO') ?: 0})}"></th:block>
+          <th:block th:replace="~{fragments/components :: statItem('Azul', 'background:#2b92d5', 'statAzul', ${estoqueStats?.get('AZUL') ?: 0})}"></th:block>
+          <th:block th:replace="~{fragments/components :: statItem('Vazio', 'background:#1e1e2e;border:1px solid #3a3a55', 'statVazio', ${estoqueStats?.get('VAZIO') ?: 0})}"></th:block>
         </div>
 
         <!-- Stacked bar — uma barra, quatro segmentos -->
@@ -122,7 +102,7 @@
 
           <span class="selection-info" id="selectionInfo">Nenhum selecionado</span>
 
-          <button type="button" class="apply-btn" id="applyColorBtn" disabled>
+          <button type="button" class="btn btn--primary btn--sm" id="applyColorBtn" disabled>
             Aplicar
           </button>
         </div>
@@ -170,17 +150,8 @@
 
         <!-- Estatísticas de expedição -->
         <div class="stats-bar">
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#5ab300"></div>
-            <span class="stat-label">Ocupadas</span>
-            <span class="stat-value" id="expOcupado"
-                  th:text="${expedicaoOcupadas ?: 0}">0</span>
-          </div>
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
-            <span class="stat-label">de</span>
-            <span class="stat-value" id="expTotal">12</span>
-          </div>
+          <th:block th:replace="~{fragments/components :: statItem('Ocupadas', 'background:#5ab300', 'expOcupado', ${expedicaoOcupadas ?: 0})}"></th:block>
+          <th:block th:replace="~{fragments/components :: statItem('de', 'background:#1e1e2e;border:1px solid #3a3a55', 'expTotal', 12)}"></th:block>
         </div>
 
         <!-- Barra de ocupação -->
@@ -229,7 +200,6 @@
     <!-- ============================================================
          SCRIPTS
          ============================================================ -->
-    <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
-    <script th:src="@{/js/dashboard.js}"></script>
+    <script type="module" th:src="@{/js/pages/dashboard.js}"></script>
   </body>
 </html>
