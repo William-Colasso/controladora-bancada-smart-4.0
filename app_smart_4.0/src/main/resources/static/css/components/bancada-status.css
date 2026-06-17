@@ -12,3 +12,7 @@
 #bancada-status img {
     position: absolute;
 }
+
+#bancada-status img[hidden] {
+    display: none;
+}
