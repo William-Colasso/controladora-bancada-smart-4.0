@@ -76,18 +76,54 @@
 
       <!-- Conexão com o CLP -->
       <div class="home-status__connect">
-        <input type="text" id="ip-clp" class="home-status__input"
-               placeholder="IP do CLP (ex: 10.74.241.10)" />
-        <button type="button" id="btn-conectar-clp" class="btn btn--primary">
-          <i class="fa-solid fa-plug"></i> Conectar
-        </button>
-        <span id="clp-status-badge" class="badge badge--dim">
-          <i class="fa-solid fa-circle-question"></i> Desconhecido
-        </span>
+        <div class="clp-ip-input" id="estoque-clp-ip">
+          <h3>Estoque: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.10)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+        <div class="clp-ip-input" id="processo-clp-ip">
+          <h3>Processo: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.20)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+        <div class="clp-ip-input" id="montagem-clp-ip">
+          <h3>Montagem: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.30)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
+        <div class="clp-ip-input" id="expedicao-clp-ip">
+          <h3>Expedição: </h3>
+          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.40)" />
+          <button type="button" class="btn-conectar-clp  btn btn--primary">
+            <i class="fa-solid fa-plug"></i> Conectar
+          </button>
+          <span class="clp-status-badge badge badge--dim">
+            <i class="fa-solid fa-circle-question"></i> Desconhecido
+          </span>
+        </div>
       </div>
 
       <!-- Espaço reservado para a visualização futura da bancada física -->
-      <div class="home-status__stage"></div>
+      <div class="home-status__stage">
+        <div th:replace="~{fragments/components :: bancada-component}"></div>
+      </div>
+
+      <button style="margin: auto;margin-top: 1rem; display: block; flex: 1;" class="btn btn--primary">Ir para página de status completa</button>
     </section>
 
   </main>
@@ -95,4 +131,5 @@
   <script type="module" th:src="@{/js/pages/home.js}"></script>
 
 </body>
+
 </html>
