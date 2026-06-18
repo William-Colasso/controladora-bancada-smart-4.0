@@ -26,9 +26,9 @@
   <script th:inline="javascript">
     /*<![CDATA[*/
     window.SMART_ENUMS = {
-      coresLaminas: /*[[${coresLaminas}]]*/ [],
-      padroes:      /*[[${padroes}]]*/ [],
-      posicoes:     /*[[${posicoes}]]*/ [],
+      coresLaminas: /*[[${coresLaminas}]]*/[],
+      padroes:      /*[[${padroes}]]*/[],
+      posicoes:     /*[[${posicoes}]]*/[],
     };
     /*]]>*/
   </script>
@@ -58,17 +58,13 @@
           <div class="field">
             <label class="field-lbl" for="tipo-pedido">Tipo de Pedido</label>
             <select id="tipo-pedido" class="field-ctrl">
-              <option th:each="tipo : ${tiposPedido}"
-                      th:value="${tipo.value}"
-                      th:text="${tipo.name()}"></option>
+              <option th:each="tipo : ${tiposPedido}" th:value="${tipo.value}" th:text="${tipo.name()}"></option>
             </select>
           </div>
           <div class="field">
             <label class="field-lbl" for="cor-tampa">Cor da Tampa</label>
             <select id="cor-tampa" class="field-ctrl">
-              <option th:each="cor : ${coresTampa}"
-                      th:value="${cor.value}"
-                      th:text="${cor.name()}"></option>
+              <option th:each="cor : ${coresTampa}" th:value="${cor.value}" th:text="${cor.name()}"></option>
             </select>
           </div>
         </div>
@@ -83,8 +79,9 @@
       </div>
       <div class="form-step__body">
         <div id="blocos-container">
-          <th:block th:each="n : ${#numbers.sequence(1, 3)}"
-                    th:replace="~{fragments/components :: blocoCard(${n}, ${n > 1})}"></th:block>
+          <th:block th:each="n : ${#numbers.sequence(1, 3)}">
+            <div th:replace="~{fragments/components :: blocoCard(${n}, ${n > 1})}"></div>
+          </th:block>
         </div>
       </div>
     </div><!-- /step 02 -->
@@ -114,4 +111,5 @@
   <script type="module" th:src="@{/js/pages/formulario.js}"></script>
 
 </body>
+
 </html>
