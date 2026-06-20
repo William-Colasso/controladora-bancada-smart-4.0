@@ -1,31 +1,34 @@
-import { corBlocoClass, corBlocoLabel, statusBadgeClass, tipoChipClass } from '../core/enums.js';
+import { corBlocoClass, corBlocoLabel, statusBadgeClass, tipoChipClass, normalizeStatus, normalizeTipo, normalizeCor, normalizePadrao, normalizePosicao } from '../core/enums.js';
 import { formatCount, formatDateTime, tampaHex } from '../core/format.js';
 import { patchText, patchInner } from '../core/dom.js';
 
 const blocosSig = (blocos) => JSON.stringify(blocos);
 
 function laminaHTML(l) {
+  const cor     = normalizeCor(l.cor);
+  const padrao  = normalizePadrao(l.padrao);
+  const posicao = normalizePosicao(l.posicaoNoBloco);
   return `
     <div class="lamina-row">
-      <div class="lamina-swatch lamina-swatch--${l.cor}"></div>
-      <span class="lamina-cor">${l.cor}</span>
-      <span class="lamina-padrao">${l.padrao !== 'NENHUM' ? l.padrao : ''}</span>
-      <span class="lamina-pos">${posicaoLabel(l.posicaoNoBloco)}</span>
+      <div class="lamina-swatch lamina-swatch--${cor.toLowerCase()}"></div>
+      <span class="lamina-cor">${cor}</span>
+      <span class="lamina-padrao">${padrao !== 'NENHUM' ? padrao : ''}</span>
+      <span class="lamina-pos">${posicaoLabel(posicao)}</span>
     </div>`;
 }
-
 const POSICAO_LABEL = { ESQUERDA: '← Esq', FRENTE: '↑ Frente', DIREITA: '→ Dir' };
 const posicaoLabel = (pos) => POSICAO_LABEL[pos] ?? pos;
 
 function blocoDetailHTML(b, i) {
+  const cor     = normalizeCor(b.cor);
   const laminas = b.laminas ?? [];
-  const posEl = b.estoque ? `<span class="bloco-detail-card__pos">Pos. ${b.estoque.posicao}</span>` : '';
+  const posEl   = b.estoque ? `<span class="bloco-detail-card__pos">Pos. ${b.estoque.posicao}</span>` : '';
   const laminasH = laminas.length > 0 ? laminas.map(laminaHTML).join('') : '<p class="no-laminas">Sem lâminas</p>';
   return `
     <div class="bloco-detail-card" data-bloco-idx="${i}">
       <div class="bloco-detail-card__header">
-        <div class="bloco-color-bar bloco-color-bar--${corBlocoClass(b.cor)}"></div>
-        <span class="bloco-detail-card__name">Bloco ${i + 1} — ${corBlocoLabel(b.cor)}</span>
+        <div class="bloco-color-bar bloco-color-bar--${corBlocoClass(cor)}"></div>
+        <span class="bloco-detail-card__name">Bloco ${i + 1} — ${corBlocoLabel(cor)}</span>
         ${posEl}
       </div>
       <div class="laminas-list">${laminasH}</div>
@@ -43,17 +46,20 @@ function infoItemHTML(key, val, field = '', style = '') {
 }
 
 export function buildDetailHTML(p) {
-  const blocos = p.blocos ?? [];
+  const status   = normalizeStatus(p.status);
+  const tipo     = normalizeTipo(p.tipoPedido);
+  const corTampa = normalizeCor(p.corTampa);
+  const blocos   = p.blocos ?? [];
   return `
     <div class="info-grid">
       ${infoItemHTML('Pedido', `#${formatCount(p.id)}`)}
       ${infoItemHTML('Ordem Produção', p.ordemProducao ?? '—', 'op')}
-      ${infoItemHTML('Status', `<span class="badge ${statusBadgeClass(p.status)}">${p.status}</span>`, 'status')}
-      ${infoItemHTML('Tipo', `<span class="tipo-chip ${tipoChipClass(p.tipoPedido)}">${p.tipoPedido}</span>`, 'tipo')}
+      ${infoItemHTML('Status', `<span class="badge ${statusBadgeClass(status)}">${status}</span>`, 'status')}
+      ${infoItemHTML('Tipo', `<span class="tipo-chip ${tipoChipClass(tipo)}">${tipo}</span>`, 'tipo')}
       ${infoItemHTML('Cor da Tampa',
         `<div class="tampa-visual">
            <div class="tampa-swatch" style="background:${tampaHex(p.corTampa)}"></div>
-           ${p.corTampa}
+           ${corTampa}
          </div>`, 'tampa')}
       ${infoItemHTML('Criado em', formatDateTime(p.dataCriacao), 'criacao', 'font-size:12px')}
       ${infoItemHTML('Entrada Expedição', formatDateTime(p.dataEntradaExpedicao), 'expedicao', 'font-size:12px')}
@@ -68,21 +74,20 @@ export function buildDetailHTML(p) {
 export function patchDetail(detailBody, next, prev) {
   const field = (name) => detailBody.querySelector(`[data-field="${name}"]`);
 
-  if (next.ordemProducao !== prev.ordemProducao) {
-    patchText(field('op'), next.ordemProducao ?? '—');
-  }
   if (next.status !== prev.status) {
     const badge = field('status')?.querySelector('.badge');
     if (badge) {
-      badge.className = `badge ${statusBadgeClass(next.status)}`;
-      badge.textContent = next.status;
+      const status = normalizeStatus(next.status);
+      badge.className = `badge ${statusBadgeClass(status)}`;
+      badge.textContent = status;
     }
   }
   if (next.tipoPedido !== prev.tipoPedido) {
     const chip = field('tipo')?.querySelector('.tipo-chip');
     if (chip) {
-      chip.className = `tipo-chip ${tipoChipClass(next.tipoPedido)}`;
-      chip.textContent = next.tipoPedido;
+      const tipo = normalizeTipo(next.tipoPedido);
+      chip.className = `tipo-chip ${tipoChipClass(tipo)}`;
+      chip.textContent = tipo;
     }
   }
   if (next.corTampa !== prev.corTampa) {
@@ -91,7 +96,7 @@ export function patchDetail(detailBody, next, prev) {
       container.querySelector('.tampa-swatch').style.background = tampaHex(next.corTampa);
       const visual = container.querySelector('.tampa-visual');
       const textNode = [...visual.childNodes].find((n) => n.nodeType === Node.TEXT_NODE);
-      if (textNode) textNode.textContent = next.corTampa;
+      if (textNode) textNode.textContent = normalizeCor(next.corTampa);
     }
   }
   if (next.dataCriacao !== prev.dataCriacao) {

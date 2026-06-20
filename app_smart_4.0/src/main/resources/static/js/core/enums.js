@@ -9,3 +9,15 @@ export const corBlocoClass = (cor) => COR_BLOCO_CLASS[cor] || 'vazio';
 export const corBlocoLabel = (cor) => COR_BLOCO_LABEL[cor] || cor;
 export const statusBadgeClass = (status) => STATUS_BADGE[status] || 'badge--dim';
 export const tipoChipClass = (tipo) => TIPO_CHIP[tipo] || '';
+
+export const STATUS_INT_TO_NAME = { 1: 'PENDENTE', 2: 'PRODUCAO', 3: 'CONCLUIDO' };
+export const TIPO_INT_TO_NAME  = { 1: 'SIMPLES', 2: 'DUPLO', 3: 'TRIPLO' };
+export const PADRAO_INT_TO_NAME = { 0: 'NENHUM', 1: 'LISTRADO', 2: 'XADREZ' }; 
+export const POSICAO_INT_TO_NAME = { 0: 'ESQUERDA', 1: 'FRENTE', 2: 'DIREITA' }; 
+
+
+export const normalizeStatus = (v) => STATUS_INT_TO_NAME[v] ?? v;
+export const normalizeTipo   = (v) => TIPO_INT_TO_NAME[v]  ?? v;
+export const normalizeCor    = (v) => COR_INT_TO_NAME[v]   ?? v;
+export const normalizePadrao = (v) => PADRAO_INT_TO_NAME[v] ?? v;
+export const normalizePosicao = (v) => POSICAO_INT_TO_NAME[v] ?? v;

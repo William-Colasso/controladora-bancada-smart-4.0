@@ -1,4 +1,11 @@
-const TAMPA_HEX = { PRETO: '#333', VERMELHO: '#fc0518', AZUL: '#2b92d5' };
+const TAMPA_HEX = {
+  PRETO:    '#333',
+  VERMELHO: '#fc0518',
+  AZUL:     '#2b92d5',
+  1: '#333',
+  2: '#fc0518',
+  3: '#2b92d5',
+};
 
 export const formatDateTime = (iso) => {
   if (!iso) return '—';
@@ -18,3 +25,5 @@ export const debounce = (fn, ms) => {
     t = setTimeout(() => fn(...args), ms);
   };
 };
+
+
