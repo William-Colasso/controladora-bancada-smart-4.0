@@ -1,6 +1,5 @@
 package com.tecdes.smart.app_smart_40.controller;
 
-import com.tecdes.smart.app_smart_40.dto.request.ExpedicaoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import lombok.RequiredArgsConstructor;

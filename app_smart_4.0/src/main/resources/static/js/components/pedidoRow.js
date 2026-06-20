@@ -1,9 +1,9 @@
-import { corBlocoClass, statusBadgeClass, tipoChipClass, normalizeStatus, normalizeTipo, normalizeCor } from '../core/enums.js';
+import { corBlocoClass, statusBadgeClass, tipoChipClass, normalizeStatus, normalizeTipo, normalizeCor, normalizeCorBloco } from '../core/enums.js';
 import { formatCount, formatDateTime, tampaHex } from '../core/format.js';
 import { patchText, patchInner } from '../core/dom.js';
 
 const blocosSig = (blocos) => JSON.stringify(blocos);
-const miniBloco = (b) => `<div class="mini-bloco mini-bloco--${corBlocoClass(normalizeCor(b.cor))}"></div>`;
+const miniBloco = (b) => `<div class="mini-bloco mini-bloco--${corBlocoClass(normalizeCorBloco(b.cor))}"></div>`;
 
 export function buildRowHTML(p) {
   const status   = normalizeStatus(p.status);

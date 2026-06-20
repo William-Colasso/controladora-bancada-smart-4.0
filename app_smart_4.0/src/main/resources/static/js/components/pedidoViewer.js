@@ -24,19 +24,23 @@ const INT_COR_LAMINA = { 1: 'VERMELHO', 2: 'AZUL', 3: 'AMARELO', 4: 'VERDE', 5: 
 // PosicaoLamina: ESQUERDA=1, FRENTE=2, DIREITA=3
 const INT_POSICAO    = { 1: 'ESQUERDA', 2: 'FRENTE', 3: 'DIREITA' };
 
-const AUTO_ROTATE_SPEED = 2.0;
-const RESUME_DELAY_MS   = 2500;
+const AUTO_ROTATE_SPEED  = 2.0;
+const RESUME_DELAY_MS    = 2500;
+// Cada bloco superior é ligeiramente maior que o inferior para que as faces externas
+// nunca sejam coplanares com as colunas do bloco de baixo (elimina z-fighting definitivamente).
+const DELTA_POR_NIVEL    = 0.005;
 
 // ─── Helpers de geometria ────────────────────────────────────────────────────
 
-function mat(hex) {
-  return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.55, metalness: 0 });
+function mat(hex, opts = {}) {
+  return new THREE.MeshStandardMaterial({ color: hex, roughness: 0.55, metalness: 0, ...opts });
 }
 
 // Cria um mesh de caixa colorido sem posição definida.
 // Posicione com mesh.position.set(x, y, z) e adicione ao group desejado.
-export function box(w, h, d, hex) {
-  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(hex));
+// opts é repassado para o material — use para polygonOffset, depthWrite, etc.
+export function box(w, h, d, hex, opts = {}) {
+  return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(hex, opts));
 }
 
 // ─── Normalização ────────────────────────────────────────────────────────────
@@ -69,37 +73,40 @@ function criarTampa(corVal, totalH) {
 // Faces abertas: FRENTE=+Z, ESQUERDA=-X, DIREITA=+X.
 // Face traseira (-Z) é sempre fechada com uma parede sólida.
 
-function criarBloco(corVal, laminas, yOffset) {
+function criarBloco(corVal, laminas, yOffset, delta = 0) {
   const group = new THREE.Group();
 
-  const nome      = normBlocoCor(corVal);
-  const hex       = COR_BLOCO[nome] ?? 0x252527;
-  const bodyH     = BH - BASE_T;
+  const bw = BW + delta;
+  const bd = BD + delta;
+  const nome        = normBlocoCor(corVal);
+  const hex         = COR_BLOCO[nome] ?? 0x252527;
+  const bodyH       = BH - BASE_T;
   const bodyCenterY = yOffset + BASE_T + bodyH / 2;
 
   // ① Piso base
-  const piso = box(BW, BASE_T, BD, hex);
+  const piso = box(bw, BASE_T, bd, hex);
   piso.position.set(0, yOffset + BASE_T / 2, 0);
   group.add(piso);
 
-  // ② 4 colunas dos cantos — sobressaem acima do corpo (COL_OVERSHOOT) para criar o encaixe visual entre blocos
-  const cx = BW / 2 - COL_W / 2;
-  const cz = BD / 2 - COL_W / 2;
+  // ② 4 colunas dos cantos
+  const colOpts = { polygonOffset: true, polygonOffsetFactor: 4, polygonOffsetUnits: 8 };
+  const cx = bw / 2 - COL_W / 2;
+  const cz = bd / 2 - COL_W / 2;
   [[-cx, -cz], [cx, -cz], [-cx, cz], [cx, cz]].forEach(([x, z]) => {
-    const col = box(COL_W, bodyH + COL_OVERSHOOT, COL_W, hex);
+    const col = box(COL_W, bodyH + COL_OVERSHOOT, COL_W, hex, colOpts);
     col.position.set(x, bodyCenterY + COL_OVERSHOOT / 2, z);
     group.add(col);
   });
 
-  // ③ Parede traseira (-Z) — fecha a face de fundo do bloco
-  const parede = box(BW - 2 * COL_W, bodyH, 0.08, hex);
-  parede.position.set(0, bodyCenterY, -BD / 2 + COL_W - 0.04);
+  // ③ Parede traseira (-Z)
+  const parede = box(bw - 2 * COL_W, bodyH, 0.08, hex);
+  parede.position.set(0, bodyCenterY, -bd / 2 + COL_W - 0.04);
   group.add(parede);
 
   // ④ Lâminas coloridas nas faces abertas (FRENTE=+Z, ESQUERDA=-X, DIREITA=+X)
-  const abertura = BW - 2 * COL_W;
-  const xBlade   = BW / 2 - BLADE_RECESS - BLADE_T / 2;
-  const zBlade   = BD / 2 - BLADE_RECESS - BLADE_T / 2;
+  const abertura = bw - 2 * COL_W;
+  const xBlade   = bw / 2 - BLADE_RECESS - BLADE_T / 2;
+  const zBlade   = bd / 2 - BLADE_RECESS - BLADE_T / 2;
 
   laminas.forEach((lamina) => {
     const lHex = COR_LAMINA[normLaminaCor(lamina.cor)] ?? 0xE6463F;
@@ -150,6 +157,13 @@ function adicionarLuzes(scene) {
   scene.add(d2);
 }
 
+// Percorre todos os descendentes e define renderOrder, garantindo que blocos
+// superiores (maior índice) sejam desenhados depois. Com o depth test LEQUAL do
+// WebGL, o fragmento desenhado por último vence em caso de empate de profundidade.
+function definirOrdem(obj, ordem) {
+  obj.traverse((node) => { node.renderOrder = ordem; });
+}
+
 function construirCena(root, pedido) {
   limparGrupo(root);
   if (!pedido) return;
@@ -161,10 +175,14 @@ function construirCena(root, pedido) {
   root.position.y = -totalH / 2;
 
   blocos.forEach((bloco, i) => {
-    root.add(criarBloco(bloco.cor, bloco.laminas ?? [], i * BH));
+    const grupo = criarBloco(bloco.cor, bloco.laminas ?? [], i * BH, i * DELTA_POR_NIVEL);
+    definirOrdem(grupo, i);
+    root.add(grupo);
   });
 
-  root.add(criarTampa(pedido.corTampa, totalH));
+  const tampa = criarTampa(pedido.corTampa, totalH);
+  definirOrdem(tampa, blocos.length);
+  root.add(tampa);
 }
 
 // ─── API pública ─────────────────────────────────────────────────────────────
