@@ -10,7 +10,7 @@ function laminaHTML(l) {
   const posicao = normalizePosicao(l.posicaoNoBloco);
   return `
     <div class="lamina-row">
-      <div class="lamina-swatch lamina-swatch--${cor.toLowerCase()}"></div>
+      <div class="lamina-swatch lamina-swatch--${String(cor).toLowerCase()}"></div>
       <span class="lamina-cor">${cor}</span>
       <span class="lamina-padrao">${padrao !== 'NENHUM' ? padrao : ''}</span>
       <span class="lamina-pos">${posicaoLabel(posicao)}</span>

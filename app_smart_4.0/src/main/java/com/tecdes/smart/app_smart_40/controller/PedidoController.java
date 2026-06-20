@@ -6,11 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
-import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
-import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
 import com.tecdes.smart.app_smart_40.service.SmartService;
 
