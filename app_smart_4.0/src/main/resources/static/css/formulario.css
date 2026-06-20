@@ -1,8 +1,42 @@
 .formulario-page {
   padding: 28px 32px;
   min-height: calc(100vh - 60px);
-  max-width: 1100px;
+  max-width: 1260px;
   margin: 0 auto;
+}
+
+.formulario-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+
+.formulario-sidebar {
+  position: sticky;
+  top: 72px; /* abaixo da navbar */
+}
+
+.formulario-sidebar__body {
+  padding: 14px !important;
+}
+
+.preview-hint {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--color-dim);
+  text-align: center;
+  letter-spacing: 0.06em;
+}
+
+@media (max-width: 960px) {
+  .formulario-layout {
+    grid-template-columns: 1fr;
+  }
+  .formulario-sidebar {
+    position: static;
+  }
 }
 
 .form-step {
