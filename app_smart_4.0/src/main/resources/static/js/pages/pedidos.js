@@ -3,6 +3,7 @@ import { Toast } from '../core/toast.js';
 import { createPoller } from '../core/poller.js';
 import { buildRowHTML, patchRow } from '../components/pedidoRow.js';
 import { buildDetailHTML, patchDetail } from '../components/pedidoDetail.js';
+import { createPedidoViewer } from '../components/pedidoViewer.js';
 
 const POLL_INTERVAL_MS = 5000;
 const countLabel = (n) => `${n} pedido${n !== 1 ? 's' : ''}`;
@@ -15,13 +16,23 @@ const state = {
   snapshot: new Map(),
 };
 
-const tableBody = document.getElementById('pedidosTableBody');
+const tableBody   = document.getElementById('pedidosTableBody');
 const detailPanel = document.getElementById('detailPanel');
-const detailBody = document.getElementById('detailBody');
+const detailViewer = document.getElementById('detailViewer');
+const detailInfo  = document.getElementById('detailInfo');
 const detailClose = document.getElementById('detailClose');
-const filterBtns = document.querySelectorAll('.filter-btn[data-filter]');
+const filterBtns  = document.querySelectorAll('.filter-btn[data-filter]');
 const countDisplay = document.getElementById('pedidosCount');
-const loadingRow = document.getElementById('loadingRow');
+const loadingRow  = document.getElementById('loadingRow');
+
+// ─── Viewer — criado uma vez ao primeiro openDetail, reutilizado no polling ──
+let viewer = null;
+function getViewer() {
+  if (!viewer && detailViewer) viewer = createPedidoViewer(detailViewer);
+  return viewer;
+}
+
+// ─── Filtros e tabela ────────────────────────────────────────────────────────
 
 function applyFilter() {
   state.filtered = state.activeFilter === 'TODOS'
@@ -68,16 +79,20 @@ function syncEmptyState() {
   }
 }
 
+// ─── Painel de detalhes ──────────────────────────────────────────────────────
+
 function syncDetailPanel() {
-  if (state.selectedId === null || !detailBody) return;
+  if (state.selectedId === null || !detailInfo) return;
   const next = state.pedidos.find((p) => p.id === state.selectedId);
   if (!next) { closeDetail(); return; }
-  if (!detailBody.hasChildNodes()) {
-    detailBody.innerHTML = buildDetailHTML(next);
+  if (!detailInfo.hasChildNodes()) {
+    detailInfo.innerHTML = buildDetailHTML(next);
+    getViewer()?.update(next);
     return;
   }
   const prev = state.snapshot.get(state.selectedId);
-  if (prev) patchDetail(detailBody, next, prev);
+  if (prev) patchDetail(detailInfo, next, prev);
+  getViewer()?.update(next);
 }
 
 function renderTable() {
@@ -95,14 +110,18 @@ function openDetail(id) {
   state.selectedId = id;
   tableBody.querySelectorAll('tr[data-pedido-id]')
     .forEach((r) => r.classList.toggle('row--selected', Number(r.dataset.pedidoId) === id));
-  detailBody.innerHTML = buildDetailHTML(pedido);
+
+  if (detailInfo) detailInfo.innerHTML = buildDetailHTML(pedido);
+  getViewer()?.update(pedido);
+
   detailPanel?.style.setProperty('display', 'block');
   detailPanel?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function closeDetail() {
   state.selectedId = null;
-  if (detailBody) detailBody.innerHTML = '';
+  if (detailInfo) detailInfo.innerHTML = '';
+  viewer?.update(null);
   detailPanel?.style.setProperty('display', 'none');
   tableBody.querySelectorAll('tr[data-pedido-id]').forEach((r) => r.classList.remove('row--selected'));
 }
@@ -117,6 +136,8 @@ async function startPedido(id, btn) {
     Toast.error(err.message);
   }
 }
+
+// ─── Eventos ─────────────────────────────────────────────────────────────────
 
 tableBody.addEventListener('click', (e) => {
   const startBtn = e.target.closest('.pedido-start-button');
@@ -139,6 +160,8 @@ filterBtns.forEach((btn) => {
 });
 
 detailClose?.addEventListener('click', closeDetail);
+
+// ─── Polling ─────────────────────────────────────────────────────────────────
 
 const poller = createPoller(() => Api.get('/api/pedidos'), POLL_INTERVAL_MS, (pedidos) => {
   state.pedidos = pedidos ?? [];
