@@ -2,12 +2,12 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
-import com.tecdes.smart.app_smart_40.service.estado.EstadoProducaoService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
