@@ -14,9 +14,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
-import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
-import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Lamina;
