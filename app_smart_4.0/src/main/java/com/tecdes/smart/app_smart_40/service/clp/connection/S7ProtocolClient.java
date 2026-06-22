@@ -1,4 +1,4 @@
-package com.tecdes.smart.app_smart_40.service.clp;
+package com.tecdes.smart.app_smart_40.service.clp.connection;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -20,8 +20,8 @@ import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.model.Pedido;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
-import com.tecdes.smart.app_smart_40.service.clp.PlcConnectionService;
-import com.tecdes.smart.app_smart_40.service.clp.PlcConnector;
+import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
+import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
 import jakarta.transaction.Transactional;
 import lombok.Getter;
