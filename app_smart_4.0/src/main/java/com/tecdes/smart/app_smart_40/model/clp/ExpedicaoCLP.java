@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Component
-public class ExpedicaoCLP {
+public class ExpedicaoCLP  extends EstacaoCLP {
 
     boolean recebidoExpedicao;
     boolean iniciarGuardarExp;

@@ -21,4 +21,6 @@ public interface ExpedicaoRepository extends JpaRepository<Expedicao, Long> {
 
     long countByPedidoIsNull();
 
+    Optional<Expedicao> findByPosicao(Integer posicao);
+
 }

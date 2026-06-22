@@ -37,4 +37,33 @@ public class ExpedicaoService {
     public ExpedicaoResponseDTO primeiraExpedicaoLivre() {
         return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoIsNull().get());
     }
+
+    /**
+     * Vincula o pedido de ordem de produção {@code ordemProducao} à posição física de expedição
+     * {@code posicao}, refletindo o que o CLP da expedição reportou ter guardado.
+     */
+    public void guardarNaPosicao(int posicao, int ordemProducao) {
+        Expedicao expedicao = expedicaoRepository.findByPosicao(posicao)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Posição de expedição " + posicao + " não existe!"));
+
+        Pedido pedido = pedidoRepository.findByOrdemProducao(ordemProducao)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Pedido com ordem de produção " + ordemProducao + " não encontrado!"));
+
+        expedicao.setPedido(pedido);
+        expedicaoRepository.save(expedicao);
+    }
+
+    /** Libera a posição física de expedição {@code posicao} (remove o pedido vinculado). */
+    public void removerDaPosicao(int posicao) {
+        Expedicao expedicao = expedicaoRepository.findByPosicao(posicao)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Posição de expedição " + posicao + " não existe!"));
+
+        expedicao.setPedido(null);
+        expedicaoRepository.save(expedicao);
+    }
 }
