@@ -88,6 +88,16 @@ public class PageController {
         }
 
         /**
+         * GET /estacoes
+         * Status ao vivo das 4 estações — consumidor SSE puro ({@code estacao-status}).
+         * Sem service/model: a tela lê tudo do CLP via SSE, não acessa o banco.
+         */
+        @GetMapping("/estacoes")
+        public String estacoes() {
+                return "estacoes/estacoes";
+        }
+
+        /**
          * GET /Dashboard
          * Exibe o dashboard com dados iniciais de estoque e expedição.
          */
