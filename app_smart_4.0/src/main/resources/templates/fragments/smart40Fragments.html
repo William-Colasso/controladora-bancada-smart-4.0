@@ -46,10 +46,10 @@
 
        Parâmetro:
          activePage — string que identifica qual link deve ficar ativo.
-                      Valores: 'dashboard' | 'pedidos' | 'formulario'
+                      Valores: 'dashboard' | 'estacoes' | 'pedidos' | 'formulario'
 
        Estrutura:
-         [Logo + nome]   [Dashboard · Pedidos · Novo Pedido]   [Refresh · Fechar]
+         [Logo + nome]   [Dashboard · Estações · Pedidos · Novo Pedido]   [Refresh · Fechar]
   ================================================================ -->
   <nav class="navbar" th:fragment="navbar(activePage)">
 
@@ -70,6 +70,13 @@
          th:classappend="${activePage == 'dashboard'} ? 'nav-link--active' : ''">
         <i class="fa-solid fa-table-cells-large"></i>
         <span>Dashboard</span>
+      </a>
+
+      <a th:href="@{/estacoes}"
+         class="nav-link"
+         th:classappend="${activePage == 'estacoes'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-industry"></i>
+        <span>Estações</span>
       </a>
 
       <a th:href="@{/pedidos}"
