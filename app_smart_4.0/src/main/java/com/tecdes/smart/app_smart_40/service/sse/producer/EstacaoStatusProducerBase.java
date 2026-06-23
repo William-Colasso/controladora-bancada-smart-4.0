@@ -69,6 +69,9 @@ public abstract class EstacaoStatusProducerBase {
         EstacaoStatusEvent atual = capturar();
         if (!Objects.equals(atual, ultimo)) {
             ultimo = atual;
+            // Camada anterior ao SSE: o que será publicado, em transição (timeline limpa no INFO).
+            log.info("[CLP {}] status -> estado={} funcionamento={} (publicando no SSE)",
+                    estacao.apiName(), atual.estado(), atual.funcionamento());
             publisher.publishEvent(atual);
         }
     }
@@ -77,10 +80,12 @@ public abstract class EstacaoStatusProducerBase {
     private EstacaoStatusEvent capturar() {
         String ip = ipRegistry.getIp(estacao);
         if (ip == null || ip.isBlank()) {
+            log.debug("[CLP {}] sem IP configurado -> offline", estacao.apiName());
             return offline();
         }
         PlcConnector connector = plcConnectionService.getConnection(ip);
         if (connector == null) {
+            log.debug("[CLP {}] ip={} sem conexão (getConnection null) -> offline", estacao.apiName(), ip);
             return offline();
         }
         try {
@@ -89,17 +94,21 @@ public abstract class EstacaoStatusProducerBase {
                 b = connector.readBlock(db, 0, size);
             }
             if (b == null || b.length <= flagsByte) {
+                log.debug("[CLP {}] ip={} bloco DB{} curto/nulo ({} bytes, esperado >{}) -> offline",
+                        estacao.apiName(), ip, db, b == null ? 0 : b.length, flagsByte);
                 return offline();
             }
-            return derivar(b);
+            return derivar(ip, b);
         } catch (Exception e) {
-            log.debug("Falha ao ler status da estação {} ({}): {}", estacao.apiName(), ip, e.getMessage());
+            log.debug("[CLP {}] ip={} falha na leitura do DB{}: {} -> offline",
+                    estacao.apiName(), ip, db, e.getMessage());
             plcConnectionService.disconnect(ip); // evicta connector morto → reconecta no próximo ciclo
             return offline();
         }
     }
 
-    private EstacaoStatusEvent derivar(byte[] b) {
+    private EstacaoStatusEvent derivar(String ip, byte[] b) {
+        boolean cancel = (b[opByte] & 0x01) != 0;
         boolean finish = (b[opByte] & 0x02) != 0;
         boolean start = (b[opByte] & 0x04) != 0;
 
@@ -130,10 +139,24 @@ public abstract class EstacaoStatusProducerBase {
             funcionamento = null;
         }
 
+        // Camada anterior ao SSE: leitura bruta do CLP (bytes + flags) e o que foi derivado.
+        // DEBUG = cada ciclo de leitura (habilite logging.level...producer=DEBUG para ver).
+        if (log.isDebugEnabled()) {
+            log.debug("[CLP {}] ip={} DB{} op[{}]={} flags[{}]={} | cancel={} finish={} start={} "
+                    + "ocupado={} aguardando={} manual={} emergencia={} => estado={} funcionamento={}",
+                    estacao.apiName(), ip, db, opByte, hex(b[opByte]), flagsByte, hex(b[flagsByte]),
+                    cancel, finish, start, ocupado, aguardando, manual, emergencia, estado, funcionamento);
+        }
+
         return new EstacaoStatusEvent(estacao.getFrontKey(), estado, funcionamento);
     }
 
     private EstacaoStatusEvent offline() {
         return new EstacaoStatusEvent(estacao.getFrontKey(), "off", null);
+    }
+
+    /** Byte em hex (ex.: 0x0A) para inspeção dos bits brutos do bloco do CLP. */
+    private static String hex(byte b) {
+        return String.format("0x%02X", b);
     }
 }
