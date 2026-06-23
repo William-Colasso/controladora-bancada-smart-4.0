@@ -6,6 +6,7 @@ import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
+import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
@@ -24,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EstoqueClpService {
+public class EstoqueClpService implements EstacaoClpHandshake {
 
     private static final int DB = 9;
     private static final int OFFSET = 0;
@@ -36,15 +37,23 @@ public class EstoqueClpService {
     private final EstoqueRepository estoqueRepository;
     private final EstoqueCLP estoqueCLP;
 
+    @Override
+    public EstacaoClp estacao() {
+        return EstacaoClp.ESTOQUE;
+    }
+
     /** Lê o bloco DB9 da estação ESTOQUE no IP informado e processa, sob demanda. */
+    @Override
     public void lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
         if (connector == null) {
             return;
         }
         try {
-            byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-            processData(ip, dados);
+            synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
+                byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
+                processData(ip, dados);
+            }
         } catch (Exception e) {
             log.error("Erro ao ler CLP ESTOQUE {}: {}", ip, e.getMessage());
         }

@@ -123,6 +123,13 @@
         <div th:replace="~{fragments/components :: bancada-component}"></div>
       </div>
 
+      <!-- Liga/desliga o driver de escrita: repete POST /api/clp/processar (handshake) -->
+      <div class="home-status__producao" style="margin-top: 1rem; text-align: center;">
+        <button type="button" id="btn-toggle-comunicacao" class="btn btn--primary">
+          <i class="fa-solid fa-play"></i> Iniciar comunicação CLP
+        </button>
+      </div>
+
       <button style="margin: auto;margin-top: 1rem; display: block; flex: 1;" class="btn btn--primary">Ir para página de status completa</button>
     </section>
 

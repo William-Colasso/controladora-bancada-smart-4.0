@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
+import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ExpedicaoClpService {
+public class ExpedicaoClpService implements EstacaoClpHandshake {
 
     private static final int DB = 9;
     private static final int OFFSET = 0;
@@ -35,15 +36,23 @@ public class ExpedicaoClpService {
     private final ExpedicaoRepository expedicaoRepository;
     private final ExpedicaoCLP expedicaoCLP;
 
+    @Override
+    public EstacaoClp estacao() {
+        return EstacaoClp.EXPEDICAO;
+    }
+
     /** Lê o bloco DB9 da estação EXPEDIÇÃO no IP informado e processa, sob demanda. */
+    @Override
     public void lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
         if (connector == null) {
             return;
         }
         try {
-            byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-            processData(ip, dados);
+            synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
+                byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
+                processData(ip, dados);
+            }
         } catch (Exception e) {
             log.error("Erro ao ler CLP EXPEDICAO {}: {}", ip, e.getMessage());
         }
