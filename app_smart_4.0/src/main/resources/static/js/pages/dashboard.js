@@ -1,12 +1,11 @@
 import { Api } from '../core/api.js';
 import { Toast } from '../core/toast.js';
-import { createPoller } from '../core/poller.js';
+import { createSse } from '../core/sse.js';
 import { COR_INT_TO_NAME } from '../core/enums.js';
 import {
   createEstoqueCell, createExpedicaoCell, renderEstoqueCell, renderExpedicaoCell,
 } from '../components/blocoCell.js';
 
-const POLL_INTERVAL = 3000;
 const ESTOQUE_TOTAL = 28;
 const EXPEDICAO_TOTAL = 12;
 
@@ -129,20 +128,27 @@ function carregarDadosIniciais() {
   }
 }
 
-async function fetchTudo() {
-  const [estoque, expedicao] = await Promise.all([
-    Api.get('/api/estoque'),
-    Api.get('/api/expedicao'),
-  ]);
-  return { estoque: estoque || [], expedicao: expedicao || [] };
-}
-
-const poller = createPoller(fetchTudo, POLL_INTERVAL, ({ estoque, expedicao }) => {
-  state.estoque = estoque;
-  state.expedicao = expedicao;
+// Tempo real via SSE (substitui o antigo polling de 3 s). O backend empurra o grid quando ele muda.
+const sse = createSse();
+sse.on('estoque', (d) => {
+  state.estoque = d.posicoes || [];
   renderEstoque();
+});
+sse.on('expedicao', (d) => {
+  state.expedicao = d.posicoes || [];
   renderExpedicao();
 });
+
+// Refresh pontual (one-shot, não é polling) para feedback imediato após uma mutação local,
+// sem esperar o próximo ciclo do produtor SSE.
+async function refreshEstoque() {
+  try {
+    state.estoque = (await Api.get('/api/estoque')) || [];
+    renderEstoque();
+  } catch (err) {
+    console.error('[Dashboard] refreshEstoque:', err);
+  }
+}
 
 colorBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -157,7 +163,6 @@ if (applyBtn) {
   applyBtn.addEventListener('click', async () => {
     if (!state.activeColor || state.selectedPos.size === 0) return;
 
-    poller.pause();
     applyBtn.disabled = true;
     const textoOriginal = applyBtn.textContent;
     applyBtn.textContent = '…';
@@ -182,10 +187,9 @@ if (applyBtn) {
       Toast.error(`${erros.length} erro(s). ${erros[0]}`);
     }
 
-    await poller.refresh();
+    await refreshEstoque();
     limparSelecao();
     applyBtn.textContent = textoOriginal;
-    poller.resume();
   });
 }
 
@@ -199,4 +203,4 @@ document.addEventListener('keydown', (e) => {
 });
 
 carregarDadosIniciais();
-poller.start();
+sse.connect();
