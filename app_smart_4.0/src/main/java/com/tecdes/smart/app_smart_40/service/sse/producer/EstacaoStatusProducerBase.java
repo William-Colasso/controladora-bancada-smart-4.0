@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
+import com.tecdes.smart.app_smart_40.service.clp.ClpLeituraRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -31,6 +32,7 @@ public abstract class EstacaoStatusProducerBase {
     private final PlcConnectionService plcConnectionService;
     private final ApplicationEventPublisher publisher;
     private final ClpIpRegistry ipRegistry;
+    private final ClpLeituraRegistry leituraRegistry;
 
     private final EstacaoClp estacao;
     private final int db;
@@ -44,11 +46,13 @@ public abstract class EstacaoStatusProducerBase {
     private EstacaoStatusEvent ultimo;
 
     protected EstacaoStatusProducerBase(PlcConnectionService plcConnectionService,
-            ApplicationEventPublisher publisher, ClpIpRegistry ipRegistry, EstacaoClp estacao,
+            ApplicationEventPublisher publisher, ClpIpRegistry ipRegistry,
+            ClpLeituraRegistry leituraRegistry, EstacaoClp estacao,
             int db, int size, int opByte, int flagsByte) {
         this.plcConnectionService = plcConnectionService;
         this.publisher = publisher;
         this.ipRegistry = ipRegistry;
+        this.leituraRegistry = leituraRegistry;
         this.estacao = estacao;
         this.db = db;
         this.size = size;
@@ -58,6 +62,10 @@ public abstract class EstacaoStatusProducerBase {
 
     @Scheduled(fixedDelayString = "${clp.poll.interval:1000}")
     public void poll() {
+        if (!leituraRegistry.isHabilitada(estacao)) {
+            ultimo = null; // ao religar, força reemissão do snapshot (não fica preso no cache antigo)
+            return;        // estação não conectada → não lê o socket
+        }
         EstacaoStatusEvent atual = capturar();
         if (!Objects.equals(atual, ultimo)) {
             ultimo = atual;

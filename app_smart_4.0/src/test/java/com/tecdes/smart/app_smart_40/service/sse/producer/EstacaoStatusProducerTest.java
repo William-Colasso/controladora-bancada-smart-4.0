@@ -20,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
+import com.tecdes.smart.app_smart_40.service.clp.ClpLeituraRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -36,11 +37,15 @@ class EstacaoStatusProducerTest {
     @Mock
     private ClpIpRegistry ipRegistry;
     @Mock
+    private ClpLeituraRegistry leituraRegistry;
+    @Mock
     private PlcConnector connector;
 
     // Produtor da estação PROCESSO: DB2, size 9, opByte 4 (start=0x04/finish=0x02), flagsByte 6.
+    // Leitura habilitada por padrão (foco dos casos é a derivação do status).
     private ProcessoStatusProducer processoProducer() {
-        return new ProcessoStatusProducer(plcConnectionService, publisher, ipRegistry);
+        when(leituraRegistry.isHabilitada(EstacaoClp.PROCESSO)).thenReturn(true);
+        return new ProcessoStatusProducer(plcConnectionService, publisher, ipRegistry, leituraRegistry);
     }
 
     /** Bloco DB2 (9 bytes) com os bits de status posicionados em b[4] (OP) e b[6] (flags). */
@@ -167,12 +172,26 @@ class EstacaoStatusProducerTest {
     void estoque_offsetsProprios() throws Exception {
         byte[] b = new byte[111];
         b[100] = 0x01; // ocupado
+        when(leituraRegistry.isHabilitada(EstacaoClp.ESTOQUE)).thenReturn(true);
         when(ipRegistry.getIp(EstacaoClp.ESTOQUE)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(9, 0, 111)).thenReturn(b);
 
-        new EstoqueStatusProducer(plcConnectionService, publisher, ipRegistry).poll();
+        new EstoqueStatusProducer(plcConnectionService, publisher, ipRegistry, leituraRegistry).poll();
 
         verify(publisher).publishEvent(new EstacaoStatusEvent("estoque", "on", 0));
+    }
+
+    @Test
+    @DisplayName("leitura desabilitada → não lê o socket nem publica")
+    void leituraDesabilitada_naoLeNemPublica() throws Exception {
+        when(leituraRegistry.isHabilitada(EstacaoClp.PROCESSO)).thenReturn(false);
+
+        new ProcessoStatusProducer(plcConnectionService, publisher, ipRegistry, leituraRegistry).poll();
+
+        verify(ipRegistry, never()).getIp(any());
+        verify(plcConnectionService, never()).getConnection(anyString());
+        verify(connector, never()).readBlock(anyInt(), anyInt(), anyInt());
+        verify(publisher, never()).publishEvent(any());
     }
 }
