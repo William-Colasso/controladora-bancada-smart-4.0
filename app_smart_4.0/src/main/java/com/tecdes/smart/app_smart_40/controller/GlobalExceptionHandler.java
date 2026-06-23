@@ -6,15 +6,18 @@ import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.exception.PosicaoEstoqueNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
-import org.springframework.core.annotation.Order;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoHandlerFoundException.class)
@@ -97,6 +100,14 @@ public class GlobalExceptionHandler {
             Exception ex,
             HttpServletRequest request) {
 
+        // SSE: a resposta já é text/event-stream — não há converter para o ErrorResponseDTO (JSON).
+        // Tipicamente é cliente que desconectou no meio do stream; loga e não escreve corpo.
+        if (isStreamRequest(request)) {
+            log.debug("Erro no stream SSE {} (cliente provavelmente desconectou): {}",
+                    request.getRequestURI(), ex.getMessage());
+            return null;
+        }
+
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         ErrorResponseDTO error = new ErrorResponseDTO(
                 status.value(),
@@ -105,5 +116,12 @@ public class GlobalExceptionHandler {
                 Instant.now()
         );
         return ResponseEntity.status(status).body(error);
+    }
+
+    /** Requisição de canal SSE (EventSource) — resposta é text/event-stream, não aceita corpo JSON. */
+    private boolean isStreamRequest(HttpServletRequest request) {
+        String accept = request.getHeader("Accept");
+        return (accept != null && accept.contains(MediaType.TEXT_EVENT_STREAM_VALUE))
+                || request.getRequestURI().startsWith("/api/stream");
     }
 }
