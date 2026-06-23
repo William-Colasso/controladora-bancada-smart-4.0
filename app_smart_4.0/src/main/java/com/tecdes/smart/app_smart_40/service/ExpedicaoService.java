@@ -8,6 +8,7 @@ import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +24,9 @@ public class ExpedicaoService {
         return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
 
+    // readOnly: mantém a sessão Hibernate aberta durante o map (inicializa o proxy lazy de Pedido).
+    // Sem isso, o produtor SSE @Scheduled (sem OSIV) quebra com LazyInitializationException.
+    @Transactional(readOnly = true)
     public List<ExpedicaoResponseDTO> listarTodos() {
         return expedicaoRepository.findAll()
                 .stream()
