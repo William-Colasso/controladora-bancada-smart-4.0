@@ -50,14 +50,28 @@ Requires **Java 17** and a **MySQL 8** instance on `localhost:3306` with databas
 ### PLC / CLP integration — `service/clp/`
 Talks to a **Siemens S7 PLC** over TCP **port 102** (`S7ProtocolClient`, `PlcConnector`). `PlcConnectionService` pools one connection per IP in a `ConcurrentHashMap` (`getConnection`/`disconnect`/`closeAll`). This — not WebSocket — is the real hardware link (the README's "WebSocket" claim is aspirational).
 
+**Per-station IP at runtime — `ClpIpRegistry`.** Each of the 4 stations (`EstacaoClp`: ESTOQUE, PROCESSO, MONTAGEM, EXPEDICAO) has its own CLP IP. `ClpIpRegistry` (`@Component`, all methods `synchronized`, `EnumMap`) is seeded at boot from `clp.ip.*` properties and **mutated at runtime** via `ClpIpController` (`GET /api/clp/ips`, `PUT /api/clp/ips/{estacao}` body `{"ip":"x.x.x.x"}`). SSE producers read `getIp(estacao)` **every poll cycle**, so an IP change takes effect without restart. On change, `setIp` validates the IP (regex + octet ≤255 → `IllegalArgumentException` → 400) and evicts the old connection (`plcConnectionService.disconnect`) only if no other station still uses it. **`EstacaoClp` has two name forms:** `getFrontKey()` (frontend/SSE key — note PROCESSO → `"producao"`) vs `apiName()` (REST path — `"processo"`); `fromApi()` resolves the REST path or throws 400.
+
+### Real-time SSE module (read-only) — `service/sse/`
+Pushes live CLP/grid state to the browser, **replacing the dashboard's 3s polling**. Pattern: **capture → route → deliver**, coupled only by event TYPE (Spring `ApplicationEventPublisher` + `@EventListener`). Servlet-based `SseEmitter` (no WebFlux on classpath). Enabled by `@EnableScheduling` + `@EnableAsync` on `Application.java`.
+
+- **Strictly read-only:** producers call **only** `PlcConnector.readBlock` — never `writeBit/writeByte/writeInt`, never `lerEProcessar`/`processData`, never mutate the shared `*CLP` beans or `EstadoProducaoService`. The write/handshake path stays in `*ClpService` and will be triggered later by a **separate REST API** (out of scope by design — see memory `sse-clp-read-only`).
+- **Producers** (`service/sse/producer/`, `@Scheduled(fixedDelayString=...)`, publish **only on change** vs a cached last snapshot):
+  - 4 station-status producers extend `EstacaoStatusProducerBase` — each subclass fixes its `EstacaoClp` + `(db, size, opByte, flagsByte)`. `derivar(byte[])` maps status bits → `estado` (emergencia→off; aguardando/manual→pause; ocupado→on; else off) + `funcionamento` (finish→2; start→1; ocupado→0; else null). `synchronized(connector)` guards the S7 socket; read error → `disconnect(ip)` + offline event.
+  - `EstoqueGridProducer` / `ExpedicaoGridProducer` source grids from MySQL (`EstoqueService.getTodos` / `ExpedicaoService.listarTodos`) — same canonical source as the REST endpoints.
+- **Events** (`dto/event/`, records): `EstacaoStatusEvent(estacao, estado, funcionamento)`, `EstoqueGridEvent(posicoes)`, `ExpedicaoGridEvent(posicoes)`.
+- **Routing/delivery** (`service/sse/`): `SseNotifier` (one `@Async @EventListener` per event type → `registry.broadcast(name, dto)`); `SseEmitterRegistry` (`CopyOnWriteArrayList<SseEmitter>`, removes dead clients per-send so one failure doesn't break the rest); `SseController` `GET /api/stream` (`text/event-stream`). SSE event names: `estacao-status`, `estoque`, `expedicao`.
+- **Adding a new source** = new producer + new event record + one `@EventListener` in `SseNotifier`. Nothing existing is touched.
+- **Frontend:** `core/sse.js` (`createSse(path)` → `EventSource` wrapper with `on(evento, cb)` + auto-reconnect backoff). `pages/dashboard.js` consumes `estoque`/`expedicao`; `pages/home.js` feeds `estacao-status` into `bancadaStatus.setEstado/setFuncionamento`.
+
 ### Frontend — vanilla ES modules, **no build step**
 Served as static assets from `src/main/resources/static/`, rendered by Thymeleaf templates in `templates/`.
 
 - **Three JS layers** under `static/js/`:
   - `pages/*.js` — one entry module per page, loaded via `<script type="module" th:src="@{/js/pages/<page>.js}">`. Owns page state and wiring.
-  - `core/*.js` — shared singletons/utilities: `Api` (fetch wrapper, throws on non-2xx), `Toast`, `createPoller` (interval polling with pause/resume/refresh), `enums`, `format`, `dom`.
+  - `core/*.js` — shared singletons/utilities: `Api` (fetch wrapper, throws on non-2xx), `Toast`, `createPoller` (interval polling with pause/resume/refresh), `createSse` (`EventSource` wrapper, see SSE module), `enums`, `format`, `dom`.
   - `components/*.js` — pure render helpers (`createXCell`/`renderXCell`) that build/update DOM nodes; no fetching.
-- **SSR + polling hydration pattern** (see `pages/dashboard.js`): the page controller serializes initial data to JSON into hidden `<input>`s; the JS reads them on load (`carregarDadosIniciais`), renders immediately, then a `createPoller` refreshes from `/api/**` every ~3s. Mutations `poller.pause()` → call API → `poller.refresh()` → `poller.resume()`.
+- **SSR hydration pattern** (see `pages/dashboard.js`): the page controller serializes initial data to JSON into hidden `<input>`s; the JS reads them on load (`carregarDadosIniciais`) and renders immediately. Live updates now come from **SSE** (`createSse`), not polling — the dashboard's old `createPoller` was replaced (see the SSE module section). `createPoller` is still the pattern for any page that polls `/api/**`; after a mutation, do `poller.pause()` → call API → `poller.refresh()` → `poller.resume()`.
 - **Thymeleaf fragments** live in `templates/fragments/` (`smart40Fragments.html` for `headDeps`/`navbar`, `components.html` for reusable component markup) and are pulled in via `th:replace="~{fragments/... :: name(args)}"`.
 - **CSS** mirrors this split: `static/css/components/*.css` for component styles, page-level CSS at `static/css/<page>.css`, with `vars.css`/`base.css` as the design-system base.
 

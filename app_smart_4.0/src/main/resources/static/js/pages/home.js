@@ -1,4 +1,6 @@
 import { Toast } from '../core/toast.js';
+import { createSse } from '../core/sse.js';
+import bancadaStatus from '../components/bancadaStatus.js';
 
 function setClpBadge(status, label, icon) {
   const badge = document.getElementById('clp-status-badge');
@@ -30,3 +32,11 @@ async function conectarClp(button) {
 document.querySelectorAll('.btn-conectar-clp').forEach((button) => {
   button.addEventListener('click', () => conectarClp(button));
 })
+
+// Status das estações da bancada em tempo real (SSE). Alimenta os overlays do bancada-status.
+const sse = createSse();
+sse.on('estacao-status', (d) => {
+  bancadaStatus.setEstado(d.estacao, d.estado);
+  bancadaStatus.setFuncionamento(d.estacao, d.funcionamento);
+});
+sse.connect();
