@@ -32,7 +32,7 @@ class ClpConexaoControllerTest {
     @Mock
     private ClpLeituraRegistry leituraRegistry;
     @InjectMocks
-    private ClpConexaoController controller;
+    private ClpComandoController controller;
 
     @Test
     @DisplayName("conectar - CLP alcançável → grava IP, habilita leitura, responde leitura:true")
