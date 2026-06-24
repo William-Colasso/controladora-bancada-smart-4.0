@@ -30,9 +30,9 @@ public class ClpIpRegistry {
 
     public ClpIpRegistry(PlcConnectionService plcConnectionService,
             @Value("${clp.ip.estoque:10.74.241.10}") String estoque,
-            @Value("${clp.ip.processo:10.74.241.10}") String processo,
-            @Value("${clp.ip.montagem:10.74.241.10}") String montagem,
-            @Value("${clp.ip.expedicao:10.74.241.10}") String expedicao) {
+            @Value("${clp.ip.processo:10.74.241.20}") String processo,
+            @Value("${clp.ip.montagem:10.74.241.30}") String montagem,
+            @Value("${clp.ip.expedicao:10.74.241.40}") String expedicao) {
         this.plcConnectionService = plcConnectionService;
         ips.put(EstacaoClp.ESTOQUE, estoque);
         ips.put(EstacaoClp.PROCESSO, processo);
