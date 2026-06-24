@@ -3,8 +3,10 @@ package com.tecdes.smart.app_smart_40.dto.response;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 
 import lombok.Builder;
+import lombok.Data;
 
 @Builder
+
 public record ExpedicaoResponseDTO(
         Long id,
         Integer posicao,
@@ -14,7 +16,7 @@ public record ExpedicaoResponseDTO(
         return new ExpedicaoResponseDTO(
                 expedicao.getId(),
                 expedicao.getPosicao(),
-                expedicao.getPedido() != null ? PedidoResponseDTO.fromEntity(expedicao.getPedido()) : null);
+                expedicao.getPedidoAtual() != null ? PedidoResponseDTO.fromEntity(expedicao.getPedidoAtual()) : null);
     }
 
     public Expedicao toEntity() {
@@ -22,7 +24,7 @@ public record ExpedicaoResponseDTO(
         expedicao.setId(this.id);
         expedicao.setPosicao(this.posicao);
         if (this.pedidoResponseDTO != null) {
-            expedicao.setPedido(this.pedidoResponseDTO.toEntity());
+            expedicao.setPedidoAtual(this.pedidoResponseDTO.toEntity());
         }
         return expedicao;
     }
