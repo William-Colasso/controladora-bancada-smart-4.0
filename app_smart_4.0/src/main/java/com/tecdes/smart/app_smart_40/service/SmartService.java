@@ -71,7 +71,7 @@ public class SmartService {
         if (pedido.getExpedicao() == null) {
             Expedicao expedicao = expedicaoService.primeiraExpedicaoLivre().toEntity();
             pedido.setExpedicao(expedicao);
-            expedicao.setPedido(pedido);
+            expedicao.setPedidoAtual(pedido);
             expedicaoService.atualizarExpedicao(expedicao);
         }
     }

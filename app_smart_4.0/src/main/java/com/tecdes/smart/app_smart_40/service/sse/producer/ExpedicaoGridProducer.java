@@ -32,6 +32,7 @@ public class ExpedicaoGridProducer {
         try {
             List<ExpedicaoResponseDTO> atual = expedicaoService.listarTodos();
             if (!atual.equals(ultimo)) {
+                System.out.println(atual.equals(ultimo));
                 ultimo = atual;
                 publisher.publishEvent(new ExpedicaoGridEvent(atual));
             }
