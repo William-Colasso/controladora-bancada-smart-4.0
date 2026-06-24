@@ -8,9 +8,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
-import com.tecdes.smart.app_smart_40.service.clp.ClpLeituraRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
+import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,6 +25,11 @@ import lombok.extern.slf4j.Slf4j;
  * <p>O IP da estação vem do {@link ClpIpRegistry} e é lido <b>a cada ciclo</b> — assim a troca de IP
  * via {@code PUT /api/clp/ips/{estacao}} entra em vigor sem reiniciar. Cada subclasse fixa apenas a
  * estação (DB/tamanho do bloco + offsets dos bytes de status). Só publica quando o snapshot muda.
+ *
+ * <p><b>Gating por cliente:</b> só lê o CLP quando há ao menos um cliente SSE conectado
+ * ({@link SseEmitterRegistry#count()} &gt; 0). Sem ninguém ouvindo, o {@code poll()} retorna cedo e
+ * não toca o socket S7 — qualquer tela que abra o {@code EventSource} (home, estações, dashboard) já
+ * basta para ligar a leitura; não há mais opt-in manual por estação.
  */
 @Slf4j
 public abstract class EstacaoStatusProducerBase {
@@ -32,7 +37,7 @@ public abstract class EstacaoStatusProducerBase {
     private final PlcConnectionService plcConnectionService;
     private final ApplicationEventPublisher publisher;
     private final ClpIpRegistry ipRegistry;
-    private final ClpLeituraRegistry leituraRegistry;
+    private final SseEmitterRegistry sseRegistry;
 
     private final EstacaoClp estacao;
     private final int db;
@@ -47,12 +52,12 @@ public abstract class EstacaoStatusProducerBase {
 
     protected EstacaoStatusProducerBase(PlcConnectionService plcConnectionService,
             ApplicationEventPublisher publisher, ClpIpRegistry ipRegistry,
-            ClpLeituraRegistry leituraRegistry, EstacaoClp estacao,
+            SseEmitterRegistry sseRegistry, EstacaoClp estacao,
             int db, int size, int opByte, int flagsByte) {
         this.plcConnectionService = plcConnectionService;
         this.publisher = publisher;
         this.ipRegistry = ipRegistry;
-        this.leituraRegistry = leituraRegistry;
+        this.sseRegistry = sseRegistry;
         this.estacao = estacao;
         this.db = db;
         this.size = size;
@@ -62,9 +67,9 @@ public abstract class EstacaoStatusProducerBase {
 
     @Scheduled(fixedDelayString = "${clp.poll.interval:1000}")
     public void poll() {
-        if (!leituraRegistry.isHabilitada(estacao)) {
-            ultimo = null; // ao religar, força reemissão do snapshot (não fica preso no cache antigo)
-            return;        // estação não conectada → não lê o socket
+        if (sseRegistry.count() == 0) {
+            ultimo = null; // ao reconectar, força reemissão do snapshot (não fica preso no cache antigo)
+            return;        // ninguém ouvindo o SSE → não lê o socket
         }
         EstacaoStatusEvent atual = capturar();
         if (!Objects.equals(atual, ultimo)) {
