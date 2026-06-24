@@ -30,9 +30,15 @@
           <i class="fa-solid fa-industry"></i> Estações
         </h1>
         <p class="estacoes__sub">
-          Status ao vivo lido do CLP via SSE. Conecte uma estação na tela inicial para vê-la aqui.
+          Status e dados ao vivo lidos do CLP via SSE. Defina o IP na tela inicial e inicie a
+          comunicação CLP para alimentar os dados completos de cada estação.
         </p>
       </header>
+
+      <!-- Componente visual da bancada (overlays alimentados por estacao-status) -->
+      <section class="estacoes__bancada">
+        <div th:replace="~{fragments/components :: bancada-component}"></div>
+      </section>
 
       <section class="estacoes__grid">
 
@@ -47,6 +53,9 @@
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
           </div>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
+          </div>
         </article>
 
         <!-- PROCESSO (frontKey = producao) -->
@@ -59,6 +68,9 @@
           <div class="estacao-card__linha">
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
+          </div>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
           </div>
         </article>
 
@@ -73,6 +85,9 @@
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
           </div>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
+          </div>
         </article>
 
         <!-- EXPEDIÇÃO -->
@@ -85,6 +100,9 @@
           <div class="estacao-card__linha">
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
+          </div>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
           </div>
         </article>
 
