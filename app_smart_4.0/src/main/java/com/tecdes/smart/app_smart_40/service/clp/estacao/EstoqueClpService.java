@@ -3,6 +3,7 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
@@ -40,6 +41,11 @@ public class EstoqueClpService implements EstacaoClpHandshake {
     @Override
     public EstacaoClp estacao() {
         return EstacaoClp.ESTOQUE;
+    }
+
+    @Override
+    public EstacaoCLP dados() {
+        return estoqueCLP;
     }
 
     /** Lê o bloco DB9 da estação ESTOQUE no IP informado e processa, sob demanda. */

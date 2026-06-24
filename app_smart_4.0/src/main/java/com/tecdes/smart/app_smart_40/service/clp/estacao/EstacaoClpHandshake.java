@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 
 /**
@@ -17,4 +18,7 @@ public interface EstacaoClpHandshake {
 
     /** Lê o bloco DB da estação no {@code ip} informado e executa o handshake de escrita, sob demanda. */
     void lerEProcessar(String ip);
+
+    /** Snapshot atual do bean {@code *CLP} desta estação (preenchido pela última passada de {@link #lerEProcessar}). */
+    EstacaoCLP dados();
 }
