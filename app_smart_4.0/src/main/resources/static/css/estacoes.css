@@ -1,5 +1,7 @@
+@import "components/bancada-status.css";
+
 /* ============================================================
-   Tela "Estações" — grid de status ao vivo das 4 estações (CLP→SSE).
+   Tela "Estações" — bancada no topo + grid de status/dados ao vivo (CLP→SSE).
    Reusa tokens de vars.css e o componente .badge (base.css).
    ============================================================ */
 
@@ -97,4 +99,48 @@
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text);
+}
+
+/* Componente visual da bancada no topo da página. */
+.estacoes__bancada {
+  position: relative;
+  max-width: 860px;
+  margin: 0 auto 28px;
+}
+
+/* Dados completos do bean *CLP (evento estacao-all) — grid chave/valor no card. */
+.estacao-card__dados {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.dado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.dado__k {
+  color: var(--color-muted);
+}
+
+.dado__v {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: right;
+  word-break: break-word;
+}
+
+.dado--vazio {
+  justify-content: center;
+  color: var(--color-muted);
+  font-style: italic;
 }
