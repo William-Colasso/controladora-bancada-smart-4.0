@@ -201,7 +201,7 @@ export function createPedidoViewer(container) {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0x15161a, 1);
+  renderer.setClearColor(0xe8e1f2, 1);
   container.appendChild(renderer.domElement);
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
