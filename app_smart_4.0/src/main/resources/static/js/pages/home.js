@@ -4,12 +4,7 @@ import { createSse } from '../core/sse.js';
 import { createPoller } from '../core/poller.js';
 import bancadaStatus from '../components/bancadaStatus.js';
 
-// apiName (path REST / id da linha) → frontKey (chave dos overlays e dos eventos SSE).
-// Só PROCESSO difere: "processo" → "producao". Resto é igual.
-const API_TO_FRONT = { processo: 'producao' };
-const frontKey = (apiName) => API_TO_FRONT[apiName] || apiName;
-
-// Atualiza o badge de status de conexão dentro de uma linha de estação (.clp-ip-input).
+// Atualiza o badge de status dentro de uma linha de estação (.clp-ip-input).
 function setClpBadge(row, status, label, icon) {
   const badge = row.querySelector('.clp-status-badge');
   if (!badge) return;
@@ -17,16 +12,22 @@ function setClpBadge(row, status, label, icon) {
   badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
 }
 
-// Alterna o rótulo/ícone do botão entre Conectar e Desconectar.
-function setBotao(button, conectado) {
-  button.innerHTML = conectado
-    ? '<i class="fa-solid fa-plug-circle-xmark"></i> Desconectar'
-    : '<i class="fa-solid fa-plug"></i> Conectar';
+// Pré-preenche os inputs com o IP atual de cada estação (GET /api/clp/ips).
+async function carregarIps() {
+  try {
+    const ips = await Api.get('/api/clp/ips'); // [{ estacao, ip }]
+    ips.forEach(({ estacao, ip }) => {
+      const row = document.getElementById(`${estacao}-clp-ip`);
+      if (row && ip) row.querySelector('input.ip-clp').value = ip;
+    });
+  } catch (_) { /* sem IPs salvos ainda — segue com os campos vazios */ }
 }
 
-// Conectar: grava IP, testa o CLP (S7 :102) e habilita a leitura read-only daquela estação.
-// A estação é derivada do id da linha pai: "estoque-clp-ip" → "estoque" (apiName).
-async function conectarClp(button, row, estacao) {
+// "Tela de conexão" = apenas grava o IP da estação (PUT /api/clp/ips/{estacao}).
+// A leitura do CLP NÃO é mais ligada aqui: os produtores SSE leem sozinhos sempre que houver ao
+// menos 1 cliente SSE conectado (qualquer tela aberta). Ver core/sse.js + SseEmitterRegistry no back.
+// A estação vem do id da linha pai: "estoque-clp-ip" → "estoque" (apiName).
+async function salvarIp(row, estacao) {
   const input = row.querySelector('input.ip-clp');
   const ip = input.value.trim();
   if (!ip) {
@@ -34,36 +35,14 @@ async function conectarClp(button, row, estacao) {
     return;
   }
 
-  setClpBadge(row, 'dim', 'Conectando...', 'fa-circle-notch fa-spin');
+  setClpBadge(row, 'dim', 'Salvando...', 'fa-circle-notch fa-spin');
   try {
-    const r = await Api.post(`/api/clp/${estacao}/conectar`, { ip });
-    if (r.alcancavel && r.leitura) {
-      row.dataset.conectado = '1';
-      setBotao(button, true);
-      setClpBadge(row, 'green', 'Lendo', 'fa-circle-check');
-      Toast.success(`Estação ${estacao} conectada: ${ip}`);
-    } else {
-      setClpBadge(row, 'red', 'CLP não responde', 'fa-circle-xmark');
-      Toast.error(`CLP da estação ${estacao} (${ip}) não respondeu na porta 102.`);
-    }
+    const r = await Api.put(`/api/clp/ips/${estacao}`, { ip });
+    setClpBadge(row, 'green', 'IP salvo', 'fa-circle-check');
+    Toast.success(`IP da estação ${estacao} salvo: ${r.ip}`);
   } catch (err) {
-    setClpBadge(row, 'red', 'Falha', 'fa-circle-xmark');
-    Toast.error(err.message || 'Falha ao conectar.');
-  }
-}
-
-// Desconectar: para a leitura da estação e apaga o overlay correspondente.
-async function desconectarClp(button, row, estacao) {
-  try {
-    await Api.post(`/api/clp/${estacao}/desconectar`);
-    delete row.dataset.conectado;
-    setBotao(button, false);
-    setClpBadge(row, 'dim', 'Desconectado', 'fa-circle-question');
-    const fk = frontKey(estacao);
-    bancadaStatus.setEstado(fk, 'off');
-    bancadaStatus.setFuncionamento(fk, null);
-  } catch (err) {
-    Toast.error(err.message || 'Falha ao desconectar.');
+    setClpBadge(row, 'red', 'IP inválido', 'fa-circle-xmark');
+    Toast.error(err.message || 'Falha ao salvar o IP.');
   }
 }
 
@@ -73,15 +52,17 @@ document.querySelectorAll('.btn-conectar-clp').forEach((button) => {
   button.addEventListener('click', async () => {
     button.disabled = true;
     try {
-      if (row.dataset.conectado) await desconectarClp(button, row, estacao);
-      else await conectarClp(button, row, estacao);
+      await salvarIp(row, estacao);
     } finally {
       button.disabled = false;
     }
   });
 });
 
+carregarIps();
+
 // Status das estações da bancada em tempo real (SSE). Alimenta os overlays do bancada-status.
+// Abrir esta tela já basta para o back-end começar a ler os CLPs (gating por cliente SSE).
 const sse = createSse();
 sse.on('estacao-status', (d) => {
   bancadaStatus.setEstado(d.estacao, d.estado);
