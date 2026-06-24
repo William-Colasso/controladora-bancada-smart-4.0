@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.dto.event.EstoqueGridEvent;
 import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoGridEvent;
@@ -31,6 +32,16 @@ class SseNotifierTest {
         notifier.onEstacaoStatus(e);
 
         verify(registry).broadcast("estacao-status", e);
+    }
+
+    @Test
+    @DisplayName("dados completos de estação → broadcast 'estacao-all'")
+    void estacaoAll_broadcastNomeCerto() {
+        EstacaoAllData e = new EstacaoAllData("estoque", null);
+
+        notifier.onEstacaoAll(e);
+
+        verify(registry).broadcast("estacao-all", e);
     }
 
     @Test

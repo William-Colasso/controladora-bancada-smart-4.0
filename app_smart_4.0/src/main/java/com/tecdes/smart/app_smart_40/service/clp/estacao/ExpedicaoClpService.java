@@ -2,6 +2,7 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
@@ -39,6 +40,11 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
     @Override
     public EstacaoClp estacao() {
         return EstacaoClp.EXPEDICAO;
+    }
+
+    @Override
+    public EstacaoCLP dados() {
+        return expedicaoCLP;
     }
 
     /** Lê o bloco DB9 da estação EXPEDIÇÃO no IP informado e processa, sob demanda. */

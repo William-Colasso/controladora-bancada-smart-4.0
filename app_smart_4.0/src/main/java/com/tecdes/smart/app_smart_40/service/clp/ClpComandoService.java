@@ -4,8 +4,10 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 
@@ -25,12 +27,15 @@ public class ClpComandoService {
 
     private final Map<EstacaoClp, EstacaoClpHandshake> handshakes = new EnumMap<>(EstacaoClp.class);
     private final ClpIpRegistry ipRegistry;
+    private final ApplicationEventPublisher publisher;
 
-    public ClpComandoService(List<EstacaoClpHandshake> handshakes, ClpIpRegistry ipRegistry) {
+    public ClpComandoService(List<EstacaoClpHandshake> handshakes, ClpIpRegistry ipRegistry,
+            ApplicationEventPublisher publisher) {
         for (EstacaoClpHandshake h : handshakes) {
             this.handshakes.put(h.estacao(), h);
         }
         this.ipRegistry = ipRegistry;
+        this.publisher = publisher;
     }
 
     /** Executa uma passada de leitura+escrita na estação. IP não configurado → estado inalterado. */
@@ -45,6 +50,9 @@ public class ClpComandoService {
             return;
         }
         handshake.lerEProcessar(ip);
+        // Lado escrita também alimenta o SSE: publica o bean *CLP completo desta passada.
+        // O módulo SSE produtor segue read-only; esta emissão parte do write path.
+        publisher.publishEvent(new EstacaoAllData(estacao.getFrontKey(), handshake.dados()));
     }
 
     /** Executa uma passada em todas as estações. */

@@ -15,7 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
+import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 
@@ -25,6 +28,9 @@ class ClpComandoServiceTest {
 
     @Mock
     private ClpIpRegistry ipRegistry;
+
+    @Mock
+    private ApplicationEventPublisher publisher;
 
     /** Mock de um handshake fixando sua estação (consumido no construtor do facade). */
     private EstacaoClpHandshake handshake(EstacaoClp estacao) {
@@ -38,7 +44,7 @@ class ClpComandoServiceTest {
     void processar_comIp_despacha() {
         EstacaoClpHandshake estoque = handshake(EstacaoClp.ESTOQUE);
         EstacaoClpHandshake processo = handshake(EstacaoClp.PROCESSO);
-        ClpComandoService service = new ClpComandoService(List.of(estoque, processo), ipRegistry);
+        ClpComandoService service = new ClpComandoService(List.of(estoque, processo), ipRegistry, publisher);
         when(ipRegistry.getIp(EstacaoClp.ESTOQUE)).thenReturn("10.0.0.1");
 
         service.processar(EstacaoClp.ESTOQUE);
@@ -48,22 +54,38 @@ class ClpComandoServiceTest {
     }
 
     @Test
+    @DisplayName("processar - com IP publica EstacaoAllData(frontKey, dados) no barramento")
+    void processar_comIp_publicaEstacaoAll() {
+        EstacaoClpHandshake estoque = handshake(EstacaoClp.ESTOQUE);
+        EstoqueCLP bean = new EstoqueCLP();
+        when(estoque.dados()).thenReturn(bean);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
+        when(ipRegistry.getIp(EstacaoClp.ESTOQUE)).thenReturn("10.0.0.1");
+
+        service.processar(EstacaoClp.ESTOQUE);
+
+        verify(estoque).lerEProcessar("10.0.0.1");
+        verify(publisher).publishEvent(new EstacaoAllData("estoque", bean));
+    }
+
+    @Test
     @DisplayName("processar - IP não configurado (blank) → não chama lerEProcessar")
     void processar_semIp_naoDispara() {
         EstacaoClpHandshake estoque = handshake(EstacaoClp.ESTOQUE);
-        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
         when(ipRegistry.getIp(EstacaoClp.ESTOQUE)).thenReturn("   ");
 
         service.processar(EstacaoClp.ESTOQUE);
 
         verify(estoque, never()).lerEProcessar(anyString());
+        verify(publisher, never()).publishEvent(any());
     }
 
     @Test
     @DisplayName("processar - estação sem serviço de handshake → IllegalState (400)")
     void processar_estacaoSemServico_lanca() {
         EstacaoClpHandshake estoque = handshake(EstacaoClp.ESTOQUE);
-        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
 
         assertThatThrownBy(() -> service.processar(EstacaoClp.EXPEDICAO))
                 .isInstanceOf(IllegalStateException.class);
@@ -77,7 +99,7 @@ class ClpComandoServiceTest {
         EstacaoClpHandshake montagem = handshake(EstacaoClp.MONTAGEM);
         EstacaoClpHandshake expedicao = handshake(EstacaoClp.EXPEDICAO);
         ClpComandoService service = new ClpComandoService(
-                List.of(estoque, processo, montagem, expedicao), ipRegistry);
+                List.of(estoque, processo, montagem, expedicao), ipRegistry, publisher);
         when(ipRegistry.getIp(any())).thenReturn("10.0.0.1");
 
         service.processarTodas();
