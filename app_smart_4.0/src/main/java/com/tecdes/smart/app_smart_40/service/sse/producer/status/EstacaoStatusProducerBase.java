@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
@@ -39,7 +39,7 @@ public abstract class EstacaoStatusProducerBase {
     private final ClpIpRegistry ipRegistry;
     private final SseEmitterRegistry sseRegistry;
 
-    private final EstacaoClp estacao;
+    private final EstacoesCLP estacao;
     private final int db;
     private final int size;
     /** Índice do byte com os bits cancelOP(0x01)/finishOP(0x02)/startOP(0x04). */
@@ -52,7 +52,7 @@ public abstract class EstacaoStatusProducerBase {
 
     protected EstacaoStatusProducerBase(PlcConnectionService plcConnectionService,
             ApplicationEventPublisher publisher, ClpIpRegistry ipRegistry,
-            SseEmitterRegistry sseRegistry, EstacaoClp estacao,
+            SseEmitterRegistry sseRegistry, EstacoesCLP estacao,
             int db, int size, int opByte, int flagsByte) {
         this.plcConnectionService = plcConnectionService;
         this.publisher = publisher;

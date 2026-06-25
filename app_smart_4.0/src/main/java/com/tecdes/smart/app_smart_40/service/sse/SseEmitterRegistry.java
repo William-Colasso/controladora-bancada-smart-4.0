@@ -66,6 +66,7 @@ public class SseEmitterRegistry {
      * a própria chave de cache é o nome do evento). Delega para o overload com discriminador.
      */
     public void broadcast(String evento, Object dado) {
+
         broadcast(evento, evento, dado);
     }
 
@@ -76,6 +77,9 @@ public class SseEmitterRegistry {
      * é isolado em try/catch — um cliente morto é removido sem afetar os outros.
      */
     public void broadcast(String evento, String chave, Object dado) {
+        if(count() == 0 ){
+            System.out.println("Sem clientes escutando");
+        }
         ultimoPorChave.put(evento + "::" + chave, new Snapshot(evento, dado));
         for (SseEmitter emitter : emitters) {
             try {

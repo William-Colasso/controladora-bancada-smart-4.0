@@ -8,7 +8,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.ClpComandoService;
 
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class ClpComandoController {
 
     @PostMapping("/{estacao}/processar")
     public ResponseEntity<Map<String, Object>> processar(@PathVariable String estacao) {
-        EstacaoClp alvo = EstacaoClp.fromApi(estacao);
+        EstacoesCLP alvo = EstacoesCLP.fromApi(estacao);
         comandoService.processar(alvo);
         return ResponseEntity.ok(Map.of("estacao", alvo.apiName(), "ok", true));
     }

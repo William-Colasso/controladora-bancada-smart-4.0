@@ -1,7 +1,8 @@
 package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
+
 
 /**
  * Contrato do handshake de escrita de uma estação do CLP.
@@ -14,7 +15,7 @@ import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
 public interface EstacaoClpHandshake {
 
     /** Estação física que este serviço controla. */
-    EstacaoClp estacao();
+    EstacoesCLP estacao();
 
     /** Lê o bloco DB da estação no {@code ip} informado e executa o handshake de escrita, sob demanda. */
     void lerEProcessar(String ip);
