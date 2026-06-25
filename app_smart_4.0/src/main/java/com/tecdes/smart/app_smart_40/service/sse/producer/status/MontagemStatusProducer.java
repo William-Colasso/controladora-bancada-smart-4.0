@@ -1,4 +1,4 @@
-package com.tecdes.smart.app_smart_40.service.sse.producer;
+package com.tecdes.smart.app_smart_40.service.sse.producer.status;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -8,13 +8,13 @@ import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
 
-/** Produtor read-only do status da estação EXPEDIÇÃO (DB9: opByte 32, flagsByte 34). */
+/** Produtor read-only do status da estação MONTAGEM (DB57: opByte 4, flagsByte 6). */
 @Component
-public class ExpedicaoStatusProducer extends EstacaoStatusProducerBase {
+public class MontagemStatusProducer extends EstacaoStatusProducerBase {
 
-    public ExpedicaoStatusProducer(PlcConnectionService plcConnectionService,
+    public MontagemStatusProducer(PlcConnectionService plcConnectionService,
             ApplicationEventPublisher publisher, ClpIpRegistry ipRegistry,
             SseEmitterRegistry sseRegistry) {
-        super(plcConnectionService, publisher, ipRegistry, sseRegistry, EstacaoClp.EXPEDICAO, 9, 48, 32, 34);
+        super(plcConnectionService, publisher, ipRegistry, sseRegistry, EstacaoClp.MONTAGEM, 57, 9, 4, 6);
     }
 }
