@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.ClpComandoService;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,7 +32,7 @@ class ClpComandoControllerTest {
     void processar_valida_delega() {
         ResponseEntity<Map<String, Object>> resp = controller.processar("processo");
 
-        verify(comandoService).processar(EstacaoClp.PROCESSO);
+        verify(comandoService).processar(EstacoesCLP.PROCESSO);
         assertThat(resp.getStatusCode().value()).isEqualTo(200);
         assertThat(resp.getBody()).containsEntry("estacao", "processo").containsEntry("ok", true);
     }

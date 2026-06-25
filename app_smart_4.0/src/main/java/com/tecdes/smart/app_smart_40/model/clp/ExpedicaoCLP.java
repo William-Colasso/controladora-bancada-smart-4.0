@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Component
+@Component("expedicao")
 public class ExpedicaoCLP  extends EstacaoCLP {
 
     boolean recebidoExpedicao;

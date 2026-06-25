@@ -1,5 +1,9 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
+import com.tecdes.smart.app_smart_40.model.Estoque;
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
+import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
+
 /**
  * As quatro estações físicas da bancada, cada uma num CLP com IP próprio.
  *
@@ -10,7 +14,7 @@ package com.tecdes.smart.app_smart_40.model.enums;
 public enum EstacoesCLP {
 
     ESTOQUE("estoque"),
-    PROCESSO("producao"),
+    PROCESSO("processo"),
     MONTAGEM("montagem"),
     EXPEDICAO("expedicao");
 
@@ -30,6 +34,7 @@ public enum EstacoesCLP {
         return name().toLowerCase();
     }
 
+   
     /** Resolve a estação a partir do path da API; lança 400 (IllegalArgument) se inválida. */
     public static EstacoesCLP fromApi(String valor) {
         if (valor == null) {
