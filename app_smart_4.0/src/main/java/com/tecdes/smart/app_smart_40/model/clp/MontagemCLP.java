@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Component
+@Component("montagem")
 public class MontagemCLP extends EstacaoCLP {
 
 }

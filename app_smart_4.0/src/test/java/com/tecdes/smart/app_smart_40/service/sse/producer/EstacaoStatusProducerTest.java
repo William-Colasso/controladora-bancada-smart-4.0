@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
@@ -61,7 +61,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("ocupado → estado on, funcionamento 0")
     void ocupado_estadoOnFuncZero() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x01)); // ocupado
 
@@ -73,7 +73,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("startOP + ocupado → estado on, funcionamento 1")
     void start_funcionamentoUm() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x04, 0x01)); // start + ocupado
 
@@ -85,7 +85,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("finishOP → funcionamento 2")
     void finish_funcionamentoDois() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x02, 0x01)); // finish + ocupado
 
@@ -97,7 +97,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("aguardando → estado pause, funcionamento null")
     void aguardando_estadoPause() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x02)); // aguardando
 
@@ -109,7 +109,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("emergencia → estado off")
     void emergencia_estadoOff() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x08)); // emergencia
 
@@ -121,7 +121,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("IP não configurado → estado off, sem tentar conectar")
     void ipNaoConfigurado_estadoOff() {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(null);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(null);
 
         processoProducer().poll();
 
@@ -132,7 +132,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("conexão nula → estado off, sem ler bloco")
     void conexaoNula_estadoOff() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(null);
 
         processoProducer().poll();
@@ -144,7 +144,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("publica só quando o snapshot muda")
     void publicaSomenteEmMudanca() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x01)); // mesmo estado nas 2 leituras
 
@@ -158,7 +158,7 @@ class EstacaoStatusProducerTest {
     @Test
     @DisplayName("read-only: nunca escreve no PLC")
     void readOnly_nuncaEscreve() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.PROCESSO)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x04, 0x01));
 
@@ -175,7 +175,7 @@ class EstacaoStatusProducerTest {
         byte[] b = new byte[111];
         b[100] = 0x01; // ocupado
         when(sseRegistry.count()).thenReturn(1);
-        when(ipRegistry.getIp(EstacaoClp.ESTOQUE)).thenReturn(IP);
+        when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn(IP);
         when(plcConnectionService.getConnection(IP)).thenReturn(connector);
         when(connector.readBlock(9, 0, 111)).thenReturn(b);
 

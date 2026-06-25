@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Component
+@Component("processo")
 public class ProcessoCLP extends EstacaoCLP {
 
 }

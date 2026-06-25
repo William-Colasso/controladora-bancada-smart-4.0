@@ -6,7 +6,7 @@
   (evento `estacao-status`). Consumidor SSE puro — NÃO acessa o
   banco. Cada card é hidratado/atualizado por static/js/pages/estacoes.js.
 
-  Card id = frontKey da estação (estoque/producao/montagem/expedicao),
+  Card id = frontKey da estação (estoque/processo/montagem/expedicao),
   igual ao campo `estacao` do evento e ao bancadaStatus.js#ESTACOES.
 
   Estado inicial = "Sem leitura"; vira ao vivo quando o 1º evento chega
@@ -58,8 +58,8 @@
           </div>
         </article>
 
-        <!-- PROCESSO (frontKey = producao) -->
-        <article class="estacao-card" id="producao" data-lendo="0">
+        <!-- PROCESSO (frontKey = processo) -->
+        <article class="estacao-card" id="processo" data-lendo="0">
           <div class="estacao-card__top">
             <i class="fa-solid fa-gears estacao-card__icone"></i>
             <h2 class="estacao-card__nome">Processo</h2>
