@@ -1,4 +1,4 @@
-package com.tecdes.smart.app_smart_40.service.sse.producer;
+package com.tecdes.smart.app_smart_40.service.sse.producer.dashboard;
 
 import java.util.List;
 
