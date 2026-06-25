@@ -7,7 +7,7 @@ package com.tecdes.smart.app_smart_40.model.enums;
  * — note que PROCESSO mapeia para {@code "producao"}. {@link #apiName()} é o identificador usado na
  * API REST de configuração de IP ({@code /api/clp/ips/{estacao}}).
  */
-public enum EstacaoClp {
+public enum EstacoesCLP {
 
     ESTOQUE("estoque"),
     PROCESSO("producao"),
@@ -16,7 +16,7 @@ public enum EstacaoClp {
 
     private final String frontKey;
 
-    EstacaoClp(String frontKey) {
+    EstacoesCLP(String frontKey) {
         this.frontKey = frontKey;
     }
 
@@ -31,12 +31,12 @@ public enum EstacaoClp {
     }
 
     /** Resolve a estação a partir do path da API; lança 400 (IllegalArgument) se inválida. */
-    public static EstacaoClp fromApi(String valor) {
+    public static EstacoesCLP fromApi(String valor) {
         if (valor == null) {
             throw new IllegalArgumentException("Estação é obrigatória.");
         }
         try {
-            return EstacaoClp.valueOf(valor.trim().toUpperCase());
+            return EstacoesCLP.valueOf(valor.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Estação inválida: " + valor + ". Use: estoque, processo, montagem, expedicao.");

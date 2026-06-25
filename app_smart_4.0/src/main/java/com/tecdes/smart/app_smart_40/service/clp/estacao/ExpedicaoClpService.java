@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
@@ -38,8 +38,8 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
     private final ExpedicaoCLP expedicaoCLP;
 
     @Override
-    public EstacaoClp estacao() {
-        return EstacaoClp.EXPEDICAO;
+    public EstacoesCLP estacao() {
+        return EstacoesCLP.EXPEDICAO;
     }
 
     @Override

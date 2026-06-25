@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ProcessoCLP;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -33,8 +33,8 @@ public class ProcessoClpService implements EstacaoClpHandshake {
     private final ProcessoCLP processoCLP;
 
     @Override
-    public EstacaoClp estacao() {
-        return EstacaoClp.PROCESSO;
+    public EstacoesCLP estacao() {
+        return EstacoesCLP.PROCESSO;
     }
 
     @Override

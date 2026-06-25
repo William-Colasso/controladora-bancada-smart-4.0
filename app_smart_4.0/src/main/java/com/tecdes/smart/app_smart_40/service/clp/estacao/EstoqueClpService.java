@@ -7,7 +7,7 @@ import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
@@ -39,8 +39,8 @@ public class EstoqueClpService implements EstacaoClpHandshake {
     private final EstoqueCLP estoqueCLP;
 
     @Override
-    public EstacaoClp estacao() {
-        return EstacaoClp.ESTOQUE;
+    public EstacoesCLP estacao() {
+        return EstacoesCLP.ESTOQUE;
     }
 
     @Override

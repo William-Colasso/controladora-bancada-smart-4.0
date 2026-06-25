@@ -8,7 +8,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
+import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClpComandoService {
 
-    private final Map<EstacaoClp, EstacaoClpHandshake> handshakes = new EnumMap<>(EstacaoClp.class);
+    private final Map<EstacoesCLP, EstacaoClpHandshake> handshakes = new EnumMap<>(EstacoesCLP.class);
     private final ClpIpRegistry ipRegistry;
     private final ApplicationEventPublisher publisher;
 
@@ -39,7 +40,7 @@ public class ClpComandoService {
     }
 
     /** Executa uma passada de leitura+escrita na estação. IP não configurado → estado inalterado. */
-    public void processar(EstacaoClp estacao) {
+    public void processar(EstacoesCLP estacao) {
         EstacaoClpHandshake handshake = handshakes.get(estacao);
         if (handshake == null) {
             throw new IllegalStateException("Estação sem serviço de handshake: " + estacao.apiName());
@@ -57,7 +58,7 @@ public class ClpComandoService {
 
     /** Executa uma passada em todas as estações. */
     public void processarTodas() {
-        for (EstacaoClp estacao : EstacaoClp.values()) {
+        for (EstacoesCLP estacao : EstacoesCLP.values()) {
             processar(estacao);
         }
     }

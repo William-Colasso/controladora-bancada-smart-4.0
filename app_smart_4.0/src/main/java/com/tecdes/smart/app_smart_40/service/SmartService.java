@@ -18,7 +18,7 @@ import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.model.Pedido;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
@@ -90,7 +90,7 @@ public class SmartService {
 
         // O payload do pedido (writeBlock DB9) e as flags de início vão para o CLP da estação
         // ESTOQUE; o IP vem do mesmo ClpIpRegistry usado pela leitura SSE (alterável em runtime).
-        String ipClp = ipRegistry.getIp(EstacaoClp.ESTOQUE);
+        String ipClp = ipRegistry.getIp(EstacoesCLP.ESTOQUE);
         PlcConnector connector = plcConnectionService.getConnection(ipClp);
         if (connector != null) {
             try {

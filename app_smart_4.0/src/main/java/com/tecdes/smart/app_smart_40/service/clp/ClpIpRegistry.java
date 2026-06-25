@@ -6,7 +6,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ClpIpRegistry {
 
     private final PlcConnectionService plcConnectionService;
-    private final Map<EstacaoClp, String> ips = new EnumMap<>(EstacaoClp.class);
+    private final Map<EstacoesCLP, String> ips = new EnumMap<>(EstacoesCLP.class);
 
     public ClpIpRegistry(PlcConnectionService plcConnectionService,
             @Value("${clp.ip.estoque:10.74.241.10}") String estoque,
@@ -34,18 +34,18 @@ public class ClpIpRegistry {
             @Value("${clp.ip.montagem:10.74.241.30}") String montagem,
             @Value("${clp.ip.expedicao:10.74.241.40}") String expedicao) {
         this.plcConnectionService = plcConnectionService;
-        ips.put(EstacaoClp.ESTOQUE, estoque);
-        ips.put(EstacaoClp.PROCESSO, processo);
-        ips.put(EstacaoClp.MONTAGEM, montagem);
-        ips.put(EstacaoClp.EXPEDICAO, expedicao);
+        ips.put(EstacoesCLP.ESTOQUE, estoque);
+        ips.put(EstacoesCLP.PROCESSO, processo);
+        ips.put(EstacoesCLP.MONTAGEM, montagem);
+        ips.put(EstacoesCLP.EXPEDICAO, expedicao);
     }
 
-    public synchronized String getIp(EstacaoClp estacao) {
+    public synchronized String getIp(EstacoesCLP estacao) {
         return ips.get(estacao);
     }
 
     /** Cópia do mapa (ordem do enum) para exposição na API. */
-    public synchronized Map<EstacaoClp, String> snapshot() {
+    public synchronized Map<EstacoesCLP, String> snapshot() {
         return new EnumMap<>(ips);
     }
 
@@ -53,7 +53,7 @@ public class ClpIpRegistry {
      * Define o IP da estação (validado). Retorna o IP normalizado efetivamente gravado.
      * Fecha a conexão do IP anterior se ele não for mais usado por nenhuma estação.
      */
-    public synchronized String setIp(EstacaoClp estacao, String ip) {
+    public synchronized String setIp(EstacoesCLP estacao, String ip) {
         String novo = validar(ip);
         String anterior = ips.put(estacao, novo);
         if (anterior != null && !anterior.equals(novo) && !ips.containsValue(anterior)) {
