@@ -21,6 +21,7 @@ function renderStatus(d) {
   if (card) {
     card.dataset.lendo = '1';
 
+    console.log(d.estado)
     const [txt, cor] = ESTADO[d.estado] || ['Sem leitura', 'dim'];
     const badge = card.querySelector('.estado');
     badge.textContent = txt;

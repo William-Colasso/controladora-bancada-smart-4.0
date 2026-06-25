@@ -23,6 +23,8 @@ import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
+import com.tecdes.smart.app_smart_40.service.sse.producer.status.EstoqueStatusProducer;
+import com.tecdes.smart.app_smart_40.service.sse.producer.status.ProcessoStatusProducer;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("EstacaoStatusProducer (read-only)")

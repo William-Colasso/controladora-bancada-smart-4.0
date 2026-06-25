@@ -59,4 +59,5 @@ public class EstoqueCLP extends EstacaoCLP {
     private boolean removerEstoque;
     private boolean retornoEstoqueCheio;
     private int corGuardarEstoque;
+    
 }
