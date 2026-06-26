@@ -5,12 +5,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
-import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 
 import lombok.extern.slf4j.Slf4j;
@@ -51,10 +49,13 @@ public class ClpComandoService {
             log.warn("Estação {} sem IP configurado — handshake ignorado.", estacao.apiName());
             return;
         }
-        handshake.lerEProcessar(ip);
-        // Lado escrita também alimenta o SSE: publica o bean *CLP completo desta passada.
-        // O módulo SSE produtor segue read-only; esta emissão parte do write path.
-        publisher.publishEvent(new EstacaoAllData(estacao.getFrontKey(), handshake.dados()));
+        boolean ok = handshake.lerEProcessar(ip);
+        // O dado completo (estacao-all) sai dos producers (clp_data) a partir do bean *CLP já preenchido
+        // por esta passada. Aqui o write path só pulsa o heartbeat de "leitura viva" quando a leitura
+        // ocorreu de fato — é o sinal de liveness que o front usa (badge home + watchdog estações).
+        if (ok) {
+            publisher.publishEvent(new EstacaoHeartbeat(estacao.getFrontKey()));
+        }
     }
 
     /** Executa uma passada em todas as estações. */

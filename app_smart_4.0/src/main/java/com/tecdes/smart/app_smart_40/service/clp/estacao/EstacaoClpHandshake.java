@@ -17,8 +17,14 @@ public interface EstacaoClpHandshake {
     /** Estação física que este serviço controla. */
     EstacoesCLP estacao();
 
-    /** Lê o bloco DB da estação no {@code ip} informado e executa o handshake de escrita, sob demanda. */
-    void lerEProcessar(String ip);
+    /**
+     * Lê o bloco DB da estação no {@code ip} informado e executa o handshake de escrita, sob demanda.
+     *
+     * @return {@code true} se a leitura+processamento ocorreu (conexão ok); {@code false} se a estação
+     *         está inalcançável (sem conexão / erro de leitura). É o sinal de "passada lida com sucesso"
+     *         que o {@code ClpComandoService} usa para pulsar o heartbeat de leitura.
+     */
+    boolean lerEProcessar(String ip);
 
     /** Snapshot atual do bean {@code *CLP} desta estação (preenchido pela última passada de {@link #lerEProcessar}). */
     EstacaoCLP dados();

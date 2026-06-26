@@ -17,8 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
-import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
-import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
 
@@ -54,18 +53,31 @@ class ClpComandoServiceTest {
     }
 
     @Test
-    @DisplayName("processar - com IP publica EstacaoAllData(frontKey, dados) no barramento")
-    void processar_comIp_publicaEstacaoAll() {
+    @DisplayName("processar - leitura ok publica EstacaoHeartbeat(frontKey) no barramento")
+    void processar_comIp_publicaHeartbeat() {
         EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
-        EstoqueCLP bean = new EstoqueCLP();
-        when(estoque.dados()).thenReturn(bean);
+        when(estoque.lerEProcessar("10.0.0.1")).thenReturn(true);
         ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
         when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn("10.0.0.1");
 
         service.processar(EstacoesCLP.ESTOQUE);
 
         verify(estoque).lerEProcessar("10.0.0.1");
-        verify(publisher).publishEvent(new EstacaoAllData("estoque", bean));
+        verify(publisher).publishEvent(new EstacaoHeartbeat("estoque"));
+    }
+
+    @Test
+    @DisplayName("processar - leitura falha (false) → não publica heartbeat")
+    void processar_leituraFalha_naoPublica() {
+        EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
+        when(estoque.lerEProcessar("10.0.0.1")).thenReturn(false);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
+        when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn("10.0.0.1");
+
+        service.processar(EstacoesCLP.ESTOQUE);
+
+        verify(estoque).lerEProcessar("10.0.0.1");
+        verify(publisher, never()).publishEvent(any());
     }
 
     @Test
