@@ -6,72 +6,58 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
+import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
-import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
-import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
-import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Produtor read-only do status de uma estação do CLP. Captura + detecta mudança; NÃO conhece o SSE.
+ * Produtor do status de uma estação derivado do bean {@code *CLP} (preenchido pelo write path).
  *
- * <p><b>Somente-leitura:</b> usa exclusivamente {@link PlcConnector#readBlock}. Nunca escreve no PLC,
- * nunca chama {@code lerEProcessar}/{@code processData} e não muta os beans {@code *CLP} nem o
- * {@code EstadoProducaoService} (o handshake de escrita permanece nas {@code *ClpService}, a ser
- * disparado por outra via REST).
+ * <p><b>Não lê o socket S7.</b> A leitura/processamento ficou centralizada na passada de handshake
+ * ({@code *ClpService.lerEProcessar} → {@code processData}); este produtor só <b>deriva</b>
+ * estado/funcionamento dos campos já gravados no bean (mesma lógica de antes, sem manipular bytes).
  *
- * <p>O IP da estação vem do {@link ClpIpRegistry} e é lido <b>a cada ciclo</b> — assim a troca de IP
- * via {@code PUT /api/clp/ips/{estacao}} entra em vigor sem reiniciar. Cada subclasse fixa apenas a
- * estação (DB/tamanho do bloco + offsets dos bytes de status). Só publica quando o snapshot muda.
- *
- * <p><b>Gating por cliente:</b> só lê o CLP quando há ao menos um cliente SSE conectado
- * ({@link SseEmitterRegistry#count()} &gt; 0). Sem ninguém ouvindo, o {@code poll()} retorna cedo e
- * não toca o socket S7 — qualquer tela que abra o {@code EventSource} (home, estações, dashboard) já
- * basta para ligar a leitura; não há mais opt-in manual por estação.
+ * <p><b>Gate por cliente SSE:</b> {@code poll()} retorna cedo quando {@link SseEmitterRegistry#count()}
+ * é 0 (limpa o cache para reemitir ao reconectar). <b>Gate de frescor:</b> sem leitura recente
+ * ({@link EstadoProducaoService#getUltimoLeituraMillis()} há mais que {@link #FRESCOR_MS}), a estação é
+ * tratada como offline e emite {@code "off"} (preserva a UX: emergência/comunicação parada → desligado).
+ * Publica <b>só on-change</b> vs o último evento.
  */
 @Slf4j
 public abstract class EstacaoStatusProducerBase {
 
-    private final PlcConnectionService plcConnectionService;
-    private final ApplicationEventPublisher publisher;
-    private final ClpIpRegistry ipRegistry;
-    private final SseEmitterRegistry sseRegistry;
+    /** Janela de frescor: sem leitura há mais que isso, a estação é considerada offline ("off"). */
+    private static final long FRESCOR_MS = 1500;
 
+    private final ApplicationEventPublisher publisher;
+    private final SseEmitterRegistry sseRegistry;
+    private final EstadoProducaoService estado;
+    private final EstacaoCLP dados;
     private final EstacoesCLP estacao;
-    private final int db;
-    private final int size;
-    /** Índice do byte com os bits cancelOP(0x01)/finishOP(0x02)/startOP(0x04). */
-    private final int opByte;
-    /** Índice do byte com ocupado(0x01)/aguardando(0x02)/manual(0x04)/emergencia(0x08). */
-    private final int flagsByte;
 
     /** Último evento publicado (cache para detecção de mudança — único estado mantido). */
     private EstacaoStatusEvent ultimo;
 
-    protected EstacaoStatusProducerBase(PlcConnectionService plcConnectionService,
-            ApplicationEventPublisher publisher, ClpIpRegistry ipRegistry,
-            SseEmitterRegistry sseRegistry, EstacoesCLP estacao,
-            int db, int size, int opByte, int flagsByte) {
-        this.plcConnectionService = plcConnectionService;
+    protected EstacaoStatusProducerBase(ApplicationEventPublisher publisher, SseEmitterRegistry sseRegistry,
+            EstadoProducaoService estado, EstacaoCLP dados, EstacoesCLP estacao) {
         this.publisher = publisher;
-        this.ipRegistry = ipRegistry;
         this.sseRegistry = sseRegistry;
+        this.estado = estado;
+        this.dados = dados;
         this.estacao = estacao;
-        this.db = db;
-        this.size = size;
-        this.opByte = opByte;
-        this.flagsByte = flagsByte;
     }
 
     @Scheduled(fixedDelayString = "${clp.poll.interval:1000}")
     public void poll() {
         if (sseRegistry.count() == 0) {
             ultimo = null; // ao reconectar, força reemissão do snapshot (não fica preso no cache antigo)
-            return;        // ninguém ouvindo o SSE → não lê o socket
+            return;        // ninguém ouvindo o SSE
         }
-        EstacaoStatusEvent atual = capturar();
+        boolean fresco = System.currentTimeMillis() - estado.getUltimoLeituraMillis() <= FRESCOR_MS;
+        EstacaoStatusEvent atual = fresco ? derivar() : offline();
         if (!Objects.equals(atual, ultimo)) {
             ultimo = atual;
             // Camada anterior ao SSE: o que será publicado, em transição (timeline limpa no INFO).
@@ -81,56 +67,24 @@ public abstract class EstacaoStatusProducerBase {
         }
     }
 
-    /** Lê (read-only) os bytes de status e deriva o evento; estação offline → estado "off". */
-    private EstacaoStatusEvent capturar() {
-        String ip = ipRegistry.getIp(estacao);
-        if (ip == null || ip.isBlank()) {
-            log.debug("[CLP {}] sem IP configurado -> offline", estacao.apiName());
-            return offline();
-        }
-        PlcConnector connector = plcConnectionService.getConnection(ip);
-        if (connector == null) {
-            log.debug("[CLP {}] ip={} sem conexão (getConnection null) -> offline", estacao.apiName(), ip);
-            return offline();
-        }
-        try {
-            byte[] b;
-            synchronized (connector) { // evita leitura concorrente no mesmo socket S7
-                b = connector.readBlock(db, 0, size);
-            }
-            if (b == null || b.length <= flagsByte) {
-                log.debug("[CLP {}] ip={} bloco DB{} curto/nulo ({} bytes, esperado >{}) -> offline",
-                        estacao.apiName(), ip, db, b == null ? 0 : b.length, flagsByte);
-                return offline();
-            }
-            return derivar(ip, b);
-        } catch (Exception e) {
-            log.debug("[CLP {}] ip={} falha na leitura do DB{}: {} -> offline",
-                    estacao.apiName(), ip, db, e.getMessage());
-            plcConnectionService.disconnect(ip); // evicta connector morto → reconecta no próximo ciclo
-            return offline();
-        }
-    }
+    /** Deriva estado/funcionamento dos campos já lidos no bean (mesma lógica de bits, sem os bytes). */
+    private EstacaoStatusEvent derivar() {
+        boolean finish = dados.isFinishOP();
+        boolean start = dados.isStartOP();
+        boolean ocupado = dados.isOcupado();
+        boolean aguardando = dados.isAguardando();
+        boolean manual = dados.isManual();
+        boolean emergencia = dados.isEmergencia();
 
-    private EstacaoStatusEvent derivar(String ip, byte[] b) {
-        boolean cancel = (b[opByte] & 0x01) != 0;
-        boolean finish = (b[opByte] & 0x02) != 0;
-        boolean start = (b[opByte] & 0x04) != 0;
-
-        boolean ocupado = (b[flagsByte] & 0x01) != 0;
-        boolean aguardando = (b[flagsByte] & 0x02) != 0;
-        boolean manual = (b[flagsByte] & 0x04) != 0;
-        boolean emergencia = (b[flagsByte] & 0x08) != 0;
-
-        String estado;
+        String estadoStr;
         if (emergencia) {
-            estado = "off";
+            estadoStr = "off";
         } else if (aguardando || manual) {
-            estado = "pause";
+            estadoStr = "pause";
         } else if (ocupado) {
-            estado = "on";
+            estadoStr = "on";
         } else {
-            estado = "off";
+            estadoStr = "off";
         }
 
         Integer funcionamento;
@@ -144,24 +98,10 @@ public abstract class EstacaoStatusProducerBase {
             funcionamento = null;
         }
 
-        // Camada anterior ao SSE: leitura bruta do CLP (bytes + flags) e o que foi derivado.
-        // DEBUG = cada ciclo de leitura (habilite logging.level...producer=DEBUG para ver).
-        if (log.isDebugEnabled()) {
-            log.debug("[CLP {}] ip={} DB{} op[{}]={} flags[{}]={} | cancel={} finish={} start={} "
-                    + "ocupado={} aguardando={} manual={} emergencia={} => estado={} funcionamento={}",
-                    estacao.apiName(), ip, db, opByte, hex(b[opByte]), flagsByte, hex(b[flagsByte]),
-                    cancel, finish, start, ocupado, aguardando, manual, emergencia, estado, funcionamento);
-        }
-
-        return new EstacaoStatusEvent(estacao.getFrontKey(), estado, funcionamento);
+        return new EstacaoStatusEvent(estacao.getFrontKey(), estadoStr, funcionamento);
     }
 
     private EstacaoStatusEvent offline() {
         return new EstacaoStatusEvent(estacao.getFrontKey(), "off", null);
-    }
-
-    /** Byte em hex (ex.: 0x0A) para inspeção dos bits brutos do bloco do CLP. */
-    private static String hex(byte b) {
-        return String.format("0x%02X", b);
     }
 }
