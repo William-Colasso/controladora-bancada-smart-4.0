@@ -8,13 +8,15 @@ import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 
-/** Publica o snapshot completo da estação ESTOQUE a cada 300ms (evento {@code estacao-all}). */
+import tools.jackson.databind.ObjectMapper;
+
+/** Publica o snapshot completo da estação ESTOQUE a cada 300ms (evento {@code estacao-all}), on-change. */
 @Component
 public class EstoqueCLPProducer extends EstacaoCLPProducer {
 
     public EstoqueCLPProducer(ApplicationEventPublisher publisher, EstadoProducaoService estado,
-            EstoqueCLP dados) {
-        super(publisher, estado, EstacoesCLP.ESTOQUE, dados);
+            EstoqueCLP dados, ObjectMapper mapper) {
+        super(publisher, estado, EstacoesCLP.ESTOQUE, dados, mapper);
     }
 
     @Scheduled(fixedDelayString = "${clp.poll.estoque:300}")

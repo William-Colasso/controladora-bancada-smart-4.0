@@ -8,13 +8,15 @@ import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 
-/** Publica o snapshot completo da estação EXPEDICAO a cada 300ms (evento {@code estacao-all}). */
+import tools.jackson.databind.ObjectMapper;
+
+/** Publica o snapshot completo da estação EXPEDICAO a cada 300ms (evento {@code estacao-all}), on-change. */
 @Component
 public class ExpedicaoCLPProducer extends EstacaoCLPProducer {
 
     public ExpedicaoCLPProducer(ApplicationEventPublisher publisher, EstadoProducaoService estado,
-            ExpedicaoCLP dados) {
-        super(publisher, estado, EstacoesCLP.EXPEDICAO, dados);
+            ExpedicaoCLP dados, ObjectMapper mapper) {
+        super(publisher, estado, EstacoesCLP.EXPEDICAO, dados, mapper);
     }
 
     @Scheduled(fixedDelayString = "${clp.poll.expedicao:300}")
