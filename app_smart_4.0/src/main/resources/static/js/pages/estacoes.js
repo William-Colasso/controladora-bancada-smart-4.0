@@ -51,8 +51,9 @@ function valor(v) {
   return (v === null || v === undefined) ? '—' : String(v);
 }
 
-// Frescor por estação: o estacao-all é gateado no back (só chega enquanto há comunicação CLP). Sem
-// evento por mais que LIMITE_MS → a comunicação está parada e marcamos o card como "aguardando".
+// Frescor por estação: o estacao-all virou on-change (só chega quando o bean muda), então não serve
+// mais de heartbeat. A liveness vem do estacao-heartbeat (um pulso por passada lida, mesmo com a
+// estação ociosa). Sem pulso por mais que LIMITE_MS → comunicação parada → card "aguardando".
 const ultimaLeitura = {};
 const LIMITE_MS = 2500;
 
@@ -63,9 +64,6 @@ function renderDados(d) {
   if (!card) return;
   const box = card.querySelector('.dados');
   if (!box) return;
-
-  ultimaLeitura[d.estacao] = Date.now();
-  card.dataset.comunicacao = 'on';
 
   const entries = Object.entries(d.dados || {});
   box.innerHTML = entries.length
@@ -80,5 +78,25 @@ function renderDados(d) {
 
 const sse = createSse();
 sse.on('estacao-status', renderStatus); // status + overlays da bancada
-sse.on('estacao-all', renderDados);     // dados completos do bean *CLP
+sse.on('estacao-all', renderDados);     // dados completos do bean *CLP (on-change)
+
+// Liveness por estação: cada estacao-heartbeat = leitura viva (mesmo com a estação ociosa, quando o
+// estacao-all não muda). Marca o card como comunicando; o watchdog abaixo o derruba se o pulso parar.
+sse.on('estacao-heartbeat', (d) => {
+  ultimaLeitura[d.estacao] = Date.now();
+  const card = document.getElementById(d.estacao);
+  if (card) card.dataset.comunicacao = 'on';
+});
+
 sse.connect();
+
+// Watchdog: sem pulso de uma estação por mais que LIMITE_MS → comunicação parada → "aguardando".
+setInterval(() => {
+  const agora = Date.now();
+  Object.keys(ultimaLeitura).forEach((estacao) => {
+    if (agora - ultimaLeitura[estacao] > LIMITE_MS) {
+      const card = document.getElementById(estacao);
+      if (card) card.dataset.comunicacao = 'off';
+    }
+  });
+}, 1000);

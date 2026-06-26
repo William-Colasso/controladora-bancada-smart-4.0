@@ -66,8 +66,9 @@ carregarIps();
 const statusComunicacao = document.getElementById('comunicacao-status');
 let ultimaLeitura = 0;
 
-// Badge informativo: reflete se o CLP está sendo lido de fato. Cada estacao-all que chega é um
-// "heartbeat" de leitura viva; sem nenhum por >2,5s → leitura parada (IP não configurado, CLP fora…).
+// Badge informativo: reflete se o CLP está sendo lido de fato. Cada estacao-heartbeat que chega é um
+// pulso de leitura viva (emitido pelo write path a cada passada lida); sem nenhum por >2,5s →
+// leitura parada (IP não configurado, CLP fora…).
 function setLeituraBadge(ativa) {
   if (!statusComunicacao) return;
   statusComunicacao.className = `badge badge--${ativa ? 'green' : 'dim'}`;
@@ -82,7 +83,7 @@ sse.on('estacao-status', (d) => {
   bancadaStatus.setEstado(d.estacao, d.estado);
   bancadaStatus.setFuncionamento(d.estacao, d.funcionamento);
 });
-sse.on('estacao-all', () => { ultimaLeitura = Date.now(); }); // heartbeat de leitura para o badge
+sse.on('estacao-heartbeat', () => { ultimaLeitura = Date.now(); }); // pulso de leitura para o badge
 sse.connect();
 
 setInterval(() => setLeituraBadge(Date.now() - ultimaLeitura <= 2500), 1000);
