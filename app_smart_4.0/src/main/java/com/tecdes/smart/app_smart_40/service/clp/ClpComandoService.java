@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
@@ -57,6 +58,8 @@ public class ClpComandoService {
     }
 
     /** Executa uma passada em todas as estações. */
+    
+    
     public void processarTodas() {
         for (EstacoesCLP estacao : EstacoesCLP.values()) {
             processar(estacao);

@@ -71,6 +71,8 @@ public class EstoqueClpService implements EstacaoClpHandshake {
             return;
         }
 
+        estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
+
         // -------------- Leitura das variáveis → EstoqueCLP -------------------
         estoqueCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 

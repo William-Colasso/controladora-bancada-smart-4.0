@@ -70,6 +70,8 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
             return;
         }
 
+        estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
+
         // -------------- Leitura das variáveis → ExpedicaoCLP -------------------
         expedicaoCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 
