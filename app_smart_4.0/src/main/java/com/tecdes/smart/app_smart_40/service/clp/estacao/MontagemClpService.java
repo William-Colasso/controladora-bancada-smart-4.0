@@ -44,18 +44,20 @@ public class MontagemClpService implements EstacaoClpHandshake {
 
     /** Lê o bloco DB da estação MONTAGEM no IP informado e processa, sob demanda. */
     @Override
-    public void lerEProcessar(String ip) {
+    public boolean lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
         if (connector == null) {
-            return;
+            return false;
         }
         try {
             synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
                 byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
                 processData(ip, dados);
             }
+            return true;
         } catch (Exception e) {
             log.error("Erro ao ler CLP MONTAGEM {}: {}", ip, e.getMessage());
+            return false;
         }
     }
 
