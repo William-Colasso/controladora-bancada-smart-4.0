@@ -90,6 +90,22 @@ public class SseEmitterRegistry {
         }
     }
 
+    /**
+     * Envia {@code dado} como evento {@code evento} a todos os clientes <b>sem cachear</b> para replay.
+     * Para sinais efêmeros (ex.: heartbeat de leitura) que não fazem sentido reentregar fora do tempo:
+     * um pulso velho replayado a um cliente que conecta depois da comunicação parar daria "leitura viva"
+     * falsa (o watchdog do front se corrige sozinho em ≤2,5s, mas nem chegamos a confundi-lo).
+     */
+    public void broadcastEfemero(String evento, Object dado) {
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().name(evento).data(dado, MediaType.APPLICATION_JSON));
+            } catch (Exception e) {
+                emitters.remove(emitter);
+            }
+        }
+    }
+
     /** Quantidade de clientes atualmente conectados (útil para diagnóstico). */
     public int count() {
         return emitters.size();
