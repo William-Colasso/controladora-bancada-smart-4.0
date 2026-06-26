@@ -123,11 +123,12 @@
         <div th:replace="~{fragments/components :: bancada-component}"></div>
       </div>
 
-      <!-- Liga/desliga o driver de escrita: repete POST /api/clp/processar (handshake) -->
+      <!-- Leitura/processamento do CLP roda automaticamente no back-end enquanto esta tela (SSE)
+           estiver aberta. Badge apenas informativo do estado da leitura. -->
       <div class="home-status__producao" style="margin-top: 1rem; text-align: center;">
-        <button type="button" id="btn-toggle-comunicacao" class="btn btn--primary">
-          <i class="fa-solid fa-play"></i> Iniciar comunicação CLP
-        </button>
+        <span id="comunicacao-status" class="badge badge--dim">
+          <i class="fa-solid fa-circle-notch"></i> Sem leitura do CLP
+        </span>
       </div>
 
       <button style="margin: auto;margin-top: 1rem; display: block; flex: 1;" class="btn btn--primary">Ir para página de status completa</button>

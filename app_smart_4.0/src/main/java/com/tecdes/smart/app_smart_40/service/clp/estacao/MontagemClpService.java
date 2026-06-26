@@ -65,6 +65,8 @@ public class MontagemClpService implements EstacaoClpHandshake {
             return;
         }
 
+        estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
+
         // -------------- Leitura das variáveis → MontagemCLP -------------------
         montagemCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 

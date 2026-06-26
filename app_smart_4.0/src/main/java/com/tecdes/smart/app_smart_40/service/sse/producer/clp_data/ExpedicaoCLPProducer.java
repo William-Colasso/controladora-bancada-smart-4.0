@@ -4,6 +4,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 
@@ -11,8 +12,9 @@ import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 @Component
 public class ExpedicaoCLPProducer extends EstacaoCLPProducer {
 
-    public ExpedicaoCLPProducer(ApplicationEventPublisher publisher, ExpedicaoCLP dados) {
-        super(publisher, EstacoesCLP.EXPEDICAO, dados);
+    public ExpedicaoCLPProducer(ApplicationEventPublisher publisher, EstadoProducaoService estado,
+            ExpedicaoCLP dados) {
+        super(publisher, estado, EstacoesCLP.EXPEDICAO, dados);
     }
 
     @Scheduled(fixedDelayString = "${clp.poll.expedicao:300}")

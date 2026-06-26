@@ -65,6 +65,8 @@ public class ProcessoClpService implements EstacaoClpHandshake {
             return;
         }
 
+        estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
+
         // -------------- Leitura das variáveis → ProcessoCLP -------------------
         processoCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 

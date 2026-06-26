@@ -144,3 +144,8 @@
   color: var(--color-muted);
   font-style: italic;
 }
+
+/* Comunicação CLP parada: sem estacao-all recente (watchdog em estacoes.js). */
+.estacao-card[data-comunicacao="off"] {
+  opacity: 0.7;
+}

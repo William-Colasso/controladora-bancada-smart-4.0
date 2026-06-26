@@ -4,6 +4,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 
@@ -11,8 +12,9 @@ import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 @Component
 public class EstoqueCLPProducer extends EstacaoCLPProducer {
 
-    public EstoqueCLPProducer(ApplicationEventPublisher publisher, EstoqueCLP dados) {
-        super(publisher, EstacoesCLP.ESTOQUE, dados);
+    public EstoqueCLPProducer(ApplicationEventPublisher publisher, EstadoProducaoService estado,
+            EstoqueCLP dados) {
+        super(publisher, estado, EstacoesCLP.ESTOQUE, dados);
     }
 
     @Scheduled(fixedDelayString = "${clp.poll.estoque:300}")

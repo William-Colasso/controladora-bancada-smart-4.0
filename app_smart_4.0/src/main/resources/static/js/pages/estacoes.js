@@ -51,6 +51,11 @@ function valor(v) {
   return (v === null || v === undefined) ? '—' : String(v);
 }
 
+// Frescor por estação: o estacao-all é gateado no back (só chega enquanto há comunicação CLP). Sem
+// evento por mais que LIMITE_MS → a comunicação está parada e marcamos o card como "aguardando".
+const ultimaLeitura = {};
+const LIMITE_MS = 2500;
+
 // Dados completos (estacao-all): renderiza TODOS os campos do bean *CLP num grid chave/valor.
 // Genérico — não hardcoda o schema de cada estação; itera o que o backend mandar.
 function renderDados(d) {
@@ -58,6 +63,9 @@ function renderDados(d) {
   if (!card) return;
   const box = card.querySelector('.dados');
   if (!box) return;
+
+  ultimaLeitura[d.estacao] = Date.now();
+  card.dataset.comunicacao = 'on';
 
   const entries = Object.entries(d.dados || {});
   box.innerHTML = entries.length
@@ -67,6 +75,8 @@ function renderDados(d) {
         .join('')
     : '<div class="dado dado--vazio">Sem dados.</div>';
 }
+
+
 
 const sse = createSse();
 sse.on('estacao-status', renderStatus); // status + overlays da bancada
