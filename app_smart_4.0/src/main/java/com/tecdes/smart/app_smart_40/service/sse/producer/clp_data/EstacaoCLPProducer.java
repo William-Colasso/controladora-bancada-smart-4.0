@@ -1,49 +1,40 @@
 package com.tecdes.smart.app_smart_40.service.sse.producer.clp_data;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.emitter.EmitterException;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
-import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
-import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Component
-@RequiredArgsConstructor
+/**
+ * Produtor SSE do snapshot completo de uma estação (evento {@code estacao-all} = bean {@code *CLP}).
+ *
+ * <p>Base abstrata: cada estação tem a <b>sua própria subclasse</b> {@code @Component} com um
+ * {@code @Scheduled} próprio, publicando no <b>seu</b> intervalo — estoque/expedicao a cada 300ms,
+ * processo/montagem a cada 1s. A subclasse injeta o seu bean {@code *CLP} concreto e chama
+ * {@link #publicar()} dentro do seu {@code poll()}.
+ */
 @Slf4j
-public class EstacaoCLPProducer {
+public abstract class EstacaoCLPProducer {
+
     private final ApplicationEventPublisher publisher;
-    private final SseEmitterRegistry sseRegistry;
-    private final ClpIpRegistry ipRegistry;
+    private final EstacoesCLP estacao;
+    private final EstacaoCLP dados;
 
-    private final Map<String, EstacaoCLP> estacoes;
+    protected EstacaoCLPProducer(ApplicationEventPublisher publisher, EstacoesCLP estacao, EstacaoCLP dados) {
+        this.publisher = publisher;
+        this.estacao = estacao;
+        this.dados = dados;
+    }
 
-    @Scheduled(fixedDelayString = "${clp.poll.interval:1000}")
-    public void poll() {
-        for (EstacoesCLP e : EstacoesCLP.values()) {
-            String frontKey = e.getFrontKey();
-            EstacaoCLP atual = estacoes.get(frontKey);
-            try {
-
-                publisher.publishEvent(new EstacaoAllData(frontKey, atual));
-
-            } catch (EmitterException emitterException) {
-                log.error(emitterException.getMessage());
-            }
-            catch( NullPointerException nu){
-                log.error(nu.getLocalizedMessage());
-                
-            }
+    /** Publica o snapshot atual do bean {@code *CLP} desta estação no barramento (→ SSE {@code estacao-all}). */
+    protected void publicar() {
+        try {
+            publisher.publishEvent(new EstacaoAllData(estacao.getFrontKey(), dados));
+        } catch (Exception e) {
+            log.error("[CLP {}] falha ao publicar estacao-all: {}", estacao.apiName(), e.getMessage());
         }
     }
 }
