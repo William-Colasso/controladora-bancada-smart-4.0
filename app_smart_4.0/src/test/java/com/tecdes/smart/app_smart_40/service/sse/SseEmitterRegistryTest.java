@@ -3,6 +3,7 @@ package com.tecdes.smart.app_smart_40.service.sse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SseEmitterRegistry")
@@ -54,5 +57,18 @@ class SseEmitterRegistryTest {
 
         verify(bom, org.mockito.Mockito.times(2)).send(any(SseEmitter.SseEventBuilder.class));
         assertThat(registry.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("broadcastEfemero - envia ao cliente atual mas NÃO cacheia p/ replay no connect")
+    void broadcastEfemero_naoReplaya() throws Exception {
+        SseEmitterRegistry registry = new SseEmitterRegistry();
+        registry.add(bom);
+
+        registry.broadcastEfemero("estacao-heartbeat", new EstacaoHeartbeat("estoque"));
+        verify(bom).send(any(SseEmitter.SseEventBuilder.class)); // recebeu o pulso
+
+        registry.add(morto); // replay no connect: nada foi cacheado → nada é reenviado
+        verify(morto, never()).send(any(SseEmitter.SseEventBuilder.class));
     }
 }

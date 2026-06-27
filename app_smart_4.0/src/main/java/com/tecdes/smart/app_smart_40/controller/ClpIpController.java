@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.tecdes.smart.app_smart_40.dto.request.ClpIpUpdateRequest;
 import com.tecdes.smart.app_smart_40.dto.response.ClpIpResponseDTO;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
 
 import lombok.RequiredArgsConstructor;
@@ -46,8 +47,9 @@ public class ClpIpController {
     public ResponseEntity<ClpIpResponseDTO> atualizar(
             @PathVariable String estacao,
             @RequestBody ClpIpUpdateRequest req) {
-        EstacaoClp alvo = EstacaoClp.fromApi(estacao);
+        EstacoesCLP alvo = EstacoesCLP.fromApi(estacao);
         String ip = ipRegistry.setIp(alvo, req.ip());
         return ResponseEntity.ok(new ClpIpResponseDTO(alvo.apiName(), ip));
     }
 }
+/* */

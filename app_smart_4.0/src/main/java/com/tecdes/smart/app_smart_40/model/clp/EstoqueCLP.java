@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Component
+@Component("estoque")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -59,4 +59,5 @@ public class EstoqueCLP extends EstacaoCLP {
     private boolean removerEstoque;
     private boolean retornoEstoqueCheio;
     private int corGuardarEstoque;
+    
 }

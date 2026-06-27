@@ -8,6 +8,7 @@ import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,19 +24,22 @@ public class ExpedicaoService {
         return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
 
+    // readOnly: mantém a sessão Hibernate aberta durante o map (inicializa o proxy lazy de Pedido).
+    // Sem isso, o produtor SSE @Scheduled (sem OSIV) quebra com LazyInitializationException.
+    @Transactional(readOnly = true)
     public List<ExpedicaoResponseDTO> listarTodos() {
-        return expedicaoRepository.findAll()
+        return expedicaoRepository.findAllComPedidoAtualEBlocos()
                 .stream()
                 .map(ExpedicaoResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
     public boolean existePosicaoLivre() {
-        return expedicaoRepository.countByPedidoIsNull() > 0;
+        return expedicaoRepository.countByPedidoAtualIsNull() > 0;
     }
 
     public ExpedicaoResponseDTO primeiraExpedicaoLivre() {
-        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoIsNull().get());
+        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoAtualIsNull().get());
     }
 
     /**
@@ -53,7 +57,7 @@ public class ExpedicaoService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Pedido com ordem de produção " + ordemProducao + " não encontrado!"));
 
-        expedicao.setPedido(pedido);
+        expedicao.setPedidoAtual(pedido);
         expedicaoRepository.save(expedicao);
     }
 
@@ -63,7 +67,7 @@ public class ExpedicaoService {
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Posição de expedição " + posicao + " não existe!"));
 
-        expedicao.setPedido(null);
+        expedicao.setPedidoAtual(null);
         expedicaoRepository.save(expedicao);
     }
 }

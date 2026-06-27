@@ -1,10 +1,6 @@
 package com.tecdes.smart.app_smart_40.service.sse.producer;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyByte;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,161 +14,145 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
-import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
-import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
-import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
+import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
+import com.tecdes.smart.app_smart_40.model.clp.ProcessoCLP;
+import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
+import com.tecdes.smart.app_smart_40.service.sse.producer.status.EstoqueStatusProducer;
+import com.tecdes.smart.app_smart_40.service.sse.producer.status.ProcessoStatusProducer;
 
+/**
+ * O status agora deriva do bean {@code *CLP} (preenchido pelo write path), não do socket. Os casos
+ * setam os flags no bean + frescor e verificam o {@link EstacaoStatusEvent} publicado.
+ */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("EstacaoStatusProducer (read-only)")
+@DisplayName("EstacaoStatusProducer (deriva do bean)")
 class EstacaoStatusProducerTest {
 
-    private static final String IP = "10.0.0.99";
-
-    @Mock
-    private PlcConnectionService plcConnectionService;
     @Mock
     private ApplicationEventPublisher publisher;
     @Mock
-    private ClpIpRegistry ipRegistry;
+    private SseEmitterRegistry sseRegistry;
     @Mock
-    private PlcConnector connector;
+    private EstadoProducaoService estado;
 
-    // Produtor da estação PROCESSO: DB2, size 9, opByte 4 (start=0x04/finish=0x02), flagsByte 6.
-    private ProcessoStatusProducer processoProducer() {
-        return new ProcessoStatusProducer(plcConnectionService, publisher, ipRegistry);
+    private ProcessoStatusProducer producer(ProcessoCLP bean) {
+        when(sseRegistry.count()).thenReturn(1);
+        return new ProcessoStatusProducer(publisher, sseRegistry, estado, bean);
     }
 
-    /** Bloco DB2 (9 bytes) com os bits de status posicionados em b[4] (OP) e b[6] (flags). */
-    private byte[] blocoProcesso(int opByte, int flagsByte) {
-        byte[] b = new byte[9];
-        b[4] = (byte) opByte;
-        b[6] = (byte) flagsByte;
-        return b;
+    private void fresco() {
+        when(estado.getUltimoLeituraMillis()).thenReturn(System.currentTimeMillis());
     }
 
     @Test
     @DisplayName("ocupado → estado on, funcionamento 0")
-    void ocupado_estadoOnFuncZero() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x01)); // ocupado
+    void ocupado() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setOcupado(true);
+        fresco();
 
-        processoProducer().poll();
+        producer(b).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "on", 0));
+        verify(publisher).publishEvent(new EstacaoStatusEvent("processo", "on", 0));
     }
 
     @Test
     @DisplayName("startOP + ocupado → estado on, funcionamento 1")
-    void start_funcionamentoUm() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x04, 0x01)); // start + ocupado
+    void start() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setOcupado(true);
+        b.setStartOP(true);
+        fresco();
 
-        processoProducer().poll();
+        producer(b).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "on", 1));
+        verify(publisher).publishEvent(new EstacaoStatusEvent("processo", "on", 1));
     }
 
     @Test
     @DisplayName("finishOP → funcionamento 2")
-    void finish_funcionamentoDois() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x02, 0x01)); // finish + ocupado
+    void finish() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setOcupado(true);
+        b.setFinishOP(true);
+        fresco();
 
-        processoProducer().poll();
+        producer(b).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "on", 2));
+        verify(publisher).publishEvent(new EstacaoStatusEvent("processo", "on", 2));
     }
 
     @Test
     @DisplayName("aguardando → estado pause, funcionamento null")
-    void aguardando_estadoPause() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x02)); // aguardando
+    void aguardando() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setAguardando(true);
+        fresco();
 
-        processoProducer().poll();
+        producer(b).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "pause", null));
+        verify(publisher).publishEvent(new EstacaoStatusEvent("processo", "pause", null));
     }
 
     @Test
-    @DisplayName("emergencia → estado off")
-    void emergencia_estadoOff() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x08)); // emergencia
+    @DisplayName("emergencia → estado off (funcionamento independe: sem ocupado → null)")
+    void emergencia() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setEmergencia(true);
+        fresco();
 
-        processoProducer().poll();
+        producer(b).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "off", null));
+        verify(publisher).publishEvent(new EstacaoStatusEvent("processo", "off", null));
     }
 
     @Test
-    @DisplayName("IP não configurado → estado off, sem tentar conectar")
-    void ipNaoConfigurado_estadoOff() {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(null);
+    @DisplayName("leitura stale (comunicação parada) → estado off (UX atual)")
+    void stale() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setOcupado(true);
+        when(estado.getUltimoLeituraMillis()).thenReturn(0L); // muito antigo → offline
 
-        processoProducer().poll();
+        producer(b).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "off", null));
-        verify(plcConnectionService, never()).getConnection(anyString());
+        verify(publisher).publishEvent(new EstacaoStatusEvent("processo", "off", null));
     }
 
     @Test
-    @DisplayName("conexão nula → estado off, sem ler bloco")
-    void conexaoNula_estadoOff() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(null);
+    @DisplayName("publica só quando o status muda")
+    void onChange() {
+        ProcessoCLP b = new ProcessoCLP();
+        b.setOcupado(true);
+        when(estado.getUltimoLeituraMillis()).thenReturn(System.currentTimeMillis());
 
-        processoProducer().poll();
-
-        verify(publisher).publishEvent(new EstacaoStatusEvent("producao", "off", null));
-        verify(connector, never()).readBlock(anyInt(), anyInt(), anyInt());
-    }
-
-    @Test
-    @DisplayName("publica só quando o snapshot muda")
-    void publicaSomenteEmMudanca() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x00, 0x01)); // mesmo estado nas 2 leituras
-
-        ProcessoStatusProducer producer = processoProducer();
-        producer.poll();
-        producer.poll();
+        ProcessoStatusProducer p = producer(b);
+        p.poll();
+        p.poll();
 
         verify(publisher, times(1)).publishEvent(any(EstacaoStatusEvent.class));
     }
 
     @Test
-    @DisplayName("read-only: nunca escreve no PLC")
-    void readOnly_nuncaEscreve() throws Exception {
-        when(ipRegistry.getIp(EstacaoClp.PROCESSO)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(2, 0, 9)).thenReturn(blocoProcesso(0x04, 0x01));
+    @DisplayName("Estoque deriva do seu próprio bean (frontKey 'estoque')")
+    void estoque() {
+        EstoqueCLP b = new EstoqueCLP();
+        b.setOcupado(true);
+        when(sseRegistry.count()).thenReturn(1);
+        when(estado.getUltimoLeituraMillis()).thenReturn(System.currentTimeMillis());
 
-        processoProducer().poll();
+        new EstoqueStatusProducer(publisher, sseRegistry, estado, b).poll();
 
-        verify(connector, never()).writeBit(anyInt(), anyInt(), anyInt(), anyBoolean());
-        verify(connector, never()).writeByte(anyInt(), anyInt(), anyByte());
-        verify(connector, never()).writeInt(anyInt(), anyInt(), anyInt());
+        verify(publisher).publishEvent(new EstacaoStatusEvent("estoque", "on", 0));
     }
 
     @Test
-    @DisplayName("Estoque usa DB9 com offsets próprios (opByte 98, flagsByte 100)")
-    void estoque_offsetsProprios() throws Exception {
-        byte[] b = new byte[111];
-        b[100] = 0x01; // ocupado
-        when(ipRegistry.getIp(EstacaoClp.ESTOQUE)).thenReturn(IP);
-        when(plcConnectionService.getConnection(IP)).thenReturn(connector);
-        when(connector.readBlock(9, 0, 111)).thenReturn(b);
+    @DisplayName("sem clientes SSE → não publica")
+    void semClientes() {
+        when(sseRegistry.count()).thenReturn(0);
 
-        new EstoqueStatusProducer(plcConnectionService, publisher, ipRegistry).poll();
+        new ProcessoStatusProducer(publisher, sseRegistry, estado, new ProcessoCLP()).poll();
 
-        verify(publisher).publishEvent(new EstacaoStatusEvent("estoque", "on", 0));
+        verify(publisher, never()).publishEvent(any());
     }
 }

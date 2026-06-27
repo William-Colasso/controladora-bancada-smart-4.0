@@ -1,6 +1,8 @@
 package com.tecdes.smart.app_smart_40.service.sse;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.http.MediaType;
@@ -22,7 +24,20 @@ public class SseEmitterRegistry {
 
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    /** Registra um emitter e agenda sua remoção quando a conexão termina, expira ou falha. */
+    /**
+     * Último payload por <b>(evento + chave)</b>. Produtores publicam só on-change, então um cliente
+     * que conecta depois do estado assentar não veria nada; ao conectar, reenviamos este snapshot.
+     *
+     * <p>A chave evita que eventos <b>genéricos por estação</b> ({@code estacao-status},
+     * {@code estacao-all}) se sobrescrevam: as 4 estações compartilham o mesmo nome de evento, então
+     * sem o discriminador o cache reteria só a última e o replay entregaria uma única estação.
+     */
+    private final Map<String, Snapshot> ultimoPorChave = new ConcurrentHashMap<>();
+
+    /** Snapshot cacheado: guarda o nome real do evento para reemitir no replay. */
+    private record Snapshot(String evento, Object dado) {}
+
+    /** Registra um emitter, reenvia o último snapshot de cada evento e agenda sua remoção. */
     public SseEmitter add(SseEmitter emitter) {
         emitters.add(emitter);
         emitter.onCompletion(() -> emitters.remove(emitter));
@@ -31,14 +46,57 @@ public class SseEmitterRegistry {
             emitters.remove(emitter);
         });
         emitter.onError(e -> emitters.remove(emitter));
+        replaySnapshot(emitter);
         return emitter;
+    }
+
+    /** Entrega o último valor conhecido de cada (evento + chave) ao cliente recém-conectado. */
+    private void replaySnapshot(SseEmitter emitter) {
+        ultimoPorChave.forEach((chave, snap) -> {
+            try {
+                emitter.send(SseEmitter.event().name(snap.evento()).data(snap.dado(), MediaType.APPLICATION_JSON));
+            } catch (Exception e) {
+                emitters.remove(emitter);
+            }
+        });
+    }
+
+    /**
+     * Envia {@code dado} como evento nomeado {@code evento} a todos os clientes (eventos singleton:
+     * a própria chave de cache é o nome do evento). Delega para o overload com discriminador.
+     */
+    public void broadcast(String evento, Object dado) {
+
+        broadcast(evento, evento, dado);
     }
 
     /**
      * Envia {@code dado} (serializado em JSON) como evento nomeado {@code evento} a todos os clientes.
-     * Cada envio é isolado em try/catch — um cliente morto é removido sem afetar os outros.
+     * Cacheia o payload sob {@code (evento + chave)} para replay no connect — a {@code chave} distingue
+     * instâncias de um mesmo evento (ex.: estação), evitando que se sobrescrevam no cache. Cada envio
+     * é isolado em try/catch — um cliente morto é removido sem afetar os outros.
      */
-    public void broadcast(String evento, Object dado) {
+    public void broadcast(String evento, String chave, Object dado) {
+        if(count() == 0 ){
+            System.out.println("Sem clientes escutando");
+        }
+        ultimoPorChave.put(evento + "::" + chave, new Snapshot(evento, dado));
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().name(evento).data(dado, MediaType.APPLICATION_JSON));
+            } catch (Exception e) {
+                emitters.remove(emitter);
+            }
+        }
+    }
+
+    /**
+     * Envia {@code dado} como evento {@code evento} a todos os clientes <b>sem cachear</b> para replay.
+     * Para sinais efêmeros (ex.: heartbeat de leitura) que não fazem sentido reentregar fora do tempo:
+     * um pulso velho replayado a um cliente que conecta depois da comunicação parar daria "leitura viva"
+     * falsa (o watchdog do front se corrige sozinho em ≤2,5s, mas nem chegamos a confundi-lo).
+     */
+    public void broadcastEfemero(String evento, Object dado) {
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event().name(evento).data(dado, MediaType.APPLICATION_JSON));
