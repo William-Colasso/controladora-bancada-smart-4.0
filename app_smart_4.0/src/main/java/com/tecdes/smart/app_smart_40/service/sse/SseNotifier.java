@@ -4,6 +4,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.dto.event.EstoqueGridEvent;
 import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoGridEvent;
@@ -29,7 +31,21 @@ public class SseNotifier {
     @Async
     @EventListener
     public void onEstacaoStatus(EstacaoStatusEvent evento) {
-        registry.broadcast("estacao-status", evento);
+        // estacao() distingue as 4 estações que compartilham o nome de evento (cache de replay).
+        registry.broadcast("estacao-status", evento.estacao(), evento);
+    }
+
+    @Async
+    @EventListener
+    public void onEstacaoAll(EstacaoAllData evento) {
+        registry.broadcast("estacao-all", evento.estacao(), evento);
+    }
+
+    @Async
+    @EventListener
+    public void onHeartbeat(EstacaoHeartbeat evento) {
+        // Efêmero: liveness "leitura viva" — não cacheia para replay (ver broadcastEfemero).
+        registry.broadcastEfemero("estacao-heartbeat", evento);
     }
 
     @Async

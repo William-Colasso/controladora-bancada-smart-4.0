@@ -2,8 +2,10 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.MontagemCLP;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -20,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MontagemClpService {
+public class MontagemClpService implements EstacaoClpHandshake {
 
     private static final int DB = 57;
     private static final int OFFSET = 0;
@@ -30,17 +32,32 @@ public class MontagemClpService {
     private final EstadoProducaoService estado;
     private final MontagemCLP montagemCLP;
 
+    @Override
+    public EstacoesCLP estacao() {
+        return EstacoesCLP.MONTAGEM;
+    }
+
+    @Override
+    public EstacaoCLP dados() {
+        return montagemCLP;
+    }
+
     /** Lê o bloco DB da estação MONTAGEM no IP informado e processa, sob demanda. */
-    public void lerEProcessar(String ip) {
+    @Override
+    public boolean lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
         if (connector == null) {
-            return;
+            return false;
         }
         try {
-            byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-            processData(ip, dados);
+            synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
+                byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
+                processData(ip, dados);
+            }
+            return true;
         } catch (Exception e) {
             log.error("Erro ao ler CLP MONTAGEM {}: {}", ip, e.getMessage());
+            return false;
         }
     }
 
@@ -49,6 +66,8 @@ public class MontagemClpService {
         if (connector == null) {
             return;
         }
+
+        estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
 
         // -------------- Leitura das variáveis → MontagemCLP -------------------
         montagemCLP.setRecebidoOp((dados[0] & 0x01) != 0);

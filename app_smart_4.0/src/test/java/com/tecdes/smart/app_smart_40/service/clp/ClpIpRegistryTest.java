@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.tecdes.smart.app_smart_40.model.enums.EstacaoClp;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,10 +31,10 @@ class ClpIpRegistryTest {
     void setIp_valido_gravaEReflete() {
         ClpIpRegistry registry = registry("1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1");
 
-        String gravado = registry.setIp(EstacaoClp.ESTOQUE, "  192.168.0.50 ");
+        String gravado = registry.setIp(EstacoesCLP.ESTOQUE, "  192.168.0.50 ");
 
         assertThat(gravado).isEqualTo("192.168.0.50");
-        assertThat(registry.getIp(EstacaoClp.ESTOQUE)).isEqualTo("192.168.0.50");
+        assertThat(registry.getIp(EstacoesCLP.ESTOQUE)).isEqualTo("192.168.0.50");
     }
 
     @Test
@@ -42,7 +42,7 @@ class ClpIpRegistryTest {
     void setIp_formatoInvalido_lanca() {
         ClpIpRegistry registry = registry("1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1");
 
-        assertThatThrownBy(() -> registry.setIp(EstacaoClp.ESTOQUE, "nao-eh-ip"))
+        assertThatThrownBy(() -> registry.setIp(EstacoesCLP.ESTOQUE, "nao-eh-ip"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -51,7 +51,7 @@ class ClpIpRegistryTest {
     void setIp_octetoInvalido_lanca() {
         ClpIpRegistry registry = registry("1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1");
 
-        assertThatThrownBy(() -> registry.setIp(EstacaoClp.ESTOQUE, "10.0.0.999"))
+        assertThatThrownBy(() -> registry.setIp(EstacoesCLP.ESTOQUE, "10.0.0.999"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -60,7 +60,7 @@ class ClpIpRegistryTest {
     void setIp_ipAntigoOrfao_desconecta() {
         ClpIpRegistry registry = registry("10.0.0.1", "10.0.0.2", "10.0.0.3", "10.0.0.4");
 
-        registry.setIp(EstacaoClp.ESTOQUE, "10.0.0.9");
+        registry.setIp(EstacoesCLP.ESTOQUE, "10.0.0.9");
 
         verify(plcConnectionService).disconnect("10.0.0.1");
     }
@@ -70,7 +70,7 @@ class ClpIpRegistryTest {
     void setIp_ipAntigoCompartilhado_naoDesconecta() {
         ClpIpRegistry registry = registry("10.0.0.1", "10.0.0.1", "10.0.0.1", "10.0.0.1");
 
-        registry.setIp(EstacaoClp.ESTOQUE, "10.0.0.9");
+        registry.setIp(EstacoesCLP.ESTOQUE, "10.0.0.9");
 
         verify(plcConnectionService, never()).disconnect(anyString());
     }
@@ -78,9 +78,9 @@ class ClpIpRegistryTest {
     @Test
     @DisplayName("fromApi - resolve nomes válidos e rejeita inválidos")
     void fromApi_validaNomes() {
-        assertThat(EstacaoClp.fromApi("processo")).isEqualTo(EstacaoClp.PROCESSO);
-        assertThat(EstacaoClp.fromApi("EXPEDICAO")).isEqualTo(EstacaoClp.EXPEDICAO);
-        assertThatThrownBy(() -> EstacaoClp.fromApi("inexistente"))
+        assertThat(EstacoesCLP.fromApi("processo")).isEqualTo(EstacoesCLP.PROCESSO);
+        assertThat(EstacoesCLP.fromApi("EXPEDICAO")).isEqualTo(EstacoesCLP.EXPEDICAO);
+        assertThatThrownBy(() -> EstacoesCLP.fromApi("inexistente"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

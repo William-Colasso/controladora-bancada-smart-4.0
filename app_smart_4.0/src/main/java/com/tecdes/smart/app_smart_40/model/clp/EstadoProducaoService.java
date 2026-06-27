@@ -36,6 +36,13 @@ public class EstadoProducaoService {
     /** Trava de reentrância do handshake da expedição. */
     private boolean auxExpedicao;
 
+    /**
+     * Instante (epoch ms) da última leitura bem-sucedida do CLP em qualquer estação. Sinaliza
+     * "frescor de leitura": os produtores de {@code estacao-all} só publicam enquanto está recente,
+     * e o front mostra "Aguardando comunicação CLP" quando para. Atualizado em cada {@code processData}.
+     */
+    private volatile long ultimoLeituraMillis;
+
     /** Posição de expedição solicitada ao PLC para guardar o bloco concluído. */
     private int posicaoExpedicaoSolicitada;
 }

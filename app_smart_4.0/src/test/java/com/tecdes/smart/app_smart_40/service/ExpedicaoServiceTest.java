@@ -35,12 +35,12 @@ public class ExpedicaoServiceTest {
     private ExpedicaoService expedicaoService;
 
     private Expedicao expedicaoSemPedido(Long id, int posicao) {
-        return Expedicao.builder().id(id).posicao(posicao).pedido(null).build();
+        return Expedicao.builder().id(id).posicao(posicao).pedidoAtual(null).build();
     }
 
     private Expedicao expedicaoComPedido(Long id, int posicao) {
         Pedido pedido = Pedido.builder().blocos(List.of()).build();
-        return Expedicao.builder().id(id).posicao(posicao).pedido(pedido).build();
+        return Expedicao.builder().id(id).posicao(posicao).pedidoAtual(pedido).build();
     }
 
     // atualizarExpedicao
@@ -81,7 +81,7 @@ public class ExpedicaoServiceTest {
     @Test
     @DisplayName("listarTodos - retorna todas as expedições")
     void listarTodos_retornaTodasAsExpedicoes() {
-        when(expedicaoRepository.findAll())
+        when(expedicaoRepository.findAllComPedidoAtualEBlocos())
                 .thenReturn(List.of(expedicaoSemPedido(1L, 1), expedicaoComPedido(2L, 2)));
 
         assertThat(expedicaoService.listarTodos()).hasSize(2);
@@ -90,7 +90,7 @@ public class ExpedicaoServiceTest {
     @Test
     @DisplayName("listarTodos - retorna lista vazia quando não há expedições")
     void listarTodos_retornaListaVazia() {
-        when(expedicaoRepository.findAll()).thenReturn(List.of());
+        when(expedicaoRepository.findAllComPedidoAtualEBlocos()).thenReturn(List.of());
 
         assertThat(expedicaoService.listarTodos()).isEmpty();
     }
@@ -100,7 +100,7 @@ public class ExpedicaoServiceTest {
     @Test
     @DisplayName("existePosicaoLivre - true quando há posições livres")
     void existePosicaoLivre_comPosicaoLivre_retornaTrue() {
-        when(expedicaoRepository.countByPedidoIsNull()).thenReturn(3L);
+        when(expedicaoRepository.countByPedidoAtualIsNull()).thenReturn(3L);
 
         assertThat(expedicaoService.existePosicaoLivre()).isTrue();
     }
@@ -108,7 +108,7 @@ public class ExpedicaoServiceTest {
     @Test
     @DisplayName("existePosicaoLivre - false quando todas ocupadas")
     void existePosicaoLivre_todasOcupadas_retornaFalse() {
-        when(expedicaoRepository.countByPedidoIsNull()).thenReturn(0L);
+        when(expedicaoRepository.countByPedidoAtualIsNull()).thenReturn(0L);
 
         assertThat(expedicaoService.existePosicaoLivre()).isFalse();
     }
@@ -119,7 +119,7 @@ public class ExpedicaoServiceTest {
     @DisplayName("primeiraExpedicaoLivre - retorna DTO da primeira posição livre")
     void primeiraExpedicaoLivre_encontrada_retornaDTO() {
         Expedicao livre = expedicaoSemPedido(4L, 6);
-        when(expedicaoRepository.findFirstByPedidoIsNull()).thenReturn(Optional.of(livre));
+        when(expedicaoRepository.findFirstByPedidoAtualIsNull()).thenReturn(Optional.of(livre));
 
         ExpedicaoResponseDTO resultado = expedicaoService.primeiraExpedicaoLivre();
 
@@ -131,7 +131,7 @@ public class ExpedicaoServiceTest {
     @Test
     @DisplayName("primeiraExpedicaoLivre - lança exceção quando não há posição livre")
     void primeiraExpedicaoLivre_semPosicaoLivre_lancaExcecao() {
-        when(expedicaoRepository.findFirstByPedidoIsNull()).thenReturn(Optional.empty());
+        when(expedicaoRepository.findFirstByPedidoAtualIsNull()).thenReturn(Optional.empty());
 
         assertThrows(NoSuchElementException.class,
                 () -> expedicaoService.primeiraExpedicaoLivre());

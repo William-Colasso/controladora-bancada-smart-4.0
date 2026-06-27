@@ -47,17 +47,9 @@ public class PedidoController {
     public ResponseEntity<String> enviarParaProducao(@PathVariable Long id) {
 
         smartService.enviarParaProducao(id);
-        
+
         return ResponseEntity.status(201).body(new String("OK")); // todo
     }
-
-    @PostMapping("/clp/{ipClp}")
-    public ResponseEntity<String> setIpClp(@PathVariable String ipClp) {
-        smartService.setIpClp(ipClp);
-        
-        return ResponseEntity.ok(smartService.getIpClp());
-    }
-    
 
 
 }

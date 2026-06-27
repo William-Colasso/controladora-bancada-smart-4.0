@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoAllData;
+import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.dto.event.EstoqueGridEvent;
 import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoGridEvent;
@@ -24,13 +26,33 @@ class SseNotifierTest {
     private SseNotifier notifier;
 
     @Test
-    @DisplayName("status de estação → broadcast 'estacao-status'")
+    @DisplayName("status de estação → broadcast 'estacao-status' chaveado pela estação")
     void estacao_broadcastNomeCerto() {
         EstacaoStatusEvent e = new EstacaoStatusEvent("estoque", "on", 1);
 
         notifier.onEstacaoStatus(e);
 
-        verify(registry).broadcast("estacao-status", e);
+        verify(registry).broadcast("estacao-status", "estoque", e);
+    }
+
+    @Test
+    @DisplayName("dados completos de estação → broadcast 'estacao-all' chaveado pela estação")
+    void estacaoAll_broadcastNomeCerto() {
+        EstacaoAllData e = new EstacaoAllData("estoque", null);
+
+        notifier.onEstacaoAll(e);
+
+        verify(registry).broadcast("estacao-all", "estoque", e);
+    }
+
+    @Test
+    @DisplayName("heartbeat de estação → broadcastEfemero 'estacao-heartbeat'")
+    void heartbeat_broadcastEfemero() {
+        EstacaoHeartbeat e = new EstacaoHeartbeat("estoque");
+
+        notifier.onHeartbeat(e);
+
+        verify(registry).broadcastEfemero("estacao-heartbeat", e);
     }
 
     @Test

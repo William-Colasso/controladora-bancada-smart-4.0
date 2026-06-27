@@ -3,9 +3,11 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
@@ -24,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class EstoqueClpService {
+public class EstoqueClpService implements EstacaoClpHandshake {
 
     private static final int DB = 9;
     private static final int OFFSET = 0;
@@ -36,17 +38,32 @@ public class EstoqueClpService {
     private final EstoqueRepository estoqueRepository;
     private final EstoqueCLP estoqueCLP;
 
+    @Override
+    public EstacoesCLP estacao() {
+        return EstacoesCLP.ESTOQUE;
+    }
+
+    @Override
+    public EstacaoCLP dados() {
+        return estoqueCLP;
+    }
+
     /** Lê o bloco DB9 da estação ESTOQUE no IP informado e processa, sob demanda. */
-    public void lerEProcessar(String ip) {
+    @Override
+    public boolean lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
         if (connector == null) {
-            return;
+            return false;
         }
         try {
-            byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-            processData(ip, dados);
+            synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
+                byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
+                processData(ip, dados);
+            }
+            return true;
         } catch (Exception e) {
             log.error("Erro ao ler CLP ESTOQUE {}: {}", ip, e.getMessage());
+            return false;
         }
     }
 
@@ -55,6 +72,8 @@ public class EstoqueClpService {
         if (connector == null) {
             return;
         }
+
+        estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
 
         // -------------- Leitura das variáveis → EstoqueCLP -------------------
         estoqueCLP.setRecebidoOp((dados[0] & 0x01) != 0);

@@ -1,5 +1,9 @@
 package com.tecdes.smart.app_smart_40.model.enums;
 
+import com.tecdes.smart.app_smart_40.model.Estoque;
+import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
+import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
+
 /**
  * As quatro estações físicas da bancada, cada uma num CLP com IP próprio.
  *
@@ -7,16 +11,16 @@ package com.tecdes.smart.app_smart_40.model.enums;
  * — note que PROCESSO mapeia para {@code "producao"}. {@link #apiName()} é o identificador usado na
  * API REST de configuração de IP ({@code /api/clp/ips/{estacao}}).
  */
-public enum EstacaoClp {
+public enum EstacoesCLP {
 
     ESTOQUE("estoque"),
-    PROCESSO("producao"),
+    PROCESSO("processo"),
     MONTAGEM("montagem"),
     EXPEDICAO("expedicao");
 
     private final String frontKey;
 
-    EstacaoClp(String frontKey) {
+    EstacoesCLP(String frontKey) {
         this.frontKey = frontKey;
     }
 
@@ -30,13 +34,14 @@ public enum EstacaoClp {
         return name().toLowerCase();
     }
 
+   
     /** Resolve a estação a partir do path da API; lança 400 (IllegalArgument) se inválida. */
-    public static EstacaoClp fromApi(String valor) {
+    public static EstacoesCLP fromApi(String valor) {
         if (valor == null) {
             throw new IllegalArgumentException("Estação é obrigatória.");
         }
         try {
-            return EstacaoClp.valueOf(valor.trim().toUpperCase());
+            return EstacoesCLP.valueOf(valor.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(
                     "Estação inválida: " + valor + ". Use: estoque, processo, montagem, expedicao.");
