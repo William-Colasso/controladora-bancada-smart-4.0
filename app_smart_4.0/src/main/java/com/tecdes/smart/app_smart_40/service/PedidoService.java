@@ -13,6 +13,7 @@ import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.LaminaRequestDTO;
+import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
@@ -156,17 +157,44 @@ public class PedidoService {
     // -------------------------------------------------------------------------
 
     public PedidoResponseDTO atualizar(Long id, PedidoRequestDTO dto) {
-        if (!pedidoRepository.existsById(id)) {
-            throw new PedidoNotFoundException("Pedido não encontrado: " + id);
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
+
+        // Só pedidos ainda não enviados à produção podem ser editados.
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new IllegalStateException("Só é possível editar pedidos pendentes.");
         }
 
+        // Mesmas validações do criar() (estoque é checagem otimista — ver comentário em criar()).
         if (!validarTipoPedidoRequest(dto)) {
             throw new IllegalArgumentException(
                     "Quantidade de blocos não corresponde ao tipo de pedido.");
         }
+        if (!blocosSuficientesEmEstoque(dto.blocos())) {
+            throw new EstoqueInsuficienteException(
+                    "Cores requisitadas não se encontram presentes");
+        }
+        if (!validarLaminas(dto.blocos())) {
+            throw new IllegalArgumentException(
+                    "Lâminas propostas mal formadas, em posição incorreta ou faltante");
+        }
 
-        Pedido pedido = dto.toEntity();
-        pedido.setId(id);
+        // Muta in place preservando id/ordemProducao/status/dataCriacao.
+        pedido.setTipoPedido(dto.tipoPedido());
+        pedido.setCorTampa(dto.corTampa());
+
+        List<Bloco> novosBlocos = dto.blocos().stream()
+                .map(BlocoRequestDTO::toEntity)
+                .toList();
+        novosBlocos.forEach(bloco -> {
+            bloco.setPedido(pedido);
+            if (bloco.getLaminas() != null) {
+                bloco.getLaminas().forEach(lamina -> lamina.setBloco(bloco));
+            }
+        });
+        // clear + addAll na coleção gerenciada → orphanRemoval apaga os blocos antigos.
+        pedido.getBlocos().clear();
+        pedido.getBlocos().addAll(novosBlocos);
 
         return PedidoResponseDTO.fromEntity(pedidoRepository.save(pedido));
     }

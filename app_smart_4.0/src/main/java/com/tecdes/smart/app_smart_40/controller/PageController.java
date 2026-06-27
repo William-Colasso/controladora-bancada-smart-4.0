@@ -2,9 +2,11 @@ package com.tecdes.smart.app_smart_40.controller;
 
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.enums.*;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
+import com.tecdes.smart.app_smart_40.service.PedidoService;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -13,6 +15,7 @@ import tools.jackson.databind.exc.JsonNodeException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import lombok.extern.slf4j.Slf4j;
 import java.util.Arrays;
@@ -28,6 +31,7 @@ public class PageController {
 
         private final EstoqueService estoqueService;
         private final ExpedicaoService expedicaoService;
+        private final PedidoService pedidoService;
         private final ObjectMapper objectMapper;
 
         /**
@@ -41,17 +45,30 @@ public class PageController {
         }
 
         @GetMapping("/formulario")
-        public String formulario(Model model) {
+        public String formulario(Model model, @RequestParam(required = false) Long id) {
 
-                // ── Cores de bloco disponíveis no estoque (sem VAZIO) ──────────────
-                List<CorBloco> coresBlocos = estoqueService.getDisponivel()
-                                .stream()
-                                .map(e -> e.corBloco())
-                                .distinct()
-                                .filter(c -> c != CorBloco.VAZIO)
-                                .toList();
+                // Modo edição (id presente): carrega o pedido e oferece todas as cores (menos VAZIO)
+                // para que a cor atual do pedido apareça mesmo com o estoque dela já zerado.
+                String pedidoEditJson = null;
+                List<CorBloco> coresBlocos;
+                if (id != null) {
+                        PedidoResponseDTO pedido = pedidoService.buscarPorId(id);
+                        pedidoEditJson = toJson(pedido);
+                        coresBlocos = Arrays.stream(CorBloco.values())
+                                        .filter(c -> c != CorBloco.VAZIO)
+                                        .toList();
+                } else {
+                        // ── Cores de bloco disponíveis no estoque (sem VAZIO) ──────────────
+                        coresBlocos = estoqueService.getDisponivel()
+                                        .stream()
+                                        .map(e -> e.corBloco())
+                                        .distinct()
+                                        .filter(c -> c != CorBloco.VAZIO)
+                                        .toList();
+                }
 
                 model.addAttribute("coresBlocos", coresBlocos);
+                model.addAttribute("pedidoEditJson", pedidoEditJson);
 
                 // ── Enums para os selects estáticos do pedido ──────────────────────
                 model.addAttribute("tiposPedido", TipoPedido.values());

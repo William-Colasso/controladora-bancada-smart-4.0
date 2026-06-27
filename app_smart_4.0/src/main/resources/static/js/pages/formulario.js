@@ -4,6 +4,13 @@ import { createPedidoViewer } from '../components/pedidoViewer.js';
 
 const BLOCO_IDS = ['bloco-1', 'bloco-2', 'bloco-3'];
 
+// Modo edição: window.PEDIDO_EDIT chega como string JSON (Jackson) ou null.
+let PEDIDO_EDIT = window.PEDIDO_EDIT ?? null;
+if (typeof PEDIDO_EDIT === 'string') {
+  try { PEDIDO_EDIT = JSON.parse(PEDIDO_EDIT); } catch { PEDIDO_EDIT = null; }
+}
+const EDIT_ID = PEDIDO_EDIT?.id ?? null;
+
 const opcoesLamina = {
   cores: window.SMART_ENUMS?.coresLaminas ?? [],
   padroes: window.SMART_ENUMS?.padroes ?? [],
@@ -108,7 +115,8 @@ function showResponse(ok, status, body) {
   panel.style.display = 'block';
   panel.className = ok ? 'ok' : 'err';
   titleEl.style.color = ok ? 'var(--color-green)' : 'var(--color-red)';
-  titleEl.textContent = ok ? `✓  PEDIDO CRIADO  ·  HTTP ${status}` : `✕  ERRO  ·  HTTP ${status}`;
+  const okLabel = EDIT_ID ? 'PEDIDO ATUALIZADO' : 'PEDIDO CRIADO';
+  titleEl.textContent = ok ? `✓  ${okLabel}  ·  HTTP ${status}` : `✕  ERRO  ·  HTTP ${status}`;
   bodyEl.textContent = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
   panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
@@ -120,8 +128,10 @@ async function enviarPedido() {
   btn.textContent = 'PROCESSANDO...';
 
   try {
-    const data = await Api.post('/api/pedidos', buildPayload());
-    showResponse(true, 201, data);
+    const data = EDIT_ID
+      ? await Api.put(`/api/pedidos/${EDIT_ID}`, buildPayload())
+      : await Api.post('/api/pedidos', buildPayload());
+    showResponse(true, EDIT_ID ? 200 : 201, data);
   } catch (err) {
     const panel   = document.getElementById('resp-panel');
     const titleEl = document.getElementById('resp-title');
@@ -134,8 +144,34 @@ async function enviarPedido() {
   } finally {
     btn.disabled = false;
     btn.classList.remove('loading');
-    btn.textContent = 'ENVIAR PEDIDO';
+    btn.textContent = SUBMIT_LABEL;
   }
+}
+
+const SUBMIT_LABEL = EDIT_ID ? 'SALVAR ALTERAÇÕES' : 'ENVIAR PEDIDO';
+
+// Prefill do formulário a partir do pedido em edição (mesmos value=int dos selects).
+function prefillEdit(pedido) {
+  tipoPedidoEl.value = String(pedido.tipoPedido);
+  document.getElementById('cor-tampa').value = String(pedido.corTampa);
+  syncBlocos(); // ativa os blocos do tipo e zera as lâminas
+
+  (pedido.blocos ?? []).forEach((b, idx) => {
+    const card = document.getElementById(BLOCO_IDS[idx]);
+    if (!card) return;
+    card.querySelector('.cor-bloco-sel').value = String(b.cor);
+
+    const addBtn = card.querySelector('.btn-add-lam');
+    (b.laminas ?? []).forEach((l) => {
+      addLamina(addBtn);
+      const row = card.querySelector('.laminas-list .lamina-row:last-child');
+      if (!row) return;
+      row.querySelector('.lam-cor').value = String(l.cor);
+      row.querySelector('.lam-pad').value = String(l.padrao);
+      row.querySelector('.lam-pos').value = String(l.posicaoNoBloco); // resposta usa posicaoNoBloco
+    });
+  });
+  updatePreview();
 }
 
 function limparForm() {
@@ -169,4 +205,11 @@ document.getElementById('blocos-container')?.addEventListener('change', updatePr
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 
-syncBlocos(); // chama updatePreview internamente
+if (EDIT_ID) {
+  document.getElementById('btn-submit').textContent = SUBMIT_LABEL;
+  const titulo = document.querySelector('.page-title');
+  if (titulo) titulo.innerHTML = 'Editar Pedido <span>Smart 4.0</span>';
+  prefillEdit(PEDIDO_EDIT);
+} else {
+  syncBlocos(); // chama updatePreview internamente
+}

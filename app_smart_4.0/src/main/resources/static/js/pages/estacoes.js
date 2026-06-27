@@ -3,6 +3,10 @@
 // no topo. Consumidor SSE puro — não acessa o banco nem chama /api/**.
 import { createSse } from '../core/sse.js';
 import bancadaStatus from '../components/bancadaStatus.js';
+import { createPedidoViewer } from '../components/pedidoViewer.js';
+import { buildDetailHTML } from '../components/pedidoDetail.js';
+import { Api } from '../core/api.js';
+import { Toast } from '../core/toast.js';
 
 // estado (off/on/pause) → [rótulo, variante de badge]. Default = "Sem leitura"/dim.
 const ESTADO = {
@@ -57,11 +61,23 @@ function valor(v) {
 const ultimaLeitura = {};
 const LIMITE_MS = 2500;
 
+// OP em execução por estação (numeroOP do bean *CLP). Alimenta a linha do card + o botão "Ver pedido".
+const opAtual = {};
+
 // Dados completos (estacao-all): renderiza TODOS os campos do bean *CLP num grid chave/valor.
 // Genérico — não hardcoda o schema de cada estação; itera o que o backend mandar.
 function renderDados(d) {
   const card = document.getElementById(d.estacao);
   if (!card) return;
+
+  // OP em execução: destaca o numeroOP e habilita o popup do pedido quando > 0.
+  const op = d.dados?.numeroOP ?? 0;
+  opAtual[d.estacao] = op;
+  const opEl = card.querySelector('.op-atual');
+  if (opEl) opEl.textContent = op > 0 ? op : '—';
+  const verBtn = card.querySelector('.ver-pedido-btn');
+  if (verBtn) verBtn.hidden = !(op > 0);
+
   const box = card.querySelector('.dados');
   if (!box) return;
 
@@ -73,6 +89,35 @@ function renderDados(d) {
         .join('')
     : '<div class="dado dado--vazio">Sem dados.</div>';
 }
+
+// ─── Popup do pedido em execução (3D + detalhes) ──────────────────────────────
+const modal = document.getElementById('pedido-modal');
+let modalViewer = null;
+const getModalViewer = () =>
+  (modalViewer ??= createPedidoViewer(document.getElementById('modal-viewer')));
+
+async function abrirPedido(op) {
+  try {
+    // ponytail: lista pequena (poucas OPs ativas), filtra no cliente; criar GET /api/pedidos/op/{op} se crescer.
+    const pedidos = await Api.get('/api/pedidos');
+    const pedido = (pedidos ?? []).find((p) => p.ordemProducao === op);
+    if (!pedido) { Toast.info(`Pedido da OP ${op} não encontrado.`); return; }
+    document.getElementById('modal-info').innerHTML = buildDetailHTML(pedido);
+    getModalViewer().update(pedido);
+    modal.showModal();
+  } catch (err) {
+    Toast.error(err.message);
+  }
+}
+
+document.querySelector('.estacoes__grid')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.ver-pedido-btn');
+  if (!btn) return;
+  const op = opAtual[btn.closest('.estacao-card')?.id];
+  if (op > 0) abrirPedido(op);
+});
+document.getElementById('modalClose')?.addEventListener('click', () => modal.close());
+modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); }); // clique no backdrop fecha
 
 
 

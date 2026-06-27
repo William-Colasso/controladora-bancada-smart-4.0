@@ -149,3 +149,73 @@
 .estacao-card[data-comunicacao="off"] {
   opacity: 0.7;
 }
+
+/* OP em execução + botão do popup. */
+.estacao-card__op {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.ver-pedido-btn {
+  align-self: flex-start;
+}
+
+/* ── Popup do pedido em execução (<dialog>) ── */
+.pedido-modal {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-card);
+  padding: 0;
+  width: min(820px, 92vw);
+  max-width: 92vw;
+}
+
+.pedido-modal::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.pedido-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pedido-modal__title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.pedido-modal__close {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.pedido-modal__close:hover {
+  color: var(--color-text);
+}
+
+.pedido-modal__body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  padding: 20px;
+}
+
+.pedido-modal__body .pedido-viewer {
+  height: 300px;
+}
+
+@media (max-width: 640px) {
+  .pedido-modal__body {
+    grid-template-columns: 1fr;
+  }
+}

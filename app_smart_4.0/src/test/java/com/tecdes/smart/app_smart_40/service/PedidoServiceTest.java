@@ -20,6 +20,7 @@ import com.tecdes.smart.app_smart_40.dto.request.*;
 import com.tecdes.smart.app_smart_40.dto.response.*;
 import com.tecdes.smart.app_smart_40.model.*;
 import com.tecdes.smart.app_smart_40.model.enums.*;
+import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 
@@ -346,6 +347,58 @@ public class PedidoServiceTest {
         assertThrows(IllegalStateException.class, () -> pedidoService.concluir(pedidoId),
                 "Pedido " + pedidoId + " já está concluído.");
         verify(pedidoRepository, times(1)).findById(pedidoId);
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    // =========================================================================
+    // TESTES: atualizar(Long id, PedidoRequestDTO dto)
+    // =========================================================================
+
+    @Test
+    @DisplayName("atualizar - edita pedido PENDENTE preservando OP/status/dataCriacao e troca os blocos")
+    void deveAtualizar_QuandoPedidoPendente() {
+        Long id = 1L;
+        Pedido existente = buildPedidoEntidade(id, TipoPedido.SIMPLES, StatusPedido.PENDENTE);
+        existente.setOrdemProducao(42);
+        LocalDateTime criacao = existente.getDataCriacao();
+        PedidoRequestDTO dto = buildPedidoRequestDTOSimples();
+
+        when(pedidoRepository.findById(id)).thenReturn(Optional.of(existente));
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PedidoResponseDTO resultado = pedidoService.atualizar(id, dto);
+
+        assertEquals(42, resultado.ordemProducao());           // OP preservada
+        assertEquals(StatusPedido.PENDENTE, resultado.status()); // status preservado
+        assertEquals(criacao, resultado.dataCriacao());          // dataCriacao preservada
+        assertEquals(1, resultado.blocos().size());              // blocos substituídos
+        verify(pedidoRepository, times(1)).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("atualizar - rejeita com IllegalStateException quando pedido não está PENDENTE")
+    void deveRejeitarAtualizar_QuandoNaoPendente() {
+        Long id = 1L;
+        Pedido existente = buildPedidoEntidade(id, TipoPedido.SIMPLES, StatusPedido.PRODUCAO);
+
+        when(pedidoRepository.findById(id)).thenReturn(Optional.of(existente));
+
+        assertThrows(IllegalStateException.class,
+                () -> pedidoService.atualizar(id, buildPedidoRequestDTOSimples()),
+                "Só é possível editar pedidos pendentes.");
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("atualizar - lança PedidoNotFoundException quando pedido não existe")
+    void deveRejeitarAtualizar_QuandoPedidoNaoExiste() {
+        Long id = 999L;
+
+        when(pedidoRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(PedidoNotFoundException.class,
+                () -> pedidoService.atualizar(id, buildPedidoRequestDTOSimples()));
         verify(pedidoRepository, never()).save(any(Pedido.class));
     }
 
