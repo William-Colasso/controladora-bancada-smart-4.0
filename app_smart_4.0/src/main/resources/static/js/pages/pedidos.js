@@ -4,6 +4,7 @@ import { createPoller } from '../core/poller.js';
 import { buildRowHTML, patchRow } from '../components/pedidoRow.js';
 import { buildDetailHTML, patchDetail } from '../components/pedidoDetail.js';
 import { createPedidoViewer } from '../components/pedidoViewer.js';
+import { normalizeStatus } from '../core/enums.js';
 
 const POLL_INTERVAL_MS = 5000;
 const countLabel = (n) => `${n} pedido${n !== 1 ? 's' : ''}`;
@@ -21,6 +22,7 @@ const detailPanel = document.getElementById('detailPanel');
 const detailViewer = document.getElementById('detailViewer');
 const detailInfo  = document.getElementById('detailInfo');
 const detailClose = document.getElementById('detailClose');
+const detailEdit  = document.getElementById('detailEdit');
 const filterBtns  = document.querySelectorAll('.filter-btn[data-filter]');
 const countDisplay = document.getElementById('pedidosCount');
 const loadingRow  = document.getElementById('loadingRow');
@@ -37,7 +39,7 @@ function getViewer() {
 function applyFilter() {
   state.filtered = state.activeFilter === 'TODOS'
     ? [...state.pedidos]
-    : state.pedidos.filter((p) => p.status === state.activeFilter);
+    : state.pedidos.filter((p) => normalizeStatus(p.status) === state.activeFilter);
   if (countDisplay) countDisplay.textContent = countLabel(state.filtered.length);
 }
 
@@ -81,10 +83,19 @@ function syncEmptyState() {
 
 // ─── Painel de detalhes ──────────────────────────────────────────────────────
 
+// Botão Editar: só faz sentido enquanto o pedido pode ser alterado (PENDENTE).
+function updateEditButton(pedido) {
+  if (!detailEdit) return;
+  const editavel = normalizeStatus(pedido.status) === 'PENDENTE';
+  detailEdit.hidden = !editavel;
+  if (editavel) detailEdit.href = `/formulario?id=${pedido.id}`;
+}
+
 function syncDetailPanel() {
   if (state.selectedId === null || !detailInfo) return;
   const next = state.pedidos.find((p) => p.id === state.selectedId);
   if (!next) { closeDetail(); return; }
+  updateEditButton(next);
   if (!detailInfo.hasChildNodes()) {
     detailInfo.innerHTML = buildDetailHTML(next);
     getViewer()?.update(next);
@@ -112,6 +123,7 @@ function openDetail(id) {
     .forEach((r) => r.classList.toggle('row--selected', Number(r.dataset.pedidoId) === id));
 
   if (detailInfo) detailInfo.innerHTML = buildDetailHTML(pedido);
+  updateEditButton(pedido);
   getViewer()?.update(pedido);
 
   detailPanel?.style.setProperty('display', 'block');
@@ -120,6 +132,7 @@ function openDetail(id) {
 
 function closeDetail() {
   state.selectedId = null;
+  if (detailEdit) detailEdit.hidden = true;
   if (detailInfo) detailInfo.innerHTML = '';
   viewer?.update(null);
   detailPanel?.style.setProperty('display', 'none');

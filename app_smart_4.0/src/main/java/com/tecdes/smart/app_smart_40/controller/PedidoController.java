@@ -37,6 +37,13 @@ public class PedidoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.criar(dto));
     }
 
+    // PUT /api/pedidos/{id} — edita um pedido ainda PENDENTE
+    @PutMapping("/{id}")
+    public ResponseEntity<PedidoResponseDTO> atualizar(@PathVariable Long id,
+            @RequestBody PedidoRequestDTO dto) {
+        return ResponseEntity.ok(pedidoService.atualizar(id, dto));
+    }
+
     // PUT /api/pedidos/{id}/status
     @PutMapping("/{id}/status")
     public ResponseEntity<PedidoResponseDTO> concluir(@PathVariable Long id) {
