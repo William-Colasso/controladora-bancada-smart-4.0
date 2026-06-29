@@ -18,15 +18,36 @@ const ESTADO = {
 // funcionamento (0/1/2 ou null) → rótulo da operação em curso.
 const FUNC = { 0: 'Ocupado', 1: 'Iniciando', 2: 'Finalizando' };
 
+// Frescor por estação: a liveness vem do estacao-heartbeat (um pulso por passada lida, mesmo com a
+// estação ociosa). Sem pulso por mais que LIMITE_MS → comunicação parada → card "aguardando".
+const ultimaLeitura = {};
+const LIMITE_MS = 2500;
+
+// Funcionamento atual por estação (0/1/2 ou null). Guardado para re-renderizar o overlay da bancada
+// quando o heartbeat chega/para — a cor depende da vivacidade, não só do último estacao-status.
+const funcAtual = {};
+
+// "Sem dados ainda" é diferente de "perdemos o sinal": undefined → assume vivo até o watchdog provar
+// o contrário (ou seja, só pune após receber ao menos um heartbeat e depois perdê-lo).
+const viva = (estacao) =>
+  ultimaLeitura[estacao] === undefined
+  || Date.now() - ultimaLeitura[estacao] <= LIMITE_MS;
+
+// Overlay da bancada = vivacidade do heartbeat (≤ LIMITE_MS) + funcionamento atual.
+function renderBancada(estacao) {
+  bancadaStatus.aplicar(estacao, viva(estacao), funcAtual[estacao] ?? null);
+}
+
 // Status mínimo (estacao-status): badge + operação do card + overlays do componente da bancada.
 // `estacao` é o frontKey, que é o id do card e a chave do bancadaStatus.
 function renderStatus(d) {
+  console.log('estado recebido:', d.estado, '| viva:', viva(d.estacao));
   const card = document.getElementById(d.estacao);
   if (card) {
     card.dataset.lendo = '1';
 
-    console.log(d.estado)
-    const [txt, cor] = ESTADO[d.estado] || ['Sem leitura', 'dim'];
+    const chave = viva(d.estacao) ? d.estado : null;
+    const [txt, cor] = ESTADO[chave] ?? ['Sem leitura', 'dim'];
     const badge = card.querySelector('.estado');
     badge.textContent = txt;
     badge.className = `estacao-card__badge badge badge--${cor} estado`;
@@ -55,22 +76,6 @@ function valor(v) {
   if (typeof v === 'boolean') return v ? 'Sim' : 'Não';
   if (Array.isArray(v)) return v.length ? v.join(', ') : '—';
   return (v === null || v === undefined) ? '—' : String(v);
-}
-
-// Frescor por estação: o estacao-all virou on-change (só chega quando o bean muda), então não serve
-// mais de heartbeat. A liveness vem do estacao-heartbeat (um pulso por passada lida, mesmo com a
-// estação ociosa). Sem pulso por mais que LIMITE_MS → comunicação parada → card "aguardando".
-const ultimaLeitura = {};
-const LIMITE_MS = 2500;
-
-// Funcionamento atual por estação (0/1/2 ou null). Guardado para re-renderizar o overlay da bancada
-// quando o heartbeat chega/para — a cor depende da vivacidade, não só do último estacao-status.
-const funcAtual = {};
-
-// Overlay da bancada = vivacidade do heartbeat (≤ LIMITE_MS) + funcionamento atual.
-function renderBancada(estacao) {
-  const viva = Date.now() - (ultimaLeitura[estacao] ?? 0) <= LIMITE_MS;
-  bancadaStatus.aplicar(estacao, viva, funcAtual[estacao] ?? null);
 }
 
 // OP em execução por estação (numeroOP do bean *CLP). Alimenta a linha do card + o botão "Ver pedido".
@@ -132,7 +137,6 @@ document.getElementById('modalClose')?.addEventListener('click', () => modal.clo
 modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); }); // clique no backdrop fecha
 
 
-
 const sse = createSse();
 sse.on('estacao-status', renderStatus); // status + overlays da bancada
 sse.on('estacao-all', renderDados);     // dados completos do bean *CLP (on-change)
@@ -149,12 +153,21 @@ sse.on('estacao-heartbeat', (d) => {
 sse.connect();
 
 // Watchdog: sem pulso de uma estação por mais que LIMITE_MS → comunicação parada → "aguardando".
+// Não chama renderStatus (que espera um evento SSE completo) — só atualiza o dataset e a bancada.
 setInterval(() => {
   const agora = Date.now();
   Object.keys(ultimaLeitura).forEach((estacao) => {
     if (agora - ultimaLeitura[estacao] > LIMITE_MS) {
       const card = document.getElementById(estacao);
-      if (card) card.dataset.comunicacao = 'off';
+      if (card) {
+        card.dataset.comunicacao = 'off';
+        // Atualiza o badge para "Sem leitura" diretamente, sem precisar de um evento SSE.
+        const badge = card.querySelector('.estado');
+        if (badge) {
+          badge.textContent = 'Sem leitura';
+          badge.className = 'estacao-card__badge badge badge--dim estado';
+        }
+      }
       renderBancada(estacao); // sem pulso → bancada fica vermelha
     }
   });
