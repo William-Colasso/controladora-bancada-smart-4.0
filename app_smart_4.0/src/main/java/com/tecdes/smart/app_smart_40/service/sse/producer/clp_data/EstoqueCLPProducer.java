@@ -1,6 +1,6 @@
 package com.tecdes.smart.app_smart_40.service.sse.producer.clp_data;
 
-import org.hibernate.engine.jdbc.env.internal.LobCreationLogging_.logger;
+
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
