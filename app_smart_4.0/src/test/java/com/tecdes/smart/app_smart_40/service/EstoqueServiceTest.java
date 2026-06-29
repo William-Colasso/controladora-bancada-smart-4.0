@@ -5,6 +5,7 @@ import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
+import com.tecdes.smart.app_smart_40.service.clp.EstoqueClpWriter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +26,9 @@ class EstoqueServiceTest {
 
     @Mock
     private EstoqueRepository estoqueRepository;
+
+    @Mock
+    private EstoqueClpWriter clpWriter;
 
     @InjectMocks
     private EstoqueService estoqueService;
