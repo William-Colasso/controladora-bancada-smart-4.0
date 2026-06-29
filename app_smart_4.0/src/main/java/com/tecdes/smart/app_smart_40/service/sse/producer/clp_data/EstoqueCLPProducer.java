@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.service.sse.producer.clp_data;
 
+import org.hibernate.engine.jdbc.env.internal.LobCreationLogging_.logger;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,7 @@ public class EstoqueCLPProducer extends EstacaoCLPProducer {
     public EstoqueCLPProducer(ApplicationEventPublisher publisher, EstadoProducaoService estado,
             EstoqueCLP dados, ObjectMapper mapper) {
         super(publisher, estado, EstacoesCLP.ESTOQUE, dados, mapper);
+        
     }
 
     @Scheduled(fixedDelayString = "${clp.poll.estoque:300}")

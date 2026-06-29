@@ -37,9 +37,11 @@ function renderStatus(d) {
     card.querySelector('.func').textContent = func;
   }
 
-  // Componente da bancada no topo da página.
-  bancadaStatus.setEstado(d.estacao, d.estado);
-  bancadaStatus.setFuncionamento(d.estacao, d.funcionamento);
+  // Componente da bancada no topo da página. A cor (verde/vermelho) vem da vivacidade do heartbeat,
+  // não do `estado` — idle conectado emite estado='off'. Aqui só guardamos o funcionamento e
+  // reavaliamos; o pulso/watchdog é quem decide ligada (verde) x desligada (vermelho).
+  funcAtual[d.estacao] = d.funcionamento;
+  renderBancada(d.estacao);
 }
 
 // camelCase / snake_case → rótulo legível.
@@ -60,6 +62,16 @@ function valor(v) {
 // estação ociosa). Sem pulso por mais que LIMITE_MS → comunicação parada → card "aguardando".
 const ultimaLeitura = {};
 const LIMITE_MS = 2500;
+
+// Funcionamento atual por estação (0/1/2 ou null). Guardado para re-renderizar o overlay da bancada
+// quando o heartbeat chega/para — a cor depende da vivacidade, não só do último estacao-status.
+const funcAtual = {};
+
+// Overlay da bancada = vivacidade do heartbeat (≤ LIMITE_MS) + funcionamento atual.
+function renderBancada(estacao) {
+  const viva = Date.now() - (ultimaLeitura[estacao] ?? 0) <= LIMITE_MS;
+  bancadaStatus.aplicar(estacao, viva, funcAtual[estacao] ?? null);
+}
 
 // OP em execução por estação (numeroOP do bean *CLP). Alimenta a linha do card + o botão "Ver pedido".
 const opAtual = {};
@@ -131,6 +143,7 @@ sse.on('estacao-heartbeat', (d) => {
   ultimaLeitura[d.estacao] = Date.now();
   const card = document.getElementById(d.estacao);
   if (card) card.dataset.comunicacao = 'on';
+  renderBancada(d.estacao); // pulso vivo → reavalia a cor (sai de vermelho p/ verde quando volta a ler)
 });
 
 sse.connect();
@@ -142,6 +155,7 @@ setInterval(() => {
     if (agora - ultimaLeitura[estacao] > LIMITE_MS) {
       const card = document.getElementById(estacao);
       if (card) card.dataset.comunicacao = 'off';
+      renderBancada(estacao); // sem pulso → bancada fica vermelha
     }
   });
 }, 1000);
