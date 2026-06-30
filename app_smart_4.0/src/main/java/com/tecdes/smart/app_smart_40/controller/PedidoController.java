@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.controller;
 
+import com.tecdes.smart.app_smart_40.service.clp.PedidoConsumerList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -15,15 +16,17 @@ import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 @RestController
 @RequestMapping("/api/pedidos")
 @AllArgsConstructor
 public class PedidoController {
 
+    private final PedidoConsumerList pedidoConsumerList;
     private final PedidoService pedidoService;
     private final SmartService smartService;
 
+    
+    
 
     // GET /api/pedidos
     @GetMapping
@@ -53,10 +56,9 @@ public class PedidoController {
     @PostMapping("/{id}")
     public ResponseEntity<String> enviarParaProducao(@PathVariable Long id) {
 
-        smartService.enviarParaProducao(id);
+        pedidoConsumerList.addOrder(id);
 
         return ResponseEntity.status(201).body(new String("OK")); // todo
     }
-
 
 }
