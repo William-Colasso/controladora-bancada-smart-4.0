@@ -65,17 +65,56 @@ function renderStatus(d) {
   renderBancada(d.estacao);
 }
 
-// camelCase / snake_case → rótulo legível.
-const rotulo = (k) => k
+// Rótulos PT dos campos conhecidos do bean *CLP; fallback = prettify genérico do camelCase
+// (mantém o painel agnóstico a schema — campos novos aparecem sem precisar de mapa).
+const LABELS = {
+  recebidoOp: 'Recebido OP', numeroOP: 'Número OP',
+  finishOP: 'Finalizou OP', startOP: 'Iniciou OP', cancelOP: 'Cancelou OP',
+  ocupado: 'Ocupado', aguardando: 'Aguardando', manual: 'Manual', emergencia: 'Emergência',
+  recebidoExpedicao: 'Recebido Exp.', iniciarGuardarExp: 'Iniciar guardar',
+  posicaoGuardarExp: 'Posição guardar', orderExpedicao: 'Ordem expedição',
+  pedirPosicaoExp: 'Pedir posição', posicaoGuardadoExpedicao: 'Posição guardada',
+  posicaoRemovidoExpedicao: 'Posição removida', adicionarExpedicao: 'Adicionar',
+  removerExpedicao: 'Remover', opGuardadoExpedicao: 'OP guardada',
+};
+const rotulo = (k) => LABELS[k] ?? k
   .replace(/_/g, ' ')
   .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
   .replace(/^./, (c) => c.toUpperCase());
 
-// Valor do bean → texto exibível (boolean → Sim/Não, array → lista, nulo → —).
+// Valor não-booleano do bean → texto exibível (array → lista, nulo → —).
 function valor(v) {
-  if (typeof v === 'boolean') return v ? 'Sim' : 'Não';
   if (Array.isArray(v)) return v.length ? v.join(', ') : '—';
   return (v === null || v === undefined) ? '—' : String(v);
+}
+
+// Painel HMI: separa SINAIS (booleanos, como LEDs) de VALORES (números/arrays, como readout).
+// Continua genérico — itera o que o bean trouxer, sem hardcodar o schema de cada estação.
+function buildHmi(dados) {
+  const entries = Object.entries(dados || {});
+  if (!entries.length) return '<div class="dado dado--vazio">Sem dados.</div>';
+
+  const sinais = entries.filter(([, v]) => typeof v === 'boolean');
+  const valores = entries.filter(([, v]) => typeof v !== 'boolean');
+
+  const led = ([k, v]) => {
+    const alerta = k.toLowerCase().includes('emergencia') && v ? ' data-alerta="1"' : '';
+    return `<span class="sinal" data-on="${v}"${alerta}>
+        <span class="sinal__led"></span>${rotulo(k)}</span>`;
+  };
+  const readout = ([k, v]) =>
+    `<div class="valor"><span class="valor__k">${rotulo(k)}</span>
+       <span class="valor__dots"></span><span class="valor__v">${valor(v)}</span></div>`;
+
+  const secaoSinais = sinais.length
+    ? `<div class="hmi__sec"><span class="hmi__titulo">Sinais</span>
+         <div class="sinais-grid">${sinais.map(led).join('')}</div></div>`
+    : '';
+  const secaoValores = valores.length
+    ? `<div class="hmi__sec"><span class="hmi__titulo">Valores</span>
+         <div class="valores">${valores.map(readout).join('')}</div></div>`
+    : '';
+  return secaoSinais + secaoValores;
 }
 
 // OP em execução por estação (numeroOP do bean *CLP). Alimenta a linha do card + o botão "Ver pedido".
@@ -98,13 +137,7 @@ function renderDados(d) {
   const box = card.querySelector('.dados');
   if (!box) return;
 
-  const entries = Object.entries(d.dados || {});
-  box.innerHTML = entries.length
-    ? entries
-        .map(([k, v]) =>
-          `<div class="dado"><span class="dado__k">${rotulo(k)}</span><span class="dado__v">${valor(v)}</span></div>`)
-        .join('')
-    : '<div class="dado dado--vazio">Sem dados.</div>';
+  box.innerHTML = buildHmi(d.dados);
 }
 
 // ─── Popup do pedido em execução (3D + detalhes) ──────────────────────────────

@@ -64,6 +64,11 @@
           <div class="form-step__body">
             <div class="field-grid">
               <div class="field">
+                <label class="field-lbl" for="ordem-producao">Número de OP</label>
+                <input id="ordem-producao" type="number" min="1" step="1" class="field-ctrl"
+                       th:value="${proximaOrdem}" autocomplete="off" />
+              </div>
+              <div class="field">
                 <label class="field-lbl" for="tipo-pedido">Tipo de Pedido</label>
                 <select id="tipo-pedido" class="field-ctrl">
                   <option th:each="tipo : ${tiposPedido}" th:value="${tipo.value}" th:text="${tipo.name()}"></option>

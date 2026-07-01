@@ -70,6 +70,10 @@ public class PageController {
                 model.addAttribute("coresBlocos", coresBlocos);
                 model.addAttribute("pedidoEditJson", pedidoEditJson);
 
+                // Sugestão de OP para o modo criação (editável). Em edição, a OP vem no
+                // pedidoEditJson e o JS prefila o campo.
+                model.addAttribute("proximaOrdem", pedidoService.proximaOrdemProducao());
+
                 // ── Enums para os selects estáticos do pedido ──────────────────────
                 model.addAttribute("tiposPedido", TipoPedido.values());
                 model.addAttribute("coresTampa", CorTampa.values());

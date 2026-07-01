@@ -5,10 +5,35 @@ import { patchText, patchInner } from '../core/dom.js';
 const blocosSig = (blocos) => JSON.stringify(blocos);
 const miniBloco = (b) => `<div class="mini-bloco mini-bloco--${corBlocoClass(normalizeCorBloco(b.cor))}"></div>`;
 
-export function buildRowHTML(p) {
+// Estado do botão "produzir" a partir do status do pedido + presença na fila.
+// Só `idle` é clicável; os demais são informativos (não pode reenviar).
+function startButtonState(p, inQueue) {
+  const status = normalizeStatus(p.status);
+  if (status === 'CONCLUIDO') return { state: 'concluido', title: 'Pedido concluído' };
+  if (status === 'PRODUCAO')  return { state: 'producao',  title: 'Pedido em produção' };
+  if (inQueue)                return { state: 'queued',    title: 'Pedido já está na fila' };
+  return { state: 'idle', title: 'Enviar para produção' };
+}
+
+function startButtonHTML(p, inQueue) {
+  const { state, title } = startButtonState(p, inQueue);
+  const disabled = state !== 'idle' ? ' disabled' : '';
+  return `<button class="pedido-start-button" data-id="${p.id}" data-state="${state}" title="${title}"${disabled}></button>`;
+}
+
+// Reaplica o estado a um botão já existente (usado no patch, quando status/fila mudam).
+function syncStartButton(btn, p, inQueue) {
+  if (!btn) return;
+  const { state, title } = startButtonState(p, inQueue);
+  btn.dataset.state = state;
+  btn.title = title;
+  btn.disabled = state !== 'idle';
+}
+
+export function buildRowHTML(p, inQueue = false) {
   const status   = normalizeStatus(p.status);
   const tipo     = normalizeTipo(p.tipoPedido);
-  const corTampa = normalizeCor(p.corTampa);
+  const corTampa = normalizeCorBloco(p.corTampa);
   const blocos   = p.blocos ?? [];
   return `
     <td data-cell="id">#${formatCount(p.id)}</td>
@@ -30,11 +55,14 @@ export function buildRowHTML(p) {
     </td>
     <td data-cell="criacao">${formatDateTime(p.dataCriacao)}</td>
     <td data-cell="expedicao">${formatDateTime(p.dataEntradaExpedicao)}</td>
-    <td><button class="pedido-start-button" data-id="${p.id}"></button></td>`;
+    <td>${startButtonHTML(p, inQueue)}</td>`;
 }
 
-export function patchRow(row, next, prev) {
+export function patchRow(row, next, prev, inQueue = false) {
   const cell = (name) => row.querySelector(`[data-cell="${name}"]`);
+
+  // O estado do botão depende de status E fila — reavalia sempre (barato).
+  syncStartButton(row.querySelector('.pedido-start-button'), next, inQueue);
 
   if (next.ordemProducao !== prev.ordemProducao) {
     patchText(cell('op'), next.ordemProducao ?? '—');

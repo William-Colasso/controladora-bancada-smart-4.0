@@ -34,6 +34,12 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.listarTodos());
     }
 
+    // GET /api/pedidos/fila — ids na ordem da fila de produção (head = em produção).
+    @GetMapping("/fila")
+    public ResponseEntity<List<Long>> fila() {
+        return ResponseEntity.ok(pedidoConsumerList.filaAtual());
+    }
+
     // POST /api/pedidos
     @PostMapping
     public ResponseEntity<PedidoResponseDTO> criar(@RequestBody PedidoRequestDTO dto) {

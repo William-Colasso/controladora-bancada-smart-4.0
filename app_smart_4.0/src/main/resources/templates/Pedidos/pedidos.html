@@ -52,6 +52,24 @@
     </div>
 
     <!-- ============================================================
+         FILA DE PRODUÇÃO — ordem em que os pedidos serão feitos.
+         Preenchida por pedidos.js (GET /api/pedidos/fila).
+         ============================================================ -->
+    <section class="fila-panel" id="filaPanel" aria-label="Fila de produção">
+      <div class="fila-panel__head">
+        <span class="fila-panel__title">
+          <i class="fa-solid fa-list-ol"></i> Fila de produção
+        </span>
+        <span class="fila-panel__hint">Linha de montagem · 01 = em produção</span>
+      </div>
+      <div class="fila-panel__body" id="filaBody">
+        <div class="fila-empty">
+          <div class="spinner"></div><span>Carregando fila…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================
          FILTROS POR STATUS
          ============================================================ -->
     <div class="filters">

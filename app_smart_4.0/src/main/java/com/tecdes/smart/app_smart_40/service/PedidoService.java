@@ -78,7 +78,8 @@ public class PedidoService {
            
         });
 
-        pedido.setOrdemProducao(pedidoRepository.proximaOrdemProducao());
+        // OP escolhida pelo usuário (valida unicidade) ou auto (MAX+1).
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), null));
 
         pedido.setStatus(StatusPedido.PENDENTE);
         System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
@@ -179,7 +180,9 @@ public class PedidoService {
                     "Lâminas propostas mal formadas, em posição incorreta ou faltante");
         }
 
-        // Muta in place preservando id/ordemProducao/status/dataCriacao.
+        // Muta in place preservando id/status/dataCriacao. A OP pode ser trocada
+        // (valida unicidade, ignorando a própria OP atual); se null, preserva.
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), pedido.getOrdemProducao()));
         pedido.setTipoPedido(dto.tipoPedido());
         pedido.setCorTampa(dto.corTampa());
 
@@ -217,6 +220,26 @@ public class PedidoService {
 
     private Boolean validarTipoPedidoRequest(PedidoRequestDTO pedido) {
         return pedido.blocos().size() == pedido.tipoPedido().getValue();
+    }
+
+    // Próxima OP livre (MAX+1) — sugerida ao formulário e usada quando o usuário não escolhe.
+    public Integer proximaOrdemProducao() {
+        return pedidoRepository.proximaOrdemProducao();
+    }
+
+    // Resolve a OP a persistir: se o usuário escolheu uma, valida positividade e unicidade
+    // (ignorando `atual`, a OP que já pertence ao próprio pedido em edição); senão, auto MAX+1.
+    private Integer resolverOrdemProducao(Integer escolhida, Integer atual) {
+        if (escolhida == null || escolhida.equals(atual)) {
+            return atual != null ? atual : pedidoRepository.proximaOrdemProducao();
+        }
+        if (escolhida < 1) {
+            throw new IllegalArgumentException("Ordem de produção deve ser um número positivo.");
+        }
+        if (pedidoRepository.existsByOrdemProducao(escolhida)) {
+            throw new IllegalArgumentException("Ordem de produção " + escolhida + " já está em uso.");
+        }
+        return escolhida;
     }
 
     public PedidoResponseDTO concluir(Long id) {

@@ -380,31 +380,226 @@
 }
 
 .pedido-start-button {
-  width: 4rem;
+  width: 3.5rem;
   aspect-ratio: 1/1;
-  max-height: 4rem;
+  max-height: 3.5rem;
   border: 2px solid transparent;
   border-radius: 1rem;
   background-color: var(--color-green);
-  transition: all ease-out 0.5s;
-  box-shadow: 1px 1px 10px 1px var(--color-green);
+  color: #06210a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition), background-color var(--transition), box-shadow var(--transition);
+  box-shadow: 0 0 12px 1px rgba(90, 179, 0, 0.5);
   box-sizing: border-box;
+  cursor: pointer;
 }
-.pedido-start-button::before { content: "▶"; }
-.pedido-start-button:hover { scale: 1.1; }
-.pedido-start-button:active {
-  scale: 1;
-  opacity: 0.9;
+
+/* idle = pronto para produzir (único estado clicável). */
+.pedido-start-button[data-state="idle"]::before { content: "▶"; margin-left: 3px; }
+.pedido-start-button[data-state="idle"]:hover { transform: scale(1.08); }
+.pedido-start-button[data-state="idle"]:active { transform: scale(1); opacity: 0.9; }
+
+/* Estados informativos: desabilitados, sem hover. */
+.pedido-start-button:disabled { cursor: not-allowed; }
+
+/* Na fila (aguardando a bancada liberar). */
+.pedido-start-button[data-state="queued"] {
+  background-color: var(--color-accent);
+  box-shadow: 0 0 12px 1px var(--color-accent-lo);
+  color: var(--color-text);
 }
-.pedido-start-button.started {
+.pedido-start-button[data-state="queued"]::before { content: "\f0c9"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 0.9rem; }
+
+/* Em produção — spinner CSS (sem imagem externa). */
+.pedido-start-button[data-state="producao"] {
   background-color: var(--color-yellow);
-  box-shadow: 1px 1px 10px 1px var(--color-yellow);
-  background-image: url("https://usagif.com/wp-content/uploads/loading-25.gif");
-  background-size: 60%;
-  background-repeat: no-repeat;
-  background-position: center;
+  box-shadow: 0 0 12px 1px rgba(254, 206, 0, 0.5);
 }
-.pedido-start-button.started::before { content: ""; }
+.pedido-start-button[data-state="producao"]::before {
+  content: "";
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 3px solid rgba(0, 0, 0, 0.25);
+  border-top-color: #3a2e00;
+  border-radius: 50%;
+  animation: pedido-spin 0.8s linear infinite;
+}
+
+/* Concluído. */
+.pedido-start-button[data-state="concluido"] {
+  background-color: transparent;
+  border-color: var(--color-green);
+  box-shadow: none;
+  color: var(--color-green);
+}
+.pedido-start-button[data-state="concluido"]::before { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+
+@keyframes pedido-spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   Fila de produção — linha de montagem com paradas numeradas.
+   ============================================================ */
+.fila-panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+
+.fila-panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.fila-panel__title {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.02em;
+}
+.fila-panel__title i { color: var(--color-accent); margin-right: 6px; }
+
+.fila-panel__hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+}
+
+/* Track horizontal, rolável; as paradas ficam conectadas por uma linha de base. */
+.fila-track {
+  display: flex;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 8px;
+  overflow-x: auto;
+}
+
+.fila-stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 148px;
+  padding: 0 10px;
+  flex: 0 0 auto;
+}
+
+/* Linha conectora entre as paradas (não desenha após a última). */
+.fila-stop::after {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border-2);
+  z-index: 0;
+}
+.fila-stop:last-child::after { display: none; }
+
+.fila-stop__num {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-2);
+  border: 2px solid var(--color-border-2);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fila-stop__card {
+  width: 100%;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fila-stop__op {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+.fila-stop__op-lbl {
+  font-size: 10px;
+  color: var(--color-muted);
+  margin-right: 5px;
+  letter-spacing: 0.06em;
+}
+
+.fila-stop__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fila-stop__id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.fila-stop__tampa {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-2);
+}
+.fila-stop__badge { align-self: flex-start; }
+
+/* Parada em produção: número aceso + card destacado + pulso. */
+.fila-stop--ativo .fila-stop__num {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+  box-shadow: 0 0 0 4px var(--color-accent-lo);
+  animation: fila-pulse 1.6s ease-in-out infinite;
+}
+.fila-stop--ativo .fila-stop__card {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-glow);
+}
+
+@keyframes fila-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px var(--color-accent-lo); }
+  50%      { box-shadow: 0 0 0 8px transparent; }
+}
+
+.fila-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 4px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+.fila-empty i { color: var(--color-dim); font-size: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fila-stop--ativo .fila-stop__num { animation: none; }
+}
 
 @media (max-width: 1100px) {
   .info-grid { grid-template-columns: repeat(2, 1fr); }
