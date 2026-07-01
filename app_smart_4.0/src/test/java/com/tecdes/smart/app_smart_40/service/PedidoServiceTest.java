@@ -12,6 +12,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -177,7 +178,7 @@ public class PedidoServiceTest {
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA),
                 new LaminaRequestDTO(CorLamina.AZUL, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
         BlocoRequestDTO blocoDuplicado = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminasComDuplicatas);
-        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO,
+        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, null,
                 List.of(blocoDuplicado));
 
         when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
@@ -197,7 +198,7 @@ public class PedidoServiceTest {
                 new LaminaRequestDTO(CorLamina.AMARELO, PadraoLamina.NENHUM, PosicaoLamina.DIREITA),
                 new LaminaRequestDTO(CorLamina.VERDE, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
         BlocoRequestDTO blocoExcesso = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminasExcesso);
-        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO,
+        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, null,
                 List.of(blocoExcesso));
 
         when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
@@ -403,14 +404,71 @@ public class PedidoServiceTest {
     }
 
     // =========================================================================
+    // TESTES: OP escolhida pelo usuário (criar)
+    // =========================================================================
+
+    @Test
+    @DisplayName("Deve usar a OP escolhida quando informada, positiva e única")
+    void deveUsarOpEscolhida_QuandoUnicaEValida() {
+        PedidoRequestDTO dto = buildPedidoRequestDTOComOp(42);
+        when(expedicaoService.existePosicaoLivre()).thenReturn(true);
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.existsByOrdemProducao(42)).thenReturn(false);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        pedidoService.criar(dto);
+
+        ArgumentCaptor<Pedido> captor = ArgumentCaptor.forClass(Pedido.class);
+        verify(pedidoRepository).save(captor.capture());
+        assertEquals(42, captor.getValue().getOrdemProducao());
+        verify(pedidoRepository, never()).proximaOrdemProducao();
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar quando a OP escolhida já está em uso")
+    void deveRejeitar_QuandoOpEscolhidaDuplicada() {
+        PedidoRequestDTO dto = buildPedidoRequestDTOComOp(42);
+        when(expedicaoService.existePosicaoLivre()).thenReturn(true);
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.existsByOrdemProducao(42)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> pedidoService.criar(dto));
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("Deve usar a próxima OP automática quando o usuário não escolhe (null)")
+    void deveUsarProximaOp_QuandoOpNula() {
+        PedidoRequestDTO dto = buildPedidoRequestDTOComOp(null);
+        when(expedicaoService.existePosicaoLivre()).thenReturn(true);
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.proximaOrdemProducao()).thenReturn(7);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        pedidoService.criar(dto);
+
+        ArgumentCaptor<Pedido> captor = ArgumentCaptor.forClass(Pedido.class);
+        verify(pedidoRepository).save(captor.capture());
+        assertEquals(7, captor.getValue().getOrdemProducao());
+        verify(pedidoRepository, never()).existsByOrdemProducao(any());
+    }
+
+    // =========================================================================
     // MÉTODOS AUXILIARES (Factories)
     // =========================================================================
+
+    private static PedidoRequestDTO buildPedidoRequestDTOComOp(Integer op) {
+        List<LaminaRequestDTO> laminas = List.of(
+                new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
+        BlocoRequestDTO bloco = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas);
+        return new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, op, List.of(bloco));
+    }
 
     private static PedidoRequestDTO buildPedidoRequestDTOSimples() {
         List<LaminaRequestDTO> laminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
         BlocoRequestDTO bloco = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas);
-        return new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, List.of(bloco));
+        return new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, null, List.of(bloco));
     }
 
     private static PedidoRequestDTO buildPedidoRequestDTODuplo() {
@@ -420,7 +478,7 @@ public class PedidoServiceTest {
                 new LaminaRequestDTO(CorLamina.AZUL, PadraoLamina.NENHUM, PosicaoLamina.FRENTE));
         BlocoRequestDTO bloco1 = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas1);
         BlocoRequestDTO bloco2 = new BlocoRequestDTO(CorBloco.VERMELHO, AndarBloco.SEGUNDO, laminas2);
-        return new PedidoRequestDTO(TipoPedido.DUPLO, CorTampa.PRETO, List.of(bloco1, bloco2));
+        return new PedidoRequestDTO(TipoPedido.DUPLO, CorTampa.PRETO, null, List.of(bloco1, bloco2));
     }
 
     private static PedidoRequestDTO buildPedidoRequestDTOTriplo() {
@@ -433,7 +491,7 @@ public class PedidoServiceTest {
         BlocoRequestDTO bloco1 = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas1);
         BlocoRequestDTO bloco2 = new BlocoRequestDTO(CorBloco.VERMELHO, AndarBloco.SEGUNDO, laminas2);
         BlocoRequestDTO bloco3 = new BlocoRequestDTO(CorBloco.AZUL, AndarBloco.TERCEIRO, laminas3);
-        return new PedidoRequestDTO(TipoPedido.TRIPLO, CorTampa.PRETO,
+        return new PedidoRequestDTO(TipoPedido.TRIPLO, CorTampa.PRETO, null,
                 List.of(bloco1, bloco2, bloco3));
     }
 
@@ -444,7 +502,7 @@ public class PedidoServiceTest {
                     CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
             blocos.add(new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas));
         }
-        return new PedidoRequestDTO(tipo, CorTampa.PRETO, blocos);
+        return new PedidoRequestDTO(tipo, CorTampa.PRETO, null, blocos);
     }
 
     private static Pedido buildPedidoEntidade(Long id, TipoPedido tipo, StatusPedido status) {

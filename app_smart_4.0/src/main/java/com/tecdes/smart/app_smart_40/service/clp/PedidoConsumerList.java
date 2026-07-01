@@ -1,10 +1,9 @@
 package com.tecdes.smart.app_smart_40.service.clp;
 
-import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Component;
 import com.tecdes.smart.app_smart_40.model.Pedido;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
+import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
 import com.tecdes.smart.app_smart_40.service.SmartService;
 
@@ -19,58 +19,100 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Fila de pedidos: serializa a produção em "um pedido por vez" na bancada.
+ *
+ * <p>O estado autoritativo de "o que está rodando" é o <b>banco</b>
+ * ({@code status == PRODUCAO}), não a fila em memória — assim um restart com um
+ * pedido em curso não faz a fila sobrepor outro na bancada. A fila apenas
+ * decide qual pedido PENDENTE enviar em seguida.
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class PedidoConsumerList {
 
     public static ConcurrentLinkedQueue<Long> pedidos = new ConcurrentLinkedQueue<>();
+
     private final SmartService smartService;
     private final ExpedicaoCLP expedicaoCLP;
     private final ExpedicaoClpWriter expedicaoClpWriter;
     private final PedidoService pedidoService;
-    private Pedido current = null;
+    private final PedidoRepository pedidoRepository;
 
     @Scheduled(fixedDelayString = "${delay.order.queue:1000}")
     @Transactional
     public void processOrder() {
-        System.out.println("Lista de pedidos:       " + pedidos.toString());
-        // Nada na fila — nada a fazer
-        if (pedidos.peek() == null)
-            return;
+        log.debug("Fila de pedidos: {}", pedidos);
 
-        // Carrega o current se ainda não tem
-        if (current == null) {
-            current = pedidoService.buscarPorId(pedidos.peek()).toEntity();
-            smartService.enviarParaProducao(current.getId());
-            return; // aguarda próxima execução para checar conclusão
+        // 1) Bancada ocupada? O banco é a fonte da verdade — inclui um pedido
+        //    em PRODUCAO órfão de reset que já não está na fila. Enquanto houver
+        //    um rodando, NUNCA enviamos outro.
+        Optional<Pedido> emProducao = pedidoRepository.findFirstByStatus(StatusPedido.PRODUCAO);
+        if (emProducao.isPresent()) {
+            tratarEmProducao(emProducao.get());
+            return;
         }
 
-        // Verifica se o pedido em produção foi concluído
-        boolean concluido = current.getOrdemProducao()
-                .equals(expedicaoCLP.getNumeroOP());
+        // 2) Nada rodando — avalia o head da fila.
+        Long head = pedidos.peek();
+        if (head == null) {
+            return;
+        }
 
-        if (concluido) {
+        Pedido pedido = pedidoRepository.findById(head).orElse(null);
+        if (pedido == null) {
+            // Pedido enfileirado foi deletado: descarta o id para não travar a fila.
+            log.warn("Pedido {} não existe mais — removido da fila.", head);
+            pedidos.poll();
+            return;
+        }
 
-            try {
-                expedicaoClpWriter.escreverPosicao(current.getExpedicao().getPosicao(),
-                        current.getOrdemProducao().intValue());
+        switch (pedido.getStatus()) {
+            case CONCLUIDO -> pedidos.poll();                       // já terminou → avança
+            case PENDENTE -> smartService.enviarParaProducao(head); // dispara → vira PRODUCAO
+            default -> { /* PRODUCAO é tratado no passo 1 */ }
+        }
+    }
 
-                PedidoResponseDTO p = pedidoService.concluir(current.getId());
-                if (p.status().equals(StatusPedido.CONCLUIDO)) {
-                    pedidos.poll(); // remove o head da fila de forma segura
-                    current = null; // libera para o próximo pedido
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage());
+    /**
+     * Pedido em produção: se o CLP de expedição já reporta a OP, grava posição+OP no
+     * magazine e conclui (idempotente). Avança a fila se este for o head.
+     */
+    private void tratarEmProducao(Pedido pedido) {
+        boolean concluido = pedido.getOrdemProducao().equals(expedicaoCLP.getNumeroOP());
+        if (!concluido) {
+            return; // ainda executando — aguarda
+        }
+
+        try {
+            int posicao = pedido.getExpedicao().getPosicao().intValue();
+            int op = pedido.getOrdemProducao().intValue();
+            log.debug("Guardando OP {} na posição de expedição {}", op, posicao);
+            expedicaoClpWriter.escreverPosicao(posicao, op);
+
+            // O auto-sync (ExpedicaoService.guardarNaPosicao) pode ter concluído antes;
+            // a checagem evita o IllegalStateException de concluir() e o try blinda a corrida.
+            if (pedido.getStatus() != StatusPedido.CONCLUIDO) {
+                pedidoService.concluir(pedido.getId());
             }
 
+            Long head = pedidos.peek();
+            if (head != null && head.equals(pedido.getId())) {
+                pedidos.poll();
+            }
+        } catch (Exception e) {
+            log.error("Falha ao concluir pedido {}: {}", pedido.getId(), e.getMessage());
         }
-
     }
 
     public void addOrder(Long id) {
         pedidos.add(id);
+    }
+
+    /** Snapshot ordenado dos ids na fila (head = em produção). Para exibição no frontend. */
+    public List<Long> filaAtual() {
+        return new ArrayList<>(pedidos);
     }
 
 }

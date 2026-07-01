@@ -18,6 +18,9 @@ const opcoesLamina = {
 };
 
 const tipoPedidoEl = document.getElementById('tipo-pedido');
+const ordemProducaoEl = document.getElementById('ordem-producao');
+// OP sugerida pelo servidor (th:value) — usada para restaurar no "Limpar".
+const OP_SUGERIDA = ordemProducaoEl?.value ?? '';
 
 // ─── Preview 3D ──────────────────────────────────────────────────────────────
 
@@ -101,6 +104,8 @@ function buildPayload() {
   return {
     tipoPedido: parseInt(tipoPedidoEl.value, 10),
     corTampa: parseInt(document.getElementById('cor-tampa').value, 10),
+    // OP vazia → null: o backend usa a próxima OP automática (MAX+1).
+    ordemProducao: parseInt(ordemProducaoEl.value, 10) || null,
     blocos,
   };
 }
@@ -154,6 +159,7 @@ const SUBMIT_LABEL = EDIT_ID ? 'SALVAR ALTERAÇÕES' : 'ENVIAR PEDIDO';
 function prefillEdit(pedido) {
   tipoPedidoEl.value = String(pedido.tipoPedido);
   document.getElementById('cor-tampa').value = String(pedido.corTampa);
+  if (ordemProducaoEl) ordemProducaoEl.value = String(pedido.ordemProducao ?? '');
   syncBlocos(); // ativa os blocos do tipo e zera as lâminas
 
   (pedido.blocos ?? []).forEach((b, idx) => {
@@ -177,6 +183,7 @@ function prefillEdit(pedido) {
 function limparForm() {
   tipoPedidoEl.selectedIndex = 0;
   document.getElementById('cor-tampa').selectedIndex = 0;
+  if (ordemProducaoEl) ordemProducaoEl.value = OP_SUGERIDA;
 
   BLOCO_IDS.forEach((id) => {
     const card = document.getElementById(id);

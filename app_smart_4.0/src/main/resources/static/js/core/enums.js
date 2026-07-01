@@ -60,6 +60,7 @@ export const COR_LAMINA_INT_TO_NAME = {
 export const normalizeStatus = (v) => STATUS_INT_TO_NAME[v] ?? v;
 export const normalizeTipo = (v) => TIPO_INT_TO_NAME[v] ?? v;
 export const normalizeCor = (v) => COR_LAMINA_INT_TO_NAME[v] ?? v;
+export const normalizeCorTampa = (v) => COR_INT_TO_NAME ?? v;
 export const normalizeCorBloco = (v) => COR_INT_TO_NAME[v] ?? v;
 export const normalizePadrao = (v) => PADRAO_INT_TO_NAME[v] ?? v;
 export const normalizePosicao = (v) => POSICAO_INT_TO_NAME[v] ?? v;
