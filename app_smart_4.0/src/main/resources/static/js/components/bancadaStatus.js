@@ -5,7 +5,7 @@ const BASE = 'Smart40.png';
 // nome  → família de FUNCIONAMENTO (Smart40_Estoque_1.png, separador '_')
 const ESTACOES = {
   estoque:   { abrev: 'Est', nome: 'Estoque' },
-  producao:  { abrev: 'Pro', nome: 'Processo' },
+  processo:  { abrev: 'Pro', nome: 'Processo' },
   montagem:  { abrev: 'Mon', nome: 'Montagem' },
   expedicao: { abrev: 'Exp', nome: 'Expedicao' },
 };
@@ -40,6 +40,28 @@ function setFuncionamento(est, n) {
   }
 }
 
+// Regra visual combinada (3 cores). A imagem de funcionamento só aparece quando a estação está ocupada.
+// A cor de "ligada" vem da VIVACIDADE DA COMUNICAÇÃO (heartbeat), NÃO do `estado` do backend: uma
+// estação comunicando mas parada (idle) emite estado='off', então usar 'off' a deixaria vermelha mesmo
+// ligada. O heartbeat pulsa a cada leitura, esteja a estação ocupada ou não.
+//  - sem comunicação (heartbeat parou) → VERMELHO (off),   sem imagem
+//  - ocupada (funcionamento ativo)     → AMARELO  (pause), COM a imagem
+//  - ligada (comunicando, sem tarefa)  → VERDE    (on),    sem imagem
+function aplicar(est, viva, funcionamento) {
+  if (!ESTACOES[est]) return;
+  const ocupada = funcionamento !== null && funcionamento !== undefined;
+  if (!viva) {
+    setEstado(est, 'off');                 // vermelho
+    setFuncionamento(est, null);           // sem imagem
+  } else if (ocupada) {
+    setEstado(est, 'pause');               // amarelo
+    setFuncionamento(est, funcionamento);  // com a imagem
+  } else {
+    setEstado(est, 'on');                  // verde
+    setFuncionamento(est, null);           // sem imagem
+  }
+}
+
 export default {
   base: BASE,
   estacoes: ESTACOES,
@@ -51,4 +73,5 @@ export default {
   srcFuncionamento,
   setEstado,
   setFuncionamento,
+  aplicar,
 };

@@ -78,12 +78,30 @@ function setLeituraBadge(ativa) {
 }
 setLeituraBadge(false);
 
+// Vivacidade do heartbeat e funcionamento POR estação — a cor do overlay (verde/vermelho) depende do
+// heartbeat, não do `estado` (idle conectado emite estado='off'). Ver bancadaStatus.aplicar.
+const LIMITE_MS = 2500;
+const ultimaLeituraEst = {};
+const funcAtual = {};
+
+function renderBancada(estacao) {
+  const viva = Date.now() - (ultimaLeituraEst[estacao] ?? 0) <= LIMITE_MS;
+  bancadaStatus.aplicar(estacao, viva, funcAtual[estacao] ?? null);
+}
+
 const sse = createSse();
 sse.on('estacao-status', (d) => {
-  bancadaStatus.setEstado(d.estacao, d.estado);
-  bancadaStatus.setFuncionamento(d.estacao, d.funcionamento);
+  funcAtual[d.estacao] = d.funcionamento;
+  renderBancada(d.estacao);
 });
-sse.on('estacao-heartbeat', () => { ultimaLeitura = Date.now(); }); // pulso de leitura para o badge
+sse.on('estacao-heartbeat', (d) => {
+  ultimaLeitura = Date.now();                 // badge global de leitura
+  ultimaLeituraEst[d.estacao] = Date.now();   // vivacidade por estação (cor da bancada)
+  renderBancada(d.estacao);
+});
 sse.connect();
 
-setInterval(() => setLeituraBadge(Date.now() - ultimaLeitura <= 2500), 1000);
+setInterval(() => {
+  setLeituraBadge(Date.now() - ultimaLeitura <= LIMITE_MS);
+  Object.keys(ultimaLeituraEst).forEach(renderBancada); // sem pulso → estação vira vermelha
+}, 1000);

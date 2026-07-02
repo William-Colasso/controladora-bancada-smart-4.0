@@ -4,12 +4,14 @@ import com.tecdes.smart.app_smart_40.dto.request.ExpedicaoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
+import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +61,15 @@ public class ExpedicaoService {
 
         expedicao.setPedidoAtual(pedido);
         expedicaoRepository.save(expedicao);
+
+        // Peça guardada na expedição = produção concluída. Ponto único de sincronização CLP→pedido;
+        // feito aqui (e não em PedidoService.concluir) para evitar ciclo PedidoService↔ExpedicaoService.
+        // ponytail: reusa o mesmo par de campos de concluir(); extrair helper se a regra divergir.
+        if (pedido.getStatus() == StatusPedido.PRODUCAO) {
+            pedido.setStatus(StatusPedido.CONCLUIDO);
+            pedido.setDataEntradaExpedicao(LocalDateTime.now());
+            pedidoRepository.save(pedido);
+        }
     }
 
     /** Libera a posição física de expedição {@code posicao} (remove o pedido vinculado). */

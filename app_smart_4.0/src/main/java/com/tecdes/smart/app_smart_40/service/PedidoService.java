@@ -13,6 +13,7 @@ import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.LaminaRequestDTO;
+import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
@@ -77,7 +78,8 @@ public class PedidoService {
            
         });
 
-        pedido.setOrdemProducao(pedidoRepository.proximaOrdemProducao());
+        // OP escolhida pelo usuário (valida unicidade) ou auto (MAX+1).
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), null));
 
         pedido.setStatus(StatusPedido.PENDENTE);
         System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
@@ -156,17 +158,46 @@ public class PedidoService {
     // -------------------------------------------------------------------------
 
     public PedidoResponseDTO atualizar(Long id, PedidoRequestDTO dto) {
-        if (!pedidoRepository.existsById(id)) {
-            throw new PedidoNotFoundException("Pedido não encontrado: " + id);
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
+
+        // Só pedidos ainda não enviados à produção podem ser editados.
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new IllegalStateException("Só é possível editar pedidos pendentes.");
         }
 
+        // Mesmas validações do criar() (estoque é checagem otimista — ver comentário em criar()).
         if (!validarTipoPedidoRequest(dto)) {
             throw new IllegalArgumentException(
                     "Quantidade de blocos não corresponde ao tipo de pedido.");
         }
+        if (!blocosSuficientesEmEstoque(dto.blocos())) {
+            throw new EstoqueInsuficienteException(
+                    "Cores requisitadas não se encontram presentes");
+        }
+        if (!validarLaminas(dto.blocos())) {
+            throw new IllegalArgumentException(
+                    "Lâminas propostas mal formadas, em posição incorreta ou faltante");
+        }
 
-        Pedido pedido = dto.toEntity();
-        pedido.setId(id);
+        // Muta in place preservando id/status/dataCriacao. A OP pode ser trocada
+        // (valida unicidade, ignorando a própria OP atual); se null, preserva.
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), pedido.getOrdemProducao()));
+        pedido.setTipoPedido(dto.tipoPedido());
+        pedido.setCorTampa(dto.corTampa());
+
+        List<Bloco> novosBlocos = dto.blocos().stream()
+                .map(BlocoRequestDTO::toEntity)
+                .toList();
+        novosBlocos.forEach(bloco -> {
+            bloco.setPedido(pedido);
+            if (bloco.getLaminas() != null) {
+                bloco.getLaminas().forEach(lamina -> lamina.setBloco(bloco));
+            }
+        });
+        // clear + addAll na coleção gerenciada → orphanRemoval apaga os blocos antigos.
+        pedido.getBlocos().clear();
+        pedido.getBlocos().addAll(novosBlocos);
 
         return PedidoResponseDTO.fromEntity(pedidoRepository.save(pedido));
     }
@@ -189,6 +220,26 @@ public class PedidoService {
 
     private Boolean validarTipoPedidoRequest(PedidoRequestDTO pedido) {
         return pedido.blocos().size() == pedido.tipoPedido().getValue();
+    }
+
+    // Próxima OP livre (MAX+1) — sugerida ao formulário e usada quando o usuário não escolhe.
+    public Integer proximaOrdemProducao() {
+        return pedidoRepository.proximaOrdemProducao();
+    }
+
+    // Resolve a OP a persistir: se o usuário escolheu uma, valida positividade e unicidade
+    // (ignorando `atual`, a OP que já pertence ao próprio pedido em edição); senão, auto MAX+1.
+    private Integer resolverOrdemProducao(Integer escolhida, Integer atual) {
+        if (escolhida == null || escolhida.equals(atual)) {
+            return atual != null ? atual : pedidoRepository.proximaOrdemProducao();
+        }
+        if (escolhida < 1) {
+            throw new IllegalArgumentException("Ordem de produção deve ser um número positivo.");
+        }
+        if (pedidoRepository.existsByOrdemProducao(escolhida)) {
+            throw new IllegalArgumentException("Ordem de produção " + escolhida + " já está em uso.");
+        }
+        return escolhida;
     }
 
     public PedidoResponseDTO concluir(Long id) {

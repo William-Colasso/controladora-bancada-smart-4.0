@@ -12,6 +12,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,6 +21,7 @@ import com.tecdes.smart.app_smart_40.dto.request.*;
 import com.tecdes.smart.app_smart_40.dto.response.*;
 import com.tecdes.smart.app_smart_40.model.*;
 import com.tecdes.smart.app_smart_40.model.enums.*;
+import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 
@@ -176,7 +178,7 @@ public class PedidoServiceTest {
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA),
                 new LaminaRequestDTO(CorLamina.AZUL, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
         BlocoRequestDTO blocoDuplicado = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminasComDuplicatas);
-        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO,
+        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, null,
                 List.of(blocoDuplicado));
 
         when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
@@ -196,7 +198,7 @@ public class PedidoServiceTest {
                 new LaminaRequestDTO(CorLamina.AMARELO, PadraoLamina.NENHUM, PosicaoLamina.DIREITA),
                 new LaminaRequestDTO(CorLamina.VERDE, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
         BlocoRequestDTO blocoExcesso = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminasExcesso);
-        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO,
+        PedidoRequestDTO dto = new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, null,
                 List.of(blocoExcesso));
 
         when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
@@ -350,14 +352,123 @@ public class PedidoServiceTest {
     }
 
     // =========================================================================
+    // TESTES: atualizar(Long id, PedidoRequestDTO dto)
+    // =========================================================================
+
+    @Test
+    @DisplayName("atualizar - edita pedido PENDENTE preservando OP/status/dataCriacao e troca os blocos")
+    void deveAtualizar_QuandoPedidoPendente() {
+        Long id = 1L;
+        Pedido existente = buildPedidoEntidade(id, TipoPedido.SIMPLES, StatusPedido.PENDENTE);
+        existente.setOrdemProducao(42);
+        LocalDateTime criacao = existente.getDataCriacao();
+        PedidoRequestDTO dto = buildPedidoRequestDTOSimples();
+
+        when(pedidoRepository.findById(id)).thenReturn(Optional.of(existente));
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        PedidoResponseDTO resultado = pedidoService.atualizar(id, dto);
+
+        assertEquals(42, resultado.ordemProducao());           // OP preservada
+        assertEquals(StatusPedido.PENDENTE, resultado.status()); // status preservado
+        assertEquals(criacao, resultado.dataCriacao());          // dataCriacao preservada
+        assertEquals(1, resultado.blocos().size());              // blocos substituídos
+        verify(pedidoRepository, times(1)).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("atualizar - rejeita com IllegalStateException quando pedido não está PENDENTE")
+    void deveRejeitarAtualizar_QuandoNaoPendente() {
+        Long id = 1L;
+        Pedido existente = buildPedidoEntidade(id, TipoPedido.SIMPLES, StatusPedido.PRODUCAO);
+
+        when(pedidoRepository.findById(id)).thenReturn(Optional.of(existente));
+
+        assertThrows(IllegalStateException.class,
+                () -> pedidoService.atualizar(id, buildPedidoRequestDTOSimples()),
+                "Só é possível editar pedidos pendentes.");
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("atualizar - lança PedidoNotFoundException quando pedido não existe")
+    void deveRejeitarAtualizar_QuandoPedidoNaoExiste() {
+        Long id = 999L;
+
+        when(pedidoRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(PedidoNotFoundException.class,
+                () -> pedidoService.atualizar(id, buildPedidoRequestDTOSimples()));
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    // =========================================================================
+    // TESTES: OP escolhida pelo usuário (criar)
+    // =========================================================================
+
+    @Test
+    @DisplayName("Deve usar a OP escolhida quando informada, positiva e única")
+    void deveUsarOpEscolhida_QuandoUnicaEValida() {
+        PedidoRequestDTO dto = buildPedidoRequestDTOComOp(42);
+        when(expedicaoService.existePosicaoLivre()).thenReturn(true);
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.existsByOrdemProducao(42)).thenReturn(false);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        pedidoService.criar(dto);
+
+        ArgumentCaptor<Pedido> captor = ArgumentCaptor.forClass(Pedido.class);
+        verify(pedidoRepository).save(captor.capture());
+        assertEquals(42, captor.getValue().getOrdemProducao());
+        verify(pedidoRepository, never()).proximaOrdemProducao();
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar quando a OP escolhida já está em uso")
+    void deveRejeitar_QuandoOpEscolhidaDuplicada() {
+        PedidoRequestDTO dto = buildPedidoRequestDTOComOp(42);
+        when(expedicaoService.existePosicaoLivre()).thenReturn(true);
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.existsByOrdemProducao(42)).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> pedidoService.criar(dto));
+        verify(pedidoRepository, never()).save(any(Pedido.class));
+    }
+
+    @Test
+    @DisplayName("Deve usar a próxima OP automática quando o usuário não escolhe (null)")
+    void deveUsarProximaOp_QuandoOpNula() {
+        PedidoRequestDTO dto = buildPedidoRequestDTOComOp(null);
+        when(expedicaoService.existePosicaoLivre()).thenReturn(true);
+        when(estoqueRepository.contarDisponibilidadeCor(CorBloco.PRETO)).thenReturn(1L);
+        when(pedidoRepository.proximaOrdemProducao()).thenReturn(7);
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        pedidoService.criar(dto);
+
+        ArgumentCaptor<Pedido> captor = ArgumentCaptor.forClass(Pedido.class);
+        verify(pedidoRepository).save(captor.capture());
+        assertEquals(7, captor.getValue().getOrdemProducao());
+        verify(pedidoRepository, never()).existsByOrdemProducao(any());
+    }
+
+    // =========================================================================
     // MÉTODOS AUXILIARES (Factories)
     // =========================================================================
+
+    private static PedidoRequestDTO buildPedidoRequestDTOComOp(Integer op) {
+        List<LaminaRequestDTO> laminas = List.of(
+                new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
+        BlocoRequestDTO bloco = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas);
+        return new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, op, List.of(bloco));
+    }
 
     private static PedidoRequestDTO buildPedidoRequestDTOSimples() {
         List<LaminaRequestDTO> laminas = List.of(
                 new LaminaRequestDTO(CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
         BlocoRequestDTO bloco = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas);
-        return new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, List.of(bloco));
+        return new PedidoRequestDTO(TipoPedido.SIMPLES, CorTampa.PRETO, null, List.of(bloco));
     }
 
     private static PedidoRequestDTO buildPedidoRequestDTODuplo() {
@@ -367,7 +478,7 @@ public class PedidoServiceTest {
                 new LaminaRequestDTO(CorLamina.AZUL, PadraoLamina.NENHUM, PosicaoLamina.FRENTE));
         BlocoRequestDTO bloco1 = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas1);
         BlocoRequestDTO bloco2 = new BlocoRequestDTO(CorBloco.VERMELHO, AndarBloco.SEGUNDO, laminas2);
-        return new PedidoRequestDTO(TipoPedido.DUPLO, CorTampa.PRETO, List.of(bloco1, bloco2));
+        return new PedidoRequestDTO(TipoPedido.DUPLO, CorTampa.PRETO, null, List.of(bloco1, bloco2));
     }
 
     private static PedidoRequestDTO buildPedidoRequestDTOTriplo() {
@@ -380,7 +491,7 @@ public class PedidoServiceTest {
         BlocoRequestDTO bloco1 = new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas1);
         BlocoRequestDTO bloco2 = new BlocoRequestDTO(CorBloco.VERMELHO, AndarBloco.SEGUNDO, laminas2);
         BlocoRequestDTO bloco3 = new BlocoRequestDTO(CorBloco.AZUL, AndarBloco.TERCEIRO, laminas3);
-        return new PedidoRequestDTO(TipoPedido.TRIPLO, CorTampa.PRETO,
+        return new PedidoRequestDTO(TipoPedido.TRIPLO, CorTampa.PRETO, null,
                 List.of(bloco1, bloco2, bloco3));
     }
 
@@ -391,7 +502,7 @@ public class PedidoServiceTest {
                     CorLamina.VERMELHO, PadraoLamina.NENHUM, PosicaoLamina.ESQUERDA));
             blocos.add(new BlocoRequestDTO(CorBloco.PRETO, AndarBloco.PRIMEIRO, laminas));
         }
-        return new PedidoRequestDTO(tipo, CorTampa.PRETO, blocos);
+        return new PedidoRequestDTO(tipo, CorTampa.PRETO, null, blocos);
     }
 
     private static Pedido buildPedidoEntidade(Long id, TipoPedido tipo, StatusPedido status) {

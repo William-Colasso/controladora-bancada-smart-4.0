@@ -51,7 +51,9 @@ public class EstoqueCLP extends EstacaoCLP {
     private boolean iniciarGuardarEst;
     private int posicaoGuardarEst;
 
-    private byte[] posicoesOcupadas;
+    // int[] (não byte[]): serializa sempre como vetor de números [0,1,0,2,...] (cada posição = cor do
+    // magazine). Com byte[] o Jackson emitiria Base64 (string), que chegava como "caracteres" no front.
+    private int[] posicoesOcupadas;
 
     private boolean pedirPosicaoEst;
     private int posicaoEstoque;

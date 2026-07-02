@@ -4,6 +4,7 @@ import { createSse } from '../core/sse.js';
 import { COR_INT_TO_NAME } from '../core/enums.js';
 import {
   createEstoqueCell, createExpedicaoCell, renderEstoqueCell, renderExpedicaoCell,
+  createClpEstoqueCell, renderClpEstoqueCell,
 } from '../components/blocoCell.js';
 
 const ESTOQUE_TOTAL = 28;
@@ -12,11 +13,15 @@ const EXPEDICAO_TOTAL = 12;
 const state = {
   estoque: [],
   expedicao: [],
+  estoqueClp: null,     // snapshot do magazine lido do CLP (array de 28 ints), null até o 1º evento
+  clpRecebido: false,
   selectedPos: new Set(),
   activeColor: null,
 };
 
 const estoqueGrid = document.getElementById('estoqueGrid');
+const clpEstoqueGrid = document.getElementById('clpEstoqueGrid');
+const clpDivergencias = document.getElementById('clpDivergencias');
 const expedicaoGrid = document.getElementById('expedicaoGrid');
 const applyBtn = document.getElementById('applyColorBtn');
 const selectionInfo = document.getElementById('selectionInfo');
@@ -63,22 +68,92 @@ function syncSelecaoUI() {
   if (applyBtn) applyBtn.disabled = n === 0 || state.activeColor === null;
 }
 
+
+
+var selecting = false;
 function renderEstoque() {
   const byPos = {};
   state.estoque.forEach((e) => { byPos[e.posicao] = e; });
 
+  if (!estoqueGrid.dataset.listenerRegistrado) {
+    estoqueGrid.addEventListener("mousedown", (e) => {
+      selecting = true;
+      ifBlocoToggle(e);
+    });
+
+    document.addEventListener("mouseup", () => {
+      selecting = false;
+    });
+
+    estoqueGrid.addEventListener("mouseenter", (e) => {
+      if (e.target.classList.contains("bloco--estoque") && selecting) {
+        toggleSelecao(e.target.dataset.pos);
+      }
+    }, true); // capture: true — ver nota abaixo
+
+    function ifBlocoToggle(e) {
+      if (e.target.classList.contains("bloco--estoque") && selecting) {
+        toggleSelecao(e.target.dataset.pos);
+      }
+    }
+
+    estoqueGrid.dataset.listenerRegistrado = 'true';
+  }
   for (let pos = 1; pos <= ESTOQUE_TOTAL; pos++) {
     let cell = document.getElementById(`bloco-est-${pos}`);
     if (!cell) {
       cell = createEstoqueCell(pos, toggleSelecao);
       estoqueGrid.appendChild(cell);
-    } else if (!cell.dataset.listenerRegistrado) {
-      cell.addEventListener('click', () => toggleSelecao(pos));
-      cell.dataset.listenerRegistrado = 'true';
+      cell.addEventListener("mouseenter", () => {
+        if (selecting) {
+          toggleSelecao(pos) // usa o pos do closure — mais direto
+        }
+      })
+    } else {
+      cell.dataset.pos = pos; // só garante que o dataset.pos está atualizado
     }
+
+
     renderEstoqueCell(cell, pos, byPos[pos]?.corBloco ?? 0, state.selectedPos.has(pos));
+
   }
   renderStatsEstoque();
+  renderEstoqueClp(); // divergência depende do banco também → re-render quando o banco muda
+}
+
+// Grid do CLP (somente leitura): cor lida do magazine (posicoesOcupadas) e destaque das posições
+// que divergem do banco. Fonte = evento SSE estacao-all (on-change); enquanto não chega, fica skeleton.
+function renderEstoqueClp() {
+  if (!clpEstoqueGrid) return;
+
+  if (!state.clpRecebido) {
+    if (clpDivergencias) clpDivergencias.textContent = 'Sem comunicação com o CLP';
+    return;
+  }
+
+  const bancoByPos = {};
+  state.estoque.forEach((e) => { bancoByPos[e.posicao] = e; });
+
+  let divergencias = 0;
+  for (let pos = 1; pos <= ESTOQUE_TOTAL; pos++) {
+    let cell = document.getElementById(`bloco-clp-${pos}`);
+    if (!cell) {
+      cell = createClpEstoqueCell(pos);
+      clpEstoqueGrid.appendChild(cell);
+    }
+    let corClp = state.estoqueClp?.[pos - 1] ?? 0;
+    if (corClp < 0 || corClp > 3) corClp = 0; // valor inesperado do CLP → trata como vazio
+    const corBanco = bancoByPos[pos]?.corBloco ?? 0;
+    const divergente = corClp !== corBanco;
+    if (divergente) divergencias++;
+    renderClpEstoqueCell(cell, pos, corClp, divergente);
+  }
+
+  if (clpDivergencias) {
+    clpDivergencias.textContent = divergencias === 0
+      ? 'Sincronizado com o banco'
+      : `${divergencias} divergência${divergencias > 1 ? 's' : ''} vs. banco`;
+  }
 }
 
 function renderStatsEstoque() {
@@ -137,6 +212,14 @@ sse.on('estoque', (d) => {
 sse.on('expedicao', (d) => {
   state.expedicao = d.posicoes || [];
   renderExpedicao();
+});
+// Estoque do CLP: o bean *CLP completo chega por estação; filtramos a estação ESTOQUE e usamos
+// o magazine (posicoesOcupadas) — array de 28 ints (índice c → posição c+1, valor = cor).
+sse.on('estacao-all', (d) => {
+  if (d.estacao !== 'estoque') return;
+  state.estoqueClp = d.dados?.posicoesOcupadas ?? null;
+  state.clpRecebido = true;
+  renderEstoqueClp();
 });
 
 // Refresh pontual (one-shot, não é polling) para feedback imediato após uma mutação local,

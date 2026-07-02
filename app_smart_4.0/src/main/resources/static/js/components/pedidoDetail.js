@@ -1,5 +1,5 @@
 import { corBlocoClass, corBlocoLabel, statusBadgeClass, tipoChipClass, normalizeStatus, normalizeTipo, normalizeCor, normalizePadrao, normalizePosicao } from '../core/enums.js';
-import { formatCount, formatDateTime, tampaHex } from '../core/format.js';
+import { formatCount, formatDateTime, tampaHex, formatDuracao } from '../core/format.js';
 import { patchText, patchInner } from '../core/dom.js';
 
 const blocosSig = (blocos) => JSON.stringify(blocos);
@@ -45,6 +45,23 @@ function infoItemHTML(key, val, field = '', style = '') {
     </div>`;
 }
 
+function tempoProducaoHTML(p) {
+  const status = normalizeStatus(p.status);
+  if (status === 'PRODUCAO' && p.dataEntradaProducao) {
+    return `<span class="cronometro" data-cronometro-start="${p.dataEntradaProducao}" data-field="cronometro">00:00:00</span>`;
+  }
+  if (status === 'CONCLUIDO' && p.dataEntradaProducao) {
+    return `<span class="duracao-concluida">${formatDuracao(p.dataEntradaProducao, p.dataEntradaExpedicao)}</span>`;
+  }
+  return '—';
+}
+
+function tempoProducaoClass(status) {
+  if (status === 'PRODUCAO') return 'info-item--tempo-ativo';
+  if (status === 'CONCLUIDO') return 'info-item--tempo-done';
+  return '';
+}
+
 export function buildDetailHTML(p) {
   const status   = normalizeStatus(p.status);
   const tipo     = normalizeTipo(p.tipoPedido);
@@ -62,8 +79,13 @@ export function buildDetailHTML(p) {
            ${corTampa}
          </div>`, 'tampa')}
       ${infoItemHTML('Criado em', formatDateTime(p.dataCriacao), 'criacao', 'font-size:12px')}
+      ${infoItemHTML('Início Produção', formatDateTime(p.dataEntradaProducao), 'inicio-producao', 'font-size:12px')}
       ${infoItemHTML('Entrada Expedição', formatDateTime(p.dataEntradaExpedicao), 'expedicao', 'font-size:12px')}
       ${infoItemHTML('Blocos', String(blocos.length), 'blocos-count')}
+    </div>
+    <div class="info-item ${tempoProducaoClass(status)} info-item--tempo" data-field="tempo-producao-item">
+      <div class="info-item__key">Tempo em Produção</div>
+      <div class="info-item__val" data-field="tempo-producao">${tempoProducaoHTML(p)}</div>
     </div>
     <div class="blocos-detail-title">BLOCOS & LÂMINAS</div>
     <div class="blocos-detail-list" data-field="blocos-list">
@@ -74,13 +96,20 @@ export function buildDetailHTML(p) {
 export function patchDetail(detailBody, next, prev) {
   const field = (name) => detailBody.querySelector(`[data-field="${name}"]`);
 
-  if (next.status !== prev.status) {
-    const badge = field('status')?.querySelector('.badge');
-    if (badge) {
-      const status = normalizeStatus(next.status);
-      badge.className = `badge ${statusBadgeClass(status)}`;
-      badge.textContent = status;
+  if (next.status !== prev.status || next.dataEntradaProducao !== prev.dataEntradaProducao || next.dataEntradaExpedicao !== prev.dataEntradaExpedicao) {
+    const status = normalizeStatus(next.status);
+    if (next.status !== prev.status) {
+      const badge = field('status')?.querySelector('.badge');
+      if (badge) {
+        badge.className = `badge ${statusBadgeClass(status)}`;
+        badge.textContent = status;
+      }
     }
+    const tempoItem = field('tempo-producao-item');
+    if (tempoItem) {
+      tempoItem.className = `info-item ${tempoProducaoClass(status)} info-item--tempo`;
+    }
+    patchInner(field('tempo-producao'), tempoProducaoHTML(next));
   }
   if (next.tipoPedido !== prev.tipoPedido) {
     const chip = field('tipo')?.querySelector('.tipo-chip');
@@ -101,6 +130,9 @@ export function patchDetail(detailBody, next, prev) {
   }
   if (next.dataCriacao !== prev.dataCriacao) {
     patchText(field('criacao'), formatDateTime(next.dataCriacao));
+  }
+  if (next.dataEntradaProducao !== prev.dataEntradaProducao) {
+    patchText(field('inicio-producao'), formatDateTime(next.dataEntradaProducao));
   }
   if (next.dataEntradaExpedicao !== prev.dataEntradaExpedicao) {
     patchText(field('expedicao'), formatDateTime(next.dataEntradaExpedicao));

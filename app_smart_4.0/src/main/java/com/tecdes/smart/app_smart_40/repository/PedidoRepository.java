@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.tecdes.smart.app_smart_40.model.Pedido;
+import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import java.util.List;
 
 
@@ -18,4 +19,12 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     Integer proximaOrdemProducao();
 
      List<Pedido> findByOrdemProducao(Integer ordemProducao);
+
+    // Unicidade da OP quando o usuário a escolhe manualmente (criar/atualizar).
+    boolean existsByOrdemProducao(Integer ordemProducao);
+
+    // Fonte da verdade para "há algo rodando na bancada" — sobrevive a restart
+    // (a fila em memória não). A bancada executa um pedido por vez, então no
+    // máximo um pedido fica em PRODUCAO.
+    Optional<Pedido> findFirstByStatus(StatusPedido status);
 }

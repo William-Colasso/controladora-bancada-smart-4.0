@@ -79,20 +79,20 @@ public abstract class EstacaoStatusProducerBase {
         String estadoStr;
         if (emergencia) {
             estadoStr = "off";
-        } else if (aguardando || manual) {
+        } else if ( manual || ocupado) {
             estadoStr = "pause";
-        } else if (ocupado) {
+        } else if ( start || aguardando || finish) {
             estadoStr = "on";
         } else {
-            estadoStr = "off";
+            estadoStr = "on";
         }
 
         Integer funcionamento;
-        if (finish) {
+        if (finish || start) {
             funcionamento = 2;
-        } else if (start) {
+        } else if (start || manual || ocupado) {
             funcionamento = 1;
-        } else if (ocupado) {
+        } else if (  aguardando) {
             funcionamento = 0;
         } else {
             funcionamento = null;
