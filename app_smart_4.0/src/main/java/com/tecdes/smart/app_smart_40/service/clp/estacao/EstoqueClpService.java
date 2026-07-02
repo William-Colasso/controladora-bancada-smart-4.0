@@ -2,14 +2,11 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
 import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
-import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
-import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -21,7 +18,11 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB9 da estação e processa.
  * O snapshot lido do PLC vive no bean {@link EstoqueCLP} (model/clp), não em campos do service.
- * Persistência via {@link EstoqueService} (sem HTTP). Sem polling agendado.
+ * Sem polling agendado.
+ *
+ * <p><b>Sem caminho CLP→banco:</b> o banco é o mestre do magazine; este service só lê o CLP (preenche
+ * o bean) e mantém o handshake CLP-side. A escrita banco→CLP fica em {@code EstoqueClpWriter},
+ * acionada pelo {@code EstoqueService} quando o banco muda.
  */
 @Service
 @RequiredArgsConstructor
@@ -34,7 +35,6 @@ public class EstoqueClpService implements EstacaoClpHandshake {
 
     private final PlcConnectionService plcConnectionService;
     private final EstadoProducaoService estado;
-    private final EstoqueService estoqueService;
     private final EstoqueRepository estoqueRepository;
     private final EstoqueCLP estoqueCLP;
 
@@ -84,9 +84,9 @@ public class EstoqueClpService implements EstacaoClpHandshake {
 
         estoqueCLP.setPosicaoGuardarEst(((dados[66] & 0xFF) << 8) | (dados[67] & 0xFF));
 
-        byte[] posicoesOcupadas = new byte[28];
+        int[] posicoesOcupadas = new int[28];
         for (int c = 0; c < 28; c++) {
-            posicoesOcupadas[c] = dados[68 + c];
+            posicoesOcupadas[c] = dados[68 + c] & 0xFF;
         }
         estoqueCLP.setPosicoesOcupadas(posicoesOcupadas);
 
@@ -174,7 +174,8 @@ public class EstoqueClpService implements EstacaoClpHandshake {
             }
         }
 
-        // Remove a posição na tabela Estoque e na memória do CLP
+        // Handshake físico do magazine no CLP (ack + byte da memória). NÃO escreve no banco:
+        // o banco é o mestre e só muda via EstoqueService/API → EstoqueClpWriter (banco→CLP).
         if (posicaoEstoque > 0 && estoqueCLP.isRemoverEstoque()) {
             if (!estado.isReadOnly()) {
                 try {
@@ -186,15 +187,12 @@ public class EstoqueClpService implements EstacaoClpHandshake {
                 byte offset = (byte) (68 + (posicaoEstoque - 1));
                 try {
                     connector.writeByte(9, offset, (byte) 0);
-                    estoqueService.removerBloco((byte) posicaoEstoque);
-                    log.info("Removido estoque na posição {}", posicaoEstoque);
                 } catch (Exception e) {
                     log.error("ERRO: Na tentativa de remover do Estoque", e);
                 }
             }
         }
 
-        // Adiciona a cor do bloco na posição (tabela Estoque + memória do CLP)
         if (posicaoEstoque > 0 && estoqueCLP.isAdicionarEstoque()) {
             if (!estado.isReadOnly()) {
                 try {
@@ -206,9 +204,6 @@ public class EstoqueClpService implements EstacaoClpHandshake {
                 byte offset = (byte) (68 + (posicaoEstoque - 1));
                 try {
                     connector.writeByte(9, offset, (byte) corGuardarEstoque);
-                    estoqueService.adicionarBloco(
-                            new EstoqueRequestDTO(posicaoEstoque, CorBloco.fromValue(corGuardarEstoque)));
-                    log.info("Adicionado estoque na posição {} cor {}", posicaoEstoque, corGuardarEstoque);
                 } catch (Exception e) {
                     log.error("ERRO: Na tentativa de adicionar no Estoque", e);
                 }

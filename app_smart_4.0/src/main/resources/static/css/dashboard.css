@@ -116,6 +116,15 @@
   border-color: rgba(90, 179, 0, 0.3);
 }
 
+/* Posição do grid do CLP cuja cor diverge do banco — contorno tracejado por cima da cor. */
+.bloco--divergente {
+  outline: 2px dashed var(--color-yellow);
+  outline-offset: -2px;
+}
+
+/* Segundo card da coluna de estoque (grid do CLP), empilhado abaixo do banco. */
+.card--clp-estoque { margin-top: 16px; }
+
 .bloco__pos {
   font-size: 9px;
   opacity: 0.5;

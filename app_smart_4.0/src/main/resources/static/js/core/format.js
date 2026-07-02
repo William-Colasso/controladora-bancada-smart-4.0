@@ -18,6 +18,14 @@ export const formatOP = (op) => (op == null ? '—' : String(op).padStart(3, '0'
 
 export const tampaHex = (cor) => TAMPA_HEX[cor] ?? '#555';
 
+export const formatDuracao = (start, end = null) => {
+  if (!start) return '—';
+  const ms = (end ? new Date(end) : new Date()) - new Date(start);
+  if (ms < 0) return '00:00:00';
+  const s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
+  return `${String(h).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+};
+
 export const debounce = (fn, ms) => {
   let t;
   return (...args) => {

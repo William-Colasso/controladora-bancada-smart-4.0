@@ -13,6 +13,7 @@ import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
+import com.tecdes.smart.app_smart_40.service.clp.EstoqueClpWriter;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
+    private final EstoqueClpWriter clpWriter;
 
     public List<EstoqueResponseDTO> getDisponivel() {
         return estoqueRepository.findByCorBlocoNot(CorBloco.VAZIO)
@@ -56,7 +58,9 @@ public class EstoqueService {
                         "Posição " + dto.posicao() + " não existe!"));
 
         pos.setCorBloco(dto.corBloco());
-        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        clpWriter.escreverPosicao(dto.posicao(), dto.corBloco().getValue()); // banco→CLP (best-effort)
+        return salvo;
     }
 
     public EstoqueResponseDTO removerBloco(Byte nrPosicao) {
@@ -76,7 +80,9 @@ public class EstoqueService {
         }
 
         pos.setCorBloco(CorBloco.VAZIO);
-        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        clpWriter.escreverPosicao(nrPosicao.intValue(), CorBloco.VAZIO.getValue()); // banco→CLP (best-effort)
+        return salvo;
     }
 
     /**

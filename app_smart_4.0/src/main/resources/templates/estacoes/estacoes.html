@@ -18,6 +18,9 @@
     <title>Estações — Smart 4.0</title>
     <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
     <link rel="stylesheet" th:href="@{/css/estacoes.css}" />
+    <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
+    <!-- ponytail: reusa os estilos do detalhe (.detail-info/.info-grid/.bloco-detail-card) do popup; pedidos.css é todo class-scoped, sem vazamento. -->
+    <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
   </head>
 
   <body>
@@ -53,6 +56,13 @@
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
           </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
           <div class="estacao-card__dados dados">
             <div class="dado dado--vazio">Sem dados.</div>
           </div>
@@ -69,6 +79,13 @@
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
           </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
           <div class="estacao-card__dados dados">
             <div class="dado dado--vazio">Sem dados.</div>
           </div>
@@ -85,6 +102,13 @@
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
           </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
           <div class="estacao-card__dados dados">
             <div class="dado dado--vazio">Sem dados.</div>
           </div>
@@ -101,6 +125,13 @@
             <span class="estacao-card__rotulo">Operação</span>
             <span class="estacao-card__func func">—</span>
           </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
           <div class="estacao-card__dados dados">
             <div class="dado dado--vazio">Sem dados.</div>
           </div>
@@ -108,6 +139,23 @@
 
       </section>
     </main>
+
+    <!-- Popup do pedido em execução (3D + detalhes). Preenchido por estacoes.js. -->
+    <dialog id="pedido-modal" class="pedido-modal">
+      <div class="pedido-modal__header">
+        <span class="pedido-modal__title">
+          <i class="fa-solid fa-cube" style="margin-right:8px;color:var(--color-accent)"></i>
+          Pedido em execução
+        </span>
+        <button type="button" class="pedido-modal__close" id="modalClose" title="Fechar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="pedido-modal__body">
+        <div class="pedido-viewer" id="modal-viewer"></div>
+        <div class="detail-info" id="modal-info"></div>
+      </div>
+    </dialog>
 
     <script type="module" th:src="@{/js/pages/estacoes.js}"></script>
   </body>

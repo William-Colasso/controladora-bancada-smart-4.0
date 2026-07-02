@@ -54,6 +54,7 @@ public class SmartService {
         // (checagem otimista), não reserva nada.
         reservarExpedicao(pedido);
         pedido.setStatus(StatusPedido.PRODUCAO);
+        pedido.setDataEntradaProducao(java.time.LocalDateTime.now());
         consumirEstoque(pedido);
 
         // Salva diretamente a entidade gerenciada pelo JPA (não via

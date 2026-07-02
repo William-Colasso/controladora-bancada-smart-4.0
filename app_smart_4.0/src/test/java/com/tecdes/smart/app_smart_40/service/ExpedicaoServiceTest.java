@@ -3,6 +3,7 @@ package com.tecdes.smart.app_smart_40.service;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
+import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -135,5 +136,41 @@ public class ExpedicaoServiceTest {
 
         assertThrows(NoSuchElementException.class,
                 () -> expedicaoService.primeiraExpedicaoLivre());
+    }
+
+    // guardarNaPosicao — sincroniza o pedido para CONCLUIDO
+
+    @Test
+    @DisplayName("guardarNaPosicao - vincula e conclui o pedido em PRODUCAO")
+    void guardarNaPosicao_pedidoEmProducao_concluiPedido() {
+        Expedicao exp = expedicaoSemPedido(1L, 3);
+        Pedido pedido = Pedido.builder()
+                .id(5L).ordemProducao(42).status(StatusPedido.PRODUCAO).blocos(List.of()).build();
+        when(expedicaoRepository.findByPosicao(3)).thenReturn(Optional.of(exp));
+        when(pedidoRepository.findByOrdemProducao(42)).thenReturn(List.of(pedido));
+
+        expedicaoService.guardarNaPosicao(3, 42);
+
+        assertThat(exp.getPedidoAtual()).isEqualTo(pedido);
+        assertThat(pedido.getStatus()).isEqualTo(StatusPedido.CONCLUIDO);
+        assertThat(pedido.getDataEntradaExpedicao()).isNotNull();
+        verify(expedicaoRepository).save(exp);
+        verify(pedidoRepository).save(pedido);
+    }
+
+    @Test
+    @DisplayName("guardarNaPosicao - não altera pedido que não está em PRODUCAO")
+    void guardarNaPosicao_pedidoNaoEmProducao_naoConclui() {
+        Expedicao exp = expedicaoSemPedido(1L, 3);
+        Pedido pedido = Pedido.builder()
+                .id(5L).ordemProducao(42).status(StatusPedido.CONCLUIDO).blocos(List.of()).build();
+        when(expedicaoRepository.findByPosicao(3)).thenReturn(Optional.of(exp));
+        when(pedidoRepository.findByOrdemProducao(42)).thenReturn(List.of(pedido));
+
+        expedicaoService.guardarNaPosicao(3, 42);
+
+        assertThat(exp.getPedidoAtual()).isEqualTo(pedido);
+        verify(expedicaoRepository).save(exp);
+        verify(pedidoRepository, never()).save(any(Pedido.class));
     }
 }

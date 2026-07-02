@@ -56,7 +56,7 @@
               <i class="fa-solid fa-boxes-stacked"></i>
             </div>
             <div>
-              <h2>Estoque</h2>
+              <h2>Estoque (Banco)</h2>
             </div>
           </div>
           <div class="refresh-indicator">
@@ -107,10 +107,10 @@
           </button>
         </div>
 
-        <!-- Grid de blocos — preenchido pelo JS -->
+        <!-- Grid de blocos (BANCO/MySQL) — preenchido pelo JS -->
         <div class="card">
           <div class="card__header">
-            <span class="card__title">Posições 1 – 28</span>
+            <span class="card__title">Banco · Posições 1 – 28</span>
             <span class="section-meta">Clique para selecionar · Selecione cor · Aplique</span>
           </div>
           <div class="card__body">
@@ -118,6 +118,24 @@
               <th:block th:each="i : ${#numbers.sequence(1, 28)}">
                 <div class="bloco bloco--estoque bloco--vazio skeleton"
                      th:id="'bloco-est-' + ${i}">
+                  <span class="bloco__pos" th:text="${i}"></span>
+                </div>
+              </th:block>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid do CLP (memória do magazine, somente leitura) — preenchido pelo JS via SSE estacao-all.
+             Destaca as posições cuja cor diverge do banco. -->
+        <div class="card card--clp-estoque">
+          <div class="card__header">
+            <span class="card__title">CLP · Magazine (somente leitura)</span>
+            <span class="section-meta" id="clpDivergencias">Aguardando comunicação…</span>
+          </div>
+          <div class="card__body">
+            <div class="blocos-grid blocos-grid--estoque" id="clpEstoqueGrid">
+              <th:block th:each="i : ${#numbers.sequence(1, 28)}">
+                <div class="bloco bloco--vazio skeleton" th:id="'bloco-clp-' + ${i}">
                   <span class="bloco__pos" th:text="${i}"></span>
                 </div>
               </th:block>
