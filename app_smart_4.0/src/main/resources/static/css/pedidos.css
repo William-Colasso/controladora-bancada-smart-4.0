@@ -587,6 +587,57 @@
   50%      { box-shadow: 0 0 0 8px transparent; }
 }
 
+/* Timer HMI — exibido no card da parada ativa/concluída. */
+.fila-stop__timer {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-yellow);
+  align-self: flex-start;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(254, 206, 0, 0.08);
+}
+
+.fila-stop__timer--done {
+  color: var(--color-green);
+  background: rgba(90, 179, 0, 0.08);
+}
+
+/* Bloco "Tempo em Produção" no painel de detalhes — largura total, acima dos blocos. */
+.info-item--tempo {
+  margin-bottom: 24px;
+}
+
+.info-item--tempo-ativo {
+  border-color: rgba(254, 206, 0, 0.35);
+  background: rgba(254, 206, 0, 0.04);
+}
+
+.info-item--tempo-done {
+  border-color: rgba(90, 179, 0, 0.35);
+  background: rgba(90, 179, 0, 0.04);
+}
+
+/* Valor do cronômetro ao vivo (PRODUCAO). */
+.cronometro {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-yellow);
+}
+
+/* Duração já calculada (CONCLUIDO). */
+.duracao-concluida {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-green);
+}
+
 .fila-empty {
   display: flex;
   align-items: center;

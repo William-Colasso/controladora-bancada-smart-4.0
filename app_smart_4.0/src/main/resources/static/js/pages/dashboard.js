@@ -68,20 +68,54 @@ function syncSelecaoUI() {
   if (applyBtn) applyBtn.disabled = n === 0 || state.activeColor === null;
 }
 
+
+
+var selecting = false;
 function renderEstoque() {
   const byPos = {};
   state.estoque.forEach((e) => { byPos[e.posicao] = e; });
 
+  if (!estoqueGrid.dataset.listenerRegistrado) {
+    estoqueGrid.addEventListener("mousedown", (e) => {
+      selecting = true;
+      ifBlocoToggle(e);
+    });
+
+    document.addEventListener("mouseup", () => {
+      selecting = false;
+    });
+
+    estoqueGrid.addEventListener("mouseenter", (e) => {
+      if (e.target.classList.contains("bloco--estoque") && selecting) {
+        toggleSelecao(e.target.dataset.pos);
+      }
+    }, true); // capture: true — ver nota abaixo
+
+    function ifBlocoToggle(e) {
+      if (e.target.classList.contains("bloco--estoque") && selecting) {
+        toggleSelecao(e.target.dataset.pos);
+      }
+    }
+
+    estoqueGrid.dataset.listenerRegistrado = 'true';
+  }
   for (let pos = 1; pos <= ESTOQUE_TOTAL; pos++) {
     let cell = document.getElementById(`bloco-est-${pos}`);
     if (!cell) {
       cell = createEstoqueCell(pos, toggleSelecao);
       estoqueGrid.appendChild(cell);
-    } else if (!cell.dataset.listenerRegistrado) {
-      cell.addEventListener('click', () => toggleSelecao(pos));
-      cell.dataset.listenerRegistrado = 'true';
+      cell.addEventListener("mouseenter", () => {
+        if (selecting) {
+          toggleSelecao(pos) // usa o pos do closure — mais direto
+        }
+      })
+    } else {
+      cell.dataset.pos = pos; // só garante que o dataset.pos está atualizado
     }
+
+
     renderEstoqueCell(cell, pos, byPos[pos]?.corBloco ?? 0, state.selectedPos.has(pos));
+
   }
   renderStatsEstoque();
   renderEstoqueClp(); // divergência depende do banco também → re-render quando o banco muda

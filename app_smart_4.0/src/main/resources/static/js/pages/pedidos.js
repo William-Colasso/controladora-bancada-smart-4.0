@@ -6,6 +6,7 @@ import { buildDetailHTML, patchDetail } from '../components/pedidoDetail.js';
 import { createPedidoViewer } from '../components/pedidoViewer.js';
 import { renderFila } from '../components/filaPanel.js';
 import { normalizeStatus } from '../core/enums.js';
+import { formatDuracao } from '../core/format.js';
 
 const POLL_INTERVAL_MS = 5000;
 const countLabel = (n) => `${n} pedido${n !== 1 ? 's' : ''}`;
@@ -205,3 +206,10 @@ const poller = createPoller(
   });
 
 poller.start();
+
+// Atualiza todos os cronômetros ativos na página a cada segundo.
+setInterval(() => {
+  document.querySelectorAll('[data-cronometro-start]').forEach((el) => {
+    el.textContent = formatDuracao(el.dataset.cronometroStart);
+  });
+}, 1000);
