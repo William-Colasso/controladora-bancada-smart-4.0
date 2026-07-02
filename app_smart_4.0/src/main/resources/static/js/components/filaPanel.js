@@ -2,7 +2,7 @@
 // A numeração (01, 02, …) é a posição real na fila — o head é o que está em produção.
 // Render helper puro no padrão components/*: recebe o container e os pedidos já carregados.
 import { normalizeStatus, statusBadgeClass } from '../core/enums.js';
-import { formatOP, formatCount, tampaHex } from '../core/format.js';
+import { formatOP, formatCount, tampaHex, formatDuracao } from '../core/format.js';
 
 const STATUS_LABEL = {
   PENDENTE: 'Na fila',
@@ -14,6 +14,11 @@ const STATUS_LABEL = {
 function stopHTML(pedido, index, head) {
   const status = normalizeStatus(pedido.status);
   const ativo = head && status === 'PRODUCAO';
+  const timerHTML = ativo && pedido.dataEntradaProducao
+    ? `<span class="fila-stop__timer" data-cronometro-start="${pedido.dataEntradaProducao}">00:00:00</span>`
+    : status === 'CONCLUIDO' && pedido.dataEntradaProducao && pedido.dataEntradaExpedicao
+    ? `<span class="fila-stop__timer fila-stop__timer--done">${formatDuracao(pedido.dataEntradaProducao, pedido.dataEntradaExpedicao)}</span>`
+    : '';
   return `
     <li class="fila-stop${ativo ? ' fila-stop--ativo' : ''}" data-pedido-id="${pedido.id}">
       <span class="fila-stop__num">${formatCount(index + 1)}</span>
@@ -26,6 +31,7 @@ function stopHTML(pedido, index, head) {
           <span class="fila-stop__tampa" style="background:${tampaHex(pedido.corTampa)}"></span>
         </div>
         <span class="badge ${statusBadgeClass(status)} fila-stop__badge">${STATUS_LABEL[status] ?? status}</span>
+        ${timerHTML}
       </div>
     </li>`;
 }

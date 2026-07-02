@@ -47,7 +47,8 @@ public class PageController {
         @GetMapping("/formulario")
         public String formulario(Model model, @RequestParam(required = false) Long id) {
 
-                // Modo edição (id presente): carrega o pedido e oferece todas as cores (menos VAZIO)
+                // Modo edição (id presente): carrega o pedido e oferece todas as cores (menos
+                // VAZIO)
                 // para que a cor atual do pedido apareça mesmo com o estoque dela já zerado.
                 String pedidoEditJson = null;
                 List<CorBloco> coresBlocos;
@@ -155,9 +156,6 @@ public class PageController {
                 String expedicaoJson = toJson(expedicao);
 
                 /// ----- Loggs
-                System.out.println("Estoque stats:" + toJson(estoqueStats));
-                System.out.println("Estoque JSON: " + estoqueJson);
-                System.out.println("Expedição JSON: " + expedicaoJson);
 
                 // ---- Model ----
                 model.addAttribute("estoqueJson", estoqueJson);

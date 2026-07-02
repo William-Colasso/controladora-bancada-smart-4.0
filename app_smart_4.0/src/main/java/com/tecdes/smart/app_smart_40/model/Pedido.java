@@ -83,6 +83,9 @@ public class Pedido {
     @JsonIgnore
     private Expedicao expedicao;
 
+    @Column(name = "dt_entrada_producao", nullable = true)
+    private LocalDateTime dataEntradaProducao;
+
     @Column(name = "dt_entrada_expedicao", nullable = true)
     private LocalDateTime dataEntradaExpedicao;
 
