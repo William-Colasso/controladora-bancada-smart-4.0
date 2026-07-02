@@ -1,0 +1,162 @@
+<!doctype html>
+<!--
+  estacoes.html
+  =============================================================
+  Status ao vivo das 4 estações da bancada, lido do CLP via SSE
+  (evento `estacao-status`). Consumidor SSE puro — NÃO acessa o
+  banco. Cada card é hidratado/atualizado por static/js/pages/estacoes.js.
+
+  Card id = frontKey da estação (estoque/processo/montagem/expedicao),
+  igual ao campo `estacao` do evento e ao bancadaStatus.js#ESTACOES.
+
+  Estado inicial = "Sem leitura"; vira ao vivo quando o 1º evento chega
+  (estações conectadas na home; replay-on-connect hidrata no load).
+  =============================================================
+-->
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Estações — Smart 4.0</title>
+    <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+    <link rel="stylesheet" th:href="@{/css/estacoes.css}" />
+    <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
+    <!-- ponytail: reusa os estilos do detalhe (.detail-info/.info-grid/.bloco-detail-card) do popup; pedidos.css é todo class-scoped, sem vazamento. -->
+    <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
+  </head>
+
+  <body>
+    <!-- Navbar — activePage='estacoes' marca o link ativo -->
+    <div th:replace="~{fragments/smart40Fragments :: navbar('estacoes')}"></div>
+
+    <main class="estacoes">
+      <header class="estacoes__header">
+        <h1 class="estacoes__titulo">
+          <i class="fa-solid fa-industry"></i> Estações
+        </h1>
+        <p class="estacoes__sub">
+          Status e dados ao vivo lidos do CLP via SSE. Defina o IP na tela inicial; a leitura e o
+          processamento rodam automaticamente enquanto esta tela estiver aberta.
+        </p>
+      </header>
+
+      <!-- Componente visual da bancada (overlays alimentados por estacao-status) -->
+      <section class="estacoes__bancada">
+        <div th:replace="~{fragments/components :: bancada-component}"></div>
+      </section>
+
+      <section class="estacoes__grid">
+
+        <!-- ESTOQUE -->
+        <article class="estacao-card" id="estoque" data-lendo="0">
+          <div class="estacao-card__top">
+            <i class="fa-solid fa-boxes-stacked estacao-card__icone"></i>
+            <h2 class="estacao-card__nome">Estoque</h2>
+          </div>
+          <span class="estacao-card__badge badge badge--dim estado">Sem leitura</span>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">Operação</span>
+            <span class="estacao-card__func func">—</span>
+          </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
+          </div>
+        </article>
+
+        <!-- PROCESSO (frontKey = processo) -->
+        <article class="estacao-card" id="processo" data-lendo="0">
+          <div class="estacao-card__top">
+            <i class="fa-solid fa-gears estacao-card__icone"></i>
+            <h2 class="estacao-card__nome">Processo</h2>
+          </div>
+          <span class="estacao-card__badge badge badge--dim estado">Sem leitura</span>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">Operação</span>
+            <span class="estacao-card__func func">—</span>
+          </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
+          </div>
+        </article>
+
+        <!-- MONTAGEM -->
+        <article class="estacao-card" id="montagem" data-lendo="0">
+          <div class="estacao-card__top">
+            <i class="fa-solid fa-screwdriver-wrench estacao-card__icone"></i>
+            <h2 class="estacao-card__nome">Montagem</h2>
+          </div>
+          <span class="estacao-card__badge badge badge--dim estado">Sem leitura</span>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">Operação</span>
+            <span class="estacao-card__func func">—</span>
+          </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
+          </div>
+        </article>
+
+        <!-- EXPEDIÇÃO -->
+        <article class="estacao-card" id="expedicao" data-lendo="0">
+          <div class="estacao-card__top">
+            <i class="fa-solid fa-truck-ramp-box estacao-card__icone"></i>
+            <h2 class="estacao-card__nome">Expedição</h2>
+          </div>
+          <span class="estacao-card__badge badge badge--dim estado">Sem leitura</span>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">Operação</span>
+            <span class="estacao-card__func func">—</span>
+          </div>
+          <div class="estacao-card__linha">
+            <span class="estacao-card__rotulo">OP em execução</span>
+            <span class="estacao-card__op op-atual">—</span>
+          </div>
+          <button type="button" class="ver-pedido-btn btn btn--ghost" hidden>
+            <i class="fa-solid fa-cube" style="margin-right:6px;font-size:10px"></i>Ver pedido
+          </button>
+          <div class="estacao-card__dados dados">
+            <div class="dado dado--vazio">Sem dados.</div>
+          </div>
+        </article>
+
+      </section>
+    </main>
+
+    <!-- Popup do pedido em execução (3D + detalhes). Preenchido por estacoes.js. -->
+    <dialog id="pedido-modal" class="pedido-modal">
+      <div class="pedido-modal__header">
+        <span class="pedido-modal__title">
+          <i class="fa-solid fa-cube" style="margin-right:8px;color:var(--color-accent)"></i>
+          Pedido em execução
+        </span>
+        <button type="button" class="pedido-modal__close" id="modalClose" title="Fechar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="pedido-modal__body">
+        <div class="pedido-viewer" id="modal-viewer"></div>
+        <div class="detail-info" id="modal-info"></div>
+      </div>
+    </dialog>
+
+    <script type="module" th:src="@{/js/pages/estacoes.js}"></script>
+  </body>
+</html>

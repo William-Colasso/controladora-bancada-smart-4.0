@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Fragments — Smart 4.0</title>
+</head>
+<body>
+
+  <!-- ================================================================
+       FRAGMENT: headDeps
+       Inclua no <head> de todas as páginas do design system.
+       ================================================================ -->
+  <th:block th:fragment="headDeps">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+    <!-- Three.js via importmap — deve vir antes de qualquer <script type="module"> -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
+      }
+    }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+    <!-- Base CSS (reset + tokens + navbar + cards + toast) -->
+    <link rel="stylesheet" th:href="@{/css/base.css}" />
+
+    <!-- Favicon -->
+    <link rel="icon" th:href="@{/img/Smart_4.0.png}" type="image/png" />
+  </th:block>
+
+
+  <!-- ================================================================
+       FRAGMENT: navbar(activePage)
+       Barra de navegação superior compartilhada por todas as telas.
+
+       Parâmetro:
+         activePage — string que identifica qual link deve ficar ativo.
+                      Valores: 'dashboard' | 'estacoes' | 'pedidos' | 'formulario'
+
+       Estrutura:
+         [Logo + nome]   [Dashboard · Estações · Pedidos · Novo Pedido]   [Refresh · Fechar]
+  ================================================================ -->
+  <nav class="navbar" th:fragment="navbar(activePage)">
+
+    <!-- ── Marca ──────────────────────────────────────────────── -->
+    <a th:href="@{/}" class="navbar__brand">
+      <img th:src="@{/img/Smart_4.0.png}" alt="Smart 4.0" class="navbar__logo" />
+      <div>
+        <div>Smart 4.0</div>
+        <div class="navbar__subtitle">Sistema de Gestão</div>
+      </div>
+    </a>
+
+    <!-- ── Navegação primária ─────────────────────────────────── -->
+    <div class="navbar__nav">
+
+      <a th:href="@{/dashboard}"
+         class="nav-link"
+         th:classappend="${activePage == 'dashboard'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-table-cells-large"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <a th:href="@{/estacoes}"
+         class="nav-link"
+         th:classappend="${activePage == 'estacoes'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-industry"></i>
+        <span>Estações</span>
+      </a>
+
+      <a th:href="@{/pedidos}"
+         class="nav-link"
+         th:classappend="${activePage == 'pedidos'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-list-check"></i>
+        <span>Pedidos</span>
+      </a>
+
+      <a th:href="@{/formulario}"
+         class="nav-link nav-link--cta"
+         th:classappend="${activePage == 'formulario'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-plus"></i>
+        <span>Novo Pedido</span>
+      </a>
+
+    </div>
+
+    <!-- ── Ações utilitárias ──────────────────────────────────── -->
+    <div class="navbar__actions">
+
+      <!-- Refresh -->
+      <button type="button" class="nav-btn nav-btn--refresh"
+              title="Atualizar página"
+              onclick="location.reload()">
+        <i class="fa-solid fa-rotate-right"></i>
+      </button>
+
+      <!-- Fechar janela -->
+      <button type="button" class="nav-btn nav-btn--danger"
+              title="Fechar"
+              onclick="window.close()">
+        <i class="fa-solid fa-power-off"></i>
+      </button>
+
+    </div>
+
+  </nav>
+
+
+  <!-- ================================================================
+       FRAGMENT: scriptDeps
+       Scripts comuns. Coloque antes de </body> em todas as páginas.
+  ================================================================ -->
+  <th:block th:fragment="scriptDeps"></th:block>
+
+</body>
+</html>

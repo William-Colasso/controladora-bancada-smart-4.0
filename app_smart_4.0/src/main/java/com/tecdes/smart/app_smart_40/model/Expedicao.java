@@ -1,6 +1,6 @@
 package com.tecdes.smart.app_smart_40.model;
 
-import java.time.LocalDateTime;
+
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
         ),
         @UniqueConstraint(
             name = "UN_EXPEDICAO_PEDIDO",
-            columnNames = {"id_pedido"}
+            columnNames = {"id_pedido_atual"}
         )
     },
     check = {
@@ -42,10 +42,10 @@ public class Expedicao {
     @Column(name = "nr_posicao", nullable = false, unique = true)
     private Integer posicao;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_pedido", nullable = true)
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_pedido_atual", nullable = true)
     @JsonIgnore
-    private Pedido pedido;
+    private Pedido pedidoAtual;
 
 
 

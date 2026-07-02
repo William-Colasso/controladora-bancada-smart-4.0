@@ -1,13 +1,15 @@
 package com.tecdes.smart.app_smart_40.service;
 
-import com.tecdes.smart.app_smart_40.dto.ExpedicaoDTO;
-import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
+import com.tecdes.smart.app_smart_40.dto.request.ExpedicaoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
+import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,62 +22,63 @@ public class ExpedicaoService {
     private final ExpedicaoRepository expedicaoRepository;
     private final PedidoRepository pedidoRepository;
 
-    public ExpedicaoDTO registrarExpedicao(ExpedicaoDTO dto) {
-
-        if (dto.pedidoDTO() == null) {
-            throw new RuntimeException("Pedido é obrigatório!");
-        }
-
-        Pedido pedido = pedidoRepository.findById(dto.pedidoDTO().id())
-                .orElseThrow(() -> new RuntimeException("Pedido " + dto.pedidoDTO().id() + " não encontrado!"));
-
-        // CORRIGIDO: comparação por ID em vez de entidade não gerenciada
-        if (expedicaoRepository.existsByPedidoId(pedido.getId())) {
-            throw new RuntimeException("Pedido " + pedido.getId() + " já possui registro na expedição!");
-        }
-
-        List<Integer> posicoesOcupadas = expedicaoRepository.findAll()
-                .stream()
-                .map(Expedicao::getPosicao)
-                .collect(Collectors.toList());
-
-        Integer posicaoLivre = null;
-        for (Integer i = 1; i <= 12; i++) {
-            if (!posicoesOcupadas.contains(i)) {
-                posicaoLivre = i;
-                break;
-            }
-        }
-
-        if (posicaoLivre == null) {
-            throw new RuntimeException("Expedição lotada! Todas as 12 posições estão ocupadas.");
-        }
-
-        Expedicao expedicao = new Expedicao();
-        expedicao.setPedido(pedido);
-        expedicao.setPosicao(posicaoLivre);
-        // ADICIONADO: registrar timestamp de entrada na expedição (exigido pelas regras
-        // de negócio)
-  
-        return ExpedicaoDTO.fromEntity(expedicaoRepository.save(expedicao));
+    public ExpedicaoResponseDTO atualizarExpedicao(Expedicao expedicao) {
+        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
     }
 
-   
-
-    public List<ExpedicaoDTO> listarTodos() {
-        return expedicaoRepository.findAll()
+    // readOnly: mantém a sessão Hibernate aberta durante o map (inicializa o proxy lazy de Pedido).
+    // Sem isso, o produtor SSE @Scheduled (sem OSIV) quebra com LazyInitializationException.
+    @Transactional(readOnly = true)
+    public List<ExpedicaoResponseDTO> listarTodos() {
+        return expedicaoRepository.findAllComPedidoAtualEBlocos()
                 .stream()
-                .map(ExpedicaoDTO::fromEntity)
+                .map(ExpedicaoResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
-
-    public boolean existePosicaoLivre(){
-        return expedicaoRepository.countByPedidoIsNull() > 0;
+    public boolean existePosicaoLivre() {
+        return expedicaoRepository.countByPedidoAtualIsNull() > 0;
     }
 
+    public ExpedicaoResponseDTO primeiraExpedicaoLivre() {
+        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoAtualIsNull().get());
+    }
 
-    public ExpedicaoDTO primeiraExpedicaoLivre(){
-        return ExpedicaoDTO.fromEntity(expedicaoRepository.findFirstByPedidoIsNull().get());
+    /**
+     * Vincula o pedido de ordem de produção {@code ordemProducao} à posição física de expedição
+     * {@code posicao}, refletindo o que o CLP da expedição reportou ter guardado.
+     */
+    public void guardarNaPosicao(int posicao, int ordemProducao) {
+        Expedicao expedicao = expedicaoRepository.findByPosicao(posicao)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Posição de expedição " + posicao + " não existe!"));
+
+        Pedido pedido = pedidoRepository.findByOrdemProducao(ordemProducao)
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Pedido com ordem de produção " + ordemProducao + " não encontrado!"));
+
+        expedicao.setPedidoAtual(pedido);
+        expedicaoRepository.save(expedicao);
+
+        // Peça guardada na expedição = produção concluída. Ponto único de sincronização CLP→pedido;
+        // feito aqui (e não em PedidoService.concluir) para evitar ciclo PedidoService↔ExpedicaoService.
+        // ponytail: reusa o mesmo par de campos de concluir(); extrair helper se a regra divergir.
+        if (pedido.getStatus() == StatusPedido.PRODUCAO) {
+            pedido.setStatus(StatusPedido.CONCLUIDO);
+            pedido.setDataEntradaExpedicao(LocalDateTime.now());
+            pedidoRepository.save(pedido);
+        }
+    }
+
+    /** Libera a posição física de expedição {@code posicao} (remove o pedido vinculado). */
+    public void removerDaPosicao(int posicao) {
+        Expedicao expedicao = expedicaoRepository.findByPosicao(posicao)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Posição de expedição " + posicao + " não existe!"));
+
+        expedicao.setPedidoAtual(null);
+        expedicaoRepository.save(expedicao);
     }
 }

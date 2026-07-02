@@ -1,5 +1,6 @@
 package com.tecdes.smart.app_smart_40.model;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -31,29 +33,13 @@ import lombok.Setter;
 @Setter
 @Getter
 @Builder
-@Table(
-    name = "T_SMT_PEDIDO",
-    uniqueConstraints = {
-        @UniqueConstraint(
-            name = "UN_PEDIDO_ORDEM_PRODUCAO",
-            columnNames = {"nr_ordem_producao"}
-        )
-    },
-    check = {
-        @CheckConstraint(
-            name = "CK_PEDIDO_STATUS",
-            constraint = "vl_status IN (1, 2, 3)"
-        ),
-        @CheckConstraint(
-            name = "CK_PEDIDO_TIPO",
-            constraint = "tp_pedido IN (1, 2, 3)"
-        ),
-        @CheckConstraint(
-            name = "CK_PEDIDO_COR_TAMPA",
-            constraint = "vl_cor_tampa IN (1, 2, 3)"
-        )
-    }
-)
+@Table(name = "T_SMT_PEDIDO", uniqueConstraints = {
+        @UniqueConstraint(name = "UN_PEDIDO_ORDEM_PRODUCAO", columnNames = { "nr_ordem_producao" })
+}, check = {
+        @CheckConstraint(name = "CK_PEDIDO_STATUS", constraint = "vl_status IN (1, 2, 3)"),
+        @CheckConstraint(name = "CK_PEDIDO_TIPO", constraint = "tp_pedido IN (1, 2, 3)"),
+        @CheckConstraint(name = "CK_PEDIDO_COR_TAMPA", constraint = "vl_cor_tampa IN (1, 2, 3)")
+})
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -81,12 +67,13 @@ public class Pedido {
 
     @PrePersist
     protected void prePersist() {
+        LocalDateTime localDateTime = LocalDateTime.now();
         if (dataCriacao == null) {
-            dataCriacao = LocalDateTime.now();
+            dataCriacao = localDateTime;
         }
     }
 
-    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Bloco> blocos;
 
@@ -95,6 +82,9 @@ public class Pedido {
     @JoinColumn(name = "id_expedicao", nullable = true)
     @JsonIgnore
     private Expedicao expedicao;
+
+    @Column(name = "dt_entrada_producao", nullable = true)
+    private LocalDateTime dataEntradaProducao;
 
     @Column(name = "dt_entrada_expedicao", nullable = true)
     private LocalDateTime dataEntradaExpedicao;

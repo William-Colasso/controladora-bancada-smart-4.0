@@ -1,0 +1,18 @@
+#bancada-status {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1600/900;
+    padding: 0;
+    margin: 0;
+}
+
+#bancada-status img {
+    position: absolute;
+}
+
+#bancada-status img[hidden] {
+    display: none;
+}

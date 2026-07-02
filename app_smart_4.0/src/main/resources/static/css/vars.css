@@ -1,0 +1,61 @@
+/* ============================================================
+   SMART 4.0 — Design Tokens
+   Fonte única de verdade para cores, tipografia e espaçamento.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  /* --- Palette --- */
+  --color-bg:        #0a0a0f;
+  --color-surface:   #111118;
+  --color-surface-2: #1a1a25;
+  --color-border:    #2a2a3a;
+  --color-border-2:  #3a3a50;
+
+  --color-text:      #e8e8f0;
+  --color-muted:     #7070a0;
+  --color-dim:       #3a3a55;
+
+  /* Brand accent */
+  --color-accent:    #2b92d5;
+  --color-accent-lo: rgba(43, 146, 213, 0.12);
+
+  /* Bloco cores */
+  --cor-preto:    #1a1a1a;
+  --cor-vermelho: #fc0518;
+  --cor-azul:     #2b92d5;
+  --cor-vazio:    #1e1e2e;
+
+  /* Status */
+  --color-green:  #5ab300;
+  --color-yellow: #fece00;
+  --color-red:    #fc0518;
+
+  --success: var(--color-green);
+  --danger:  var(--color-red);
+
+  /* Tons sólidos auxiliares (ex-hardcoded) */
+  --color-preto-solid: #1a1a1a;
+  --color-preto-line:  #333;
+  --color-text-faint:  #888;
+  --color-bar-preto:   #555;
+  --color-branco:      #ddd;
+
+  /* --- Tipografia --- */
+  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'DM Sans', sans-serif;
+
+  /* --- Espaçamento --- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* --- Sombras --- */
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border);
+  --shadow-glow: 0 0 24px rgba(43, 146, 213, 0.18);
+
+  /* --- Transições --- */
+  --transition: 160ms ease;
+  --transition-slow: 400ms ease;
+}

@@ -1,52 +1,61 @@
 package com.tecdes.smart.app_smart_40.service;
 
-import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.BlocoDTO;
-import com.tecdes.smart.app_smart_40.dto.ExpedicaoDTO;
-import com.tecdes.smart.app_smart_40.dto.LaminaDTO;
-import com.tecdes.smart.app_smart_40.dto.PedidoDTO;
+import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
+import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
+import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.request.LaminaRequestDTO;
+import com.tecdes.smart.app_smart_40.model.Bloco;
+import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
+import com.tecdes.smart.app_smart_40.exception.EstoqueInsuficienteException;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
 
 @Service
 @AllArgsConstructor
 public class PedidoService {
 
-    private final EstoqueService estoqueService;
     private final PedidoRepository pedidoRepository;
     private final EstoqueRepository estoqueRepository;
-    // ADICIONADO: injeção do ExpedicaoService para registrar expedição ao concluir
+    // Usado apenas para a checagem otimista de disponibilidade em criar();
+    // a reserva/baixa de expedição em si acontece em SmartService.enviarParaProducao().
     private final ExpedicaoService expedicaoService;
-    private final BlocoService blocoService;
-
     // -------------------------------------------------------------------------
     // CREATE
     // -------------------------------------------------------------------------
-    public PedidoDTO criar(PedidoDTO dto) {
 
-        if (!validarTipoPedido(dto)) {
+    public PedidoResponseDTO criar(PedidoRequestDTO dto) {
+
+        if (!validarTipoPedidoRequest(dto)) {
             throw new IllegalArgumentException(
                     "Quantidade de blocos não corresponde ao tipo de pedido.");
         }
 
-        List<BlocoDTO> blocoDTOs = dto.blocos();
+        List<BlocoRequestDTO> blocoDTOs = dto.blocos();
 
+        // CHECAGEM OTIMISTA: aqui só validamos disponibilidade — a reserva real de
+        // estoque e expedição acontece em SmartService.enviarParaProducao(). Logo,
+        // entre criar() e o envio à produção outro pedido pode esgotar o recurso
+        // (overselling); essa falha tardia é tratada lá com EstoqueInsuficienteException.
         if (!blocosSuficientesEmEstoque(blocoDTOs)) {
-            throw new IllegalArgumentException(
+            throw new EstoqueInsuficienteException(
                     "Cores requisitadas não se encontram presentes");
         }
 
@@ -66,16 +75,17 @@ public class PedidoService {
             bloco.getLaminas().forEach(lamina -> {
                 lamina.setBloco(bloco);
             });
+           
         });
 
-        ExpedicaoDTO expedicaoDTO = expedicaoService.primeiraExpedicaoLivre();
-        Expedicao expedicao = ExpedicaoDTO.toEntity(expedicaoDTO);
-        pedido.setExpedicao(expedicao);
-        expedicao.setPedido(pedido);
+        // OP escolhida pelo usuário (valida unicidade) ou auto (MAX+1).
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), null));
 
+        pedido.setStatus(StatusPedido.PENDENTE);
+        System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
-        PedidoDTO pedidoDTO = PedidoDTO.fromEntity(pedidoSalvo);
-        estoqueService.retirarEstoque(pedidoDTO.blocos());
+        PedidoResponseDTO pedidoDTO = PedidoResponseDTO.fromEntity(pedidoSalvo);
+        
 
         return pedidoDTO;
     }
@@ -86,8 +96,8 @@ public class PedidoService {
 
     // IMPLEMENTADO: valida que cada bloco tem no máximo 3 lâminas
     // e que não há posições de lâmina duplicadas dentro do mesmo bloco
-    private boolean validarLaminas(List<BlocoDTO> blocoDTOs) {
-        for (BlocoDTO bloco : blocoDTOs) {
+    private boolean validarLaminas(List<BlocoRequestDTO> blocoDTOs) {
+        for (BlocoRequestDTO bloco : blocoDTOs) {
             if (bloco.laminas() == null)
                 continue;
 
@@ -98,7 +108,7 @@ public class PedidoService {
 
             // Posições não podem se repetir no mesmo bloco
             long posicoesDistintas = bloco.laminas().stream()
-                    .map(LaminaDTO::posicaoNoBloco)
+                    .map(LaminaRequestDTO::posicao)
                     .distinct()
                     .count();
 
@@ -111,10 +121,10 @@ public class PedidoService {
 
     // IMPLEMENTADO: verifica se há blocos disponíveis no estoque para cada cor
     // solicitada
-    private boolean blocosSuficientesEmEstoque(List<BlocoDTO> blocos) {
+    private boolean blocosSuficientesEmEstoque(List<BlocoRequestDTO> blocos) {
         // Agrupa a quantidade necessária de cada cor solicitada no pedido
         Map<CorBloco, Long> necessario = blocos.stream()
-                .collect(Collectors.groupingBy(BlocoDTO::cor, Collectors.counting()));
+                .collect(Collectors.groupingBy(BlocoRequestDTO::cor, Collectors.counting()));
 
         for (Map.Entry<CorBloco, Long> entry : necessario.entrySet()) {
             CorBloco cor = entry.getKey();
@@ -130,37 +140,66 @@ public class PedidoService {
         return true;
     }
 
-    public List<PedidoDTO> listarTodos() {
+    public List<PedidoResponseDTO> listarTodos() {
         return pedidoRepository.findAll()
                 .stream()
-                .map(PedidoDTO::fromEntity)
+                .map(PedidoResponseDTO::fromEntity)
                 .toList();
     }
 
-    public PedidoDTO buscarPorId(Long id) {
+    public PedidoResponseDTO buscarPorId(Long id) {
         return pedidoRepository.findById(id)
-                .map(PedidoDTO::fromEntity)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
+                .map(PedidoResponseDTO::fromEntity)
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
     }
 
     // -------------------------------------------------------------------------
     // UPDATE
     // -------------------------------------------------------------------------
 
-    public PedidoDTO atualizar(Long id, PedidoDTO dto) {
-        if (!pedidoRepository.existsById(id)) {
-            throw new EntityNotFoundException("Pedido não encontrado: " + id);
+    public PedidoResponseDTO atualizar(Long id, PedidoRequestDTO dto) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
+
+        // Só pedidos ainda não enviados à produção podem ser editados.
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new IllegalStateException("Só é possível editar pedidos pendentes.");
         }
 
-        if (!validarTipoPedido(dto)) {
+        // Mesmas validações do criar() (estoque é checagem otimista — ver comentário em criar()).
+        if (!validarTipoPedidoRequest(dto)) {
             throw new IllegalArgumentException(
                     "Quantidade de blocos não corresponde ao tipo de pedido.");
         }
+        if (!blocosSuficientesEmEstoque(dto.blocos())) {
+            throw new EstoqueInsuficienteException(
+                    "Cores requisitadas não se encontram presentes");
+        }
+        if (!validarLaminas(dto.blocos())) {
+            throw new IllegalArgumentException(
+                    "Lâminas propostas mal formadas, em posição incorreta ou faltante");
+        }
 
-        Pedido pedido = dto.toEntity();
-        pedido.setId(id);
+        // Muta in place preservando id/status/dataCriacao. A OP pode ser trocada
+        // (valida unicidade, ignorando a própria OP atual); se null, preserva.
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), pedido.getOrdemProducao()));
+        pedido.setTipoPedido(dto.tipoPedido());
+        pedido.setCorTampa(dto.corTampa());
 
-        return PedidoDTO.fromEntity(pedidoRepository.save(pedido));
+        List<Bloco> novosBlocos = dto.blocos().stream()
+                .map(BlocoRequestDTO::toEntity)
+                .toList();
+        novosBlocos.forEach(bloco -> {
+            bloco.setPedido(pedido);
+            if (bloco.getLaminas() != null) {
+                bloco.getLaminas().forEach(lamina -> lamina.setBloco(bloco));
+            }
+        });
+        // clear + addAll na coleção gerenciada → orphanRemoval apaga os blocos antigos.
+        pedido.getBlocos().clear();
+        pedido.getBlocos().addAll(novosBlocos);
+
+        return PedidoResponseDTO.fromEntity(pedidoRepository.save(pedido));
     }
 
     // -------------------------------------------------------------------------
@@ -169,7 +208,7 @@ public class PedidoService {
 
     public void deletar(Long id) {
         if (!pedidoRepository.existsById(id)) {
-            throw new EntityNotFoundException("Pedido não encontrado: " + id);
+            throw new PedidoNotFoundException("Pedido não encontrado: " + id);
         }
 
         pedidoRepository.deleteById(id);
@@ -179,13 +218,33 @@ public class PedidoService {
     // Helpers
     // -------------------------------------------------------------------------
 
-    private Boolean validarTipoPedido(PedidoDTO pedido) {
+    private Boolean validarTipoPedidoRequest(PedidoRequestDTO pedido) {
         return pedido.blocos().size() == pedido.tipoPedido().getValue();
     }
 
-    public PedidoDTO concluir(Long id) {
+    // Próxima OP livre (MAX+1) — sugerida ao formulário e usada quando o usuário não escolhe.
+    public Integer proximaOrdemProducao() {
+        return pedidoRepository.proximaOrdemProducao();
+    }
+
+    // Resolve a OP a persistir: se o usuário escolheu uma, valida positividade e unicidade
+    // (ignorando `atual`, a OP que já pertence ao próprio pedido em edição); senão, auto MAX+1.
+    private Integer resolverOrdemProducao(Integer escolhida, Integer atual) {
+        if (escolhida == null || escolhida.equals(atual)) {
+            return atual != null ? atual : pedidoRepository.proximaOrdemProducao();
+        }
+        if (escolhida < 1) {
+            throw new IllegalArgumentException("Ordem de produção deve ser um número positivo.");
+        }
+        if (pedidoRepository.existsByOrdemProducao(escolhida)) {
+            throw new IllegalArgumentException("Ordem de produção " + escolhida + " já está em uso.");
+        }
+        return escolhida;
+    }
+
+    public PedidoResponseDTO concluir(Long id) {
         Pedido pedido = pedidoRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pedido não encontrado: " + id));
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
 
         // ADICIONADO: impede concluir um pedido que já está concluído
         if (pedido.getStatus() == StatusPedido.CONCLUIDO) {
@@ -196,6 +255,6 @@ public class PedidoService {
         pedido.setDataEntradaExpedicao(LocalDateTime.now());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
 
-        return PedidoDTO.fromEntity(pedidoSalvo);
+        return PedidoResponseDTO.fromEntity(pedidoSalvo);
     }
 }
