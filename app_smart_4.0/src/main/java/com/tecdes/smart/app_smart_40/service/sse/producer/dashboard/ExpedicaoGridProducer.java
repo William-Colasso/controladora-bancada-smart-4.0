@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoGridEvent;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.sse.SseEmitterRegistry;
 
@@ -29,7 +30,7 @@ public class ExpedicaoGridProducer {
     private final ExpedicaoService expedicaoService;
     private final ApplicationEventPublisher publisher;
     private final SseEmitterRegistry sseRegistry;
-
+    private final ExpedicaoCLP expedicaoCLP;
     private List<ExpedicaoResponseDTO> ultimo;
 
     @Scheduled(fixedDelayString = "${clp.grid.interval:2000}")
@@ -39,7 +40,12 @@ public class ExpedicaoGridProducer {
             return;
         }
         try {
+
+            
+
             List<ExpedicaoResponseDTO> atual = expedicaoService.listarTodos();
+
+
             if (!atual.equals(ultimo)) {
                 ultimo = atual;
                 publisher.publishEvent(new ExpedicaoGridEvent(atual));

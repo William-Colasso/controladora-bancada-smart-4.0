@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PedidoConsumerList {
 
-    public static ConcurrentLinkedQueue<Long> pedidos = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Long> pedidos = new ConcurrentLinkedQueue<>();
 
     private final SmartService smartService;
     private final ExpedicaoCLP expedicaoCLP;
@@ -76,18 +78,20 @@ public class PedidoConsumerList {
     }
 
     /**
-     * Pedido em produção: se o CLP de expedição já reporta a OP, grava posição+OP no
+     * Pedido em produção: se o CLP de expedição confirma a peça guardada, grava posição+OP no
      * magazine e conclui (idempotente). Avança a fila se este for o head.
      */
     private void tratarEmProducao(Pedido pedido) {
-        boolean concluido = pedido.getOrdemProducao().equals(expedicaoCLP.getNumeroOP());
-        if (!concluido) {
+        if (pedido.getExpedicao() == null) {
+            return; // órfão sem reserva de expedição — nada a reconciliar
+        }
+        int posicao = pedido.getExpedicao().getPosicao().intValue();
+        int op = pedido.getOrdemProducao();
+        if (!pecaGuardada(posicao, op)) {
             return; // ainda executando — aguarda
         }
 
         try {
-            int posicao = pedido.getExpedicao().getPosicao().intValue();
-            int op = pedido.getOrdemProducao().intValue();
             log.debug("Guardando OP {} na posição de expedição {}", op, posicao);
             expedicaoClpWriter.escreverPosicao(posicao, op);
 
@@ -104,6 +108,33 @@ public class PedidoConsumerList {
         } catch (Exception e) {
             log.error("Falha ao concluir pedido {}: {}", pedido.getId(), e.getMessage());
         }
+    }
+
+    /**
+     * Peça guardada = o magazine do CLP na posição reservada mostra a OP (valor de nível, relido
+     * a cada ciclo e retido no DB do CLP → sobrevive a restart), OU o CLP ainda reporta a OP
+     * corrente ({@code numeroOP}). Cobre tanto "a peça já está lá" quanto "acabou de passar".
+     */
+    private boolean pecaGuardada(int posicao, int op) {
+        int[] magazine = expedicaoCLP.getOrderExpedicao();
+        boolean noMagazine = magazine != null
+                && posicao >= 1 && posicao <= magazine.length
+                && magazine[posicao - 1] == op;
+        return noMagazine || op == expedicaoCLP.getNumeroOP();
+    }
+
+    /**
+     * Recompõe a fila em memória a partir do banco (fonte da verdade) no boot: um eventual pedido
+     * em PRODUCAO (órfão de reset) na cabeça, seguido dos PENDENTE em ordem de criação. Sem isto,
+     * um restart perderia a fila e os pendentes nunca seriam enviados.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void recomporFila() {
+        pedidoRepository.findFirstByStatus(StatusPedido.PRODUCAO)
+                .ifPresent(p -> pedidos.add(p.getId()));
+        pedidoRepository.findByStatusOrderByDataCriacaoAsc(StatusPedido.PENDENTE)
+                .forEach(p -> pedidos.add(p.getId()));
+        log.info("Fila recomposta do banco: {}", pedidos);
     }
 
     public void addOrder(Long id) {

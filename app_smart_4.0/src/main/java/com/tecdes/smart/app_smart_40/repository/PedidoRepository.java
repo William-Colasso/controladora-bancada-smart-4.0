@@ -27,4 +27,7 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     // (a fila em memória não). A bancada executa um pedido por vez, então no
     // máximo um pedido fica em PRODUCAO.
     Optional<Pedido> findFirstByStatus(StatusPedido status);
+
+    // Recompor a fila no boot: pedidos PENDENTE na ordem em que foram criados.
+    List<Pedido> findByStatusOrderByDataCriacaoAsc(StatusPedido status);
 }
