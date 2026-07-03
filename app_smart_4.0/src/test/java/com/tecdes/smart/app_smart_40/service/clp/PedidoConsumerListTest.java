@@ -43,7 +43,7 @@ class PedidoConsumerListTest {
 
     @BeforeEach
     void setUp() {
-        consumer.filaAtual().clear(); // fila é static — isola os testes
+        // fila agora é campo de instância → cada consumer nasce com a fila vazia
         consumer = new PedidoConsumerList(
                 smartService, expedicaoCLP, expedicaoClpWriter, pedidoService, pedidoRepository);
     }
