@@ -63,3 +63,20 @@ export function renderExpedicaoCell(cell, pos, pedido) {
     cell.innerHTML = `<span class="bloco__pos">${pos}</span>`;
   }
 }
+
+// Célula de expedição da página magazine: igual à do dashboard, mas posições ocupadas ganham o
+// botão ✕ de limpar (banco + CLP). onLimpar(pos) é chamado no clique do botão.
+export function renderMagazineExpedicaoCell(cell, pos, pedido, onLimpar) {
+  renderExpedicaoCell(cell, pos, pedido);
+  if (!pedido) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'bloco__limpar';
+  btn.title = `Limpar posição ${pos}`;
+  btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onLimpar(pos);
+  });
+  cell.appendChild(btn);
+}
