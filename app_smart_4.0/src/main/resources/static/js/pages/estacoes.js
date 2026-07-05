@@ -5,6 +5,7 @@ import { createSse } from '../core/sse.js';
 import bancadaStatus from '../components/bancadaStatus.js';
 import { createPedidoViewer } from '../components/pedidoViewer.js';
 import { buildDetailHTML } from '../components/pedidoDetail.js';
+import { initCommBanner } from '../components/commBanner.js';
 import { Api } from '../core/api.js';
 import { Toast } from '../core/toast.js';
 
@@ -183,6 +184,7 @@ sse.on('estacao-heartbeat', (d) => {
   renderBancada(d.estacao); // pulso vivo → reavalia a cor (sai de vermelho p/ verde quando volta a ler)
 });
 
+initCommBanner(sse); // banner global além do watchdog por card
 sse.connect();
 
 // Watchdog: sem pulso de uma estação por mais que LIMITE_MS → comunicação parada → "aguardando".
