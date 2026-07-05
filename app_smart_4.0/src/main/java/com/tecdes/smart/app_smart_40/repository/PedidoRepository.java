@@ -27,4 +27,8 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     // (a fila em memória não). A bancada executa um pedido por vez, então no
     // máximo um pedido fica em PRODUCAO.
     Optional<Pedido> findFirstByStatus(StatusPedido status);
+
+    // Histórico da posição de expedição: Pedido.expedicao (FK) persiste mesmo após a
+    // posição ser liberada, então "todos que passaram por ela" é uma consulta direta.
+    List<Pedido> findByExpedicaoPosicaoOrderByDataEntradaProducaoDesc(Integer posicao);
 }
