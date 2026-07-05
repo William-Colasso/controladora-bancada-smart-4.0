@@ -30,6 +30,9 @@ class EstoqueServiceTest {
     @Mock
     private EstoqueClpWriter clpWriter;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher publisher;
+
     @InjectMocks
     private EstoqueService estoqueService;
 

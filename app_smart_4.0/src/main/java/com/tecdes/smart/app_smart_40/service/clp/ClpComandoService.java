@@ -4,12 +4,11 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
+import com.tecdes.smart.app_smart_40.service.sse.ClpEventoCoordinator;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,15 +26,15 @@ public class ClpComandoService {
 
     private final Map<EstacoesCLP, EstacaoClpHandshake> handshakes = new EnumMap<>(EstacoesCLP.class);
     private final ClpIpRegistry ipRegistry;
-    private final ApplicationEventPublisher publisher;
+    private final ClpEventoCoordinator coordinator;
 
     public ClpComandoService(List<EstacaoClpHandshake> handshakes, ClpIpRegistry ipRegistry,
-            ApplicationEventPublisher publisher) {
+            ClpEventoCoordinator coordinator) {
         for (EstacaoClpHandshake h : handshakes) {
             this.handshakes.put(h.estacao(), h);
         }
         this.ipRegistry = ipRegistry;
-        this.publisher = publisher;
+        this.coordinator = coordinator;
     }
 
     /** Executa uma passada de leitura+escrita na estação. IP não configurado → estado inalterado. */
@@ -50,11 +49,10 @@ public class ClpComandoService {
             return;
         }
         boolean ok = handshake.lerEProcessar(ip);
-        // O dado completo (estacao-all) sai dos producers (clp_data) a partir do bean *CLP já preenchido
-        // por esta passada. Aqui o write path só pulsa o heartbeat de "leitura viva" quando a leitura
-        // ocorreu de fato — é o sinal de liveness que o front usa (badge home + watchdog estações).
+        // Passada lida → o coordenador decide o que publicar: heartbeat sempre (liveness),
+        // estacao-all/estacao-status só se as variáveis do bean mudaram desde a última emissão.
         if (ok) {
-            publisher.publishEvent(new EstacaoHeartbeat(estacao.getFrontKey()));
+            coordinator.aoPassadaLida(estacao, handshake.dados());
         }
     }
 

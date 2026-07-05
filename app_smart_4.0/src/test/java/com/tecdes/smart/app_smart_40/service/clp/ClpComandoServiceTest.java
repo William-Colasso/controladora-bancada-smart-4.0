@@ -15,11 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
-
-import com.tecdes.smart.app_smart_40.dto.event.EstacaoHeartbeat;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.estacao.EstacaoClpHandshake;
+import com.tecdes.smart.app_smart_40.service.sse.ClpEventoCoordinator;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ClpComandoService")
@@ -29,7 +27,7 @@ class ClpComandoServiceTest {
     private ClpIpRegistry ipRegistry;
 
     @Mock
-    private ApplicationEventPublisher publisher;
+    private ClpEventoCoordinator coordinator;
 
     /** Mock de um handshake fixando sua estação (consumido no construtor do facade). */
     private EstacaoClpHandshake handshake(EstacoesCLP estacao) {
@@ -43,7 +41,7 @@ class ClpComandoServiceTest {
     void processar_comIp_despacha() {
         EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
         EstacaoClpHandshake processo = handshake(EstacoesCLP.PROCESSO);
-        ClpComandoService service = new ClpComandoService(List.of(estoque, processo), ipRegistry, publisher);
+        ClpComandoService service = new ClpComandoService(List.of(estoque, processo), ipRegistry, coordinator);
         when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn("10.0.0.1");
 
         service.processar(EstacoesCLP.ESTOQUE);
@@ -53,51 +51,51 @@ class ClpComandoServiceTest {
     }
 
     @Test
-    @DisplayName("processar - leitura ok publica EstacaoHeartbeat(frontKey) no barramento")
-    void processar_comIp_publicaHeartbeat() {
+    @DisplayName("processar - leitura ok notifica o coordenador com a estação e o bean lido")
+    void processar_comIp_notificaCoordenador() {
         EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
         when(estoque.lerEProcessar("10.0.0.1")).thenReturn(true);
-        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, coordinator);
         when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn("10.0.0.1");
 
         service.processar(EstacoesCLP.ESTOQUE);
 
         verify(estoque).lerEProcessar("10.0.0.1");
-        verify(publisher).publishEvent(new EstacaoHeartbeat("estoque"));
+        verify(coordinator).aoPassadaLida(EstacoesCLP.ESTOQUE, estoque.dados());
     }
 
     @Test
-    @DisplayName("processar - leitura falha (false) → não publica heartbeat")
-    void processar_leituraFalha_naoPublica() {
+    @DisplayName("processar - leitura falha (false) → não notifica o coordenador")
+    void processar_leituraFalha_naoNotifica() {
         EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
         when(estoque.lerEProcessar("10.0.0.1")).thenReturn(false);
-        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, coordinator);
         when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn("10.0.0.1");
 
         service.processar(EstacoesCLP.ESTOQUE);
 
         verify(estoque).lerEProcessar("10.0.0.1");
-        verify(publisher, never()).publishEvent(any());
+        verify(coordinator, never()).aoPassadaLida(any(), any());
     }
 
     @Test
     @DisplayName("processar - IP não configurado (blank) → não chama lerEProcessar")
     void processar_semIp_naoDispara() {
         EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
-        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, coordinator);
         when(ipRegistry.getIp(EstacoesCLP.ESTOQUE)).thenReturn("   ");
 
         service.processar(EstacoesCLP.ESTOQUE);
 
         verify(estoque, never()).lerEProcessar(anyString());
-        verify(publisher, never()).publishEvent(any());
+        verify(coordinator, never()).aoPassadaLida(any(), any());
     }
 
     @Test
     @DisplayName("processar - estação sem serviço de handshake → IllegalState (400)")
     void processar_estacaoSemServico_lanca() {
         EstacaoClpHandshake estoque = handshake(EstacoesCLP.ESTOQUE);
-        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, publisher);
+        ClpComandoService service = new ClpComandoService(List.of(estoque), ipRegistry, coordinator);
 
         assertThatThrownBy(() -> service.processar(EstacoesCLP.EXPEDICAO))
                 .isInstanceOf(IllegalStateException.class);
@@ -111,7 +109,7 @@ class ClpComandoServiceTest {
         EstacaoClpHandshake montagem = handshake(EstacoesCLP.MONTAGEM);
         EstacaoClpHandshake expedicao = handshake(EstacoesCLP.EXPEDICAO);
         ClpComandoService service = new ClpComandoService(
-                List.of(estoque, processo, montagem, expedicao), ipRegistry, publisher);
+                List.of(estoque, processo, montagem, expedicao), ipRegistry, coordinator);
         when(ipRegistry.getIp(any())).thenReturn("10.0.0.1");
 
         service.processarTodas();
