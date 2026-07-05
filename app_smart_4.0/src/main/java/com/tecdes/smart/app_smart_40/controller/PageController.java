@@ -132,6 +132,16 @@ public class PageController {
         }
 
         /**
+         * GET /configuracao
+         * Configuração da comunicação: IPs dos CLPs (base + final por estação) e
+         * controladora de tampa (ESP32). Sem model — tudo via /api/clp/ips e /api/config/tampa.
+         */
+        @GetMapping("/configuracao")
+        public String configuracao() {
+                return "configuracao/configuracao";
+        }
+
+        /**
          * GET /Dashboard
          * Exibe o dashboard com dados iniciais de estoque e expedição.
          */

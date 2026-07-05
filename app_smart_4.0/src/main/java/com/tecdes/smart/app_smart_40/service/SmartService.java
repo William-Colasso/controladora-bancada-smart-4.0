@@ -22,6 +22,7 @@ import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
+import com.tecdes.smart.app_smart_40.service.clp.TampaConfigRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -42,6 +43,7 @@ public class SmartService {
     private final ExpedicaoService expedicaoService;
     private final EstoqueService estoqueService;
     private final ClpIpRegistry ipRegistry;
+    private final TampaConfigRegistry tampaConfig;
     private static final int TOTAL_SHORTS = 30;
     private static final int TOTAL_BYTES = TOTAL_SHORTS * 2;
 
@@ -208,11 +210,16 @@ public class SmartService {
     }
 
     public void enviarTampa(int tampa) {
-        System.out.println("\n\nSELETOR DE TAMPAS INSTALADO NA BANCADA\n\n");
+        // Controladora de tampa existe só em algumas bancadas: desabilitada na config → no-op
+        // silencioso (não é erro; ver /configuracao).
+        if (!tampaConfig.isHabilitada()) {
+            log.debug("Seletor de tampa desabilitado na configuração — comando ignorado.");
+            return;
+        }
         // Passo 2) Selecionar a tampa via POST
         try {
             RestTemplate apiSeletorTampa = new RestTemplate();
-            String url = "http://10.74.241.245/api/move_pos";
+            String url = "http://" + tampaConfig.getIp() + "/api/move_pos";
 
             // 1. Definir o cabeçalho como application/x-www-form-urlencoded
             HttpHeaders headers = new HttpHeaders();
