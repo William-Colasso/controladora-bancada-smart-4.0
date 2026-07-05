@@ -107,6 +107,13 @@
     <!-- ── Ações utilitárias ──────────────────────────────────── -->
     <div class="navbar__actions">
 
+      <!-- Configuração da comunicação (CLPs + tampa) -->
+      <a th:href="@{/configuracao}" class="nav-btn"
+         title="Configuração"
+         th:classappend="${activePage == 'configuracao'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-gear"></i>
+      </a>
+
       <!-- Refresh -->
       <button type="button" class="nav-btn nav-btn--refresh"
               title="Atualizar página"
