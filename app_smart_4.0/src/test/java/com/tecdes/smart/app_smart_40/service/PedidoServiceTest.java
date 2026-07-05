@@ -39,6 +39,9 @@ public class PedidoServiceTest {
     @Mock
     private ExpedicaoService expedicaoService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher publisher;
+
     @InjectMocks
     private PedidoService pedidoService;
 
