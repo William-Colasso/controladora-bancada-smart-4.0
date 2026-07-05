@@ -74,6 +74,13 @@
         <span>Dashboard</span>
       </a>
 
+      <a th:href="@{/magazine}"
+         class="nav-link"
+         th:classappend="${activePage == 'magazine'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Magazine</span>
+      </a>
+
       <a th:href="@{/estacoes}"
          class="nav-link"
          th:classappend="${activePage == 'estacoes'} ? 'nav-link--active' : ''">
