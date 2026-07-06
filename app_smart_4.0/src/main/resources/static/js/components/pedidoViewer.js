@@ -23,6 +23,8 @@ const INT_COR_BLOCO  = { 0: 'VAZIO', 1: 'PRETO', 2: 'VERMELHO', 3: 'AZUL' };
 const INT_COR_LAMINA = { 1: 'VERMELHO', 2: 'AZUL', 3: 'AMARELO', 4: 'VERDE', 5: 'PRETO', 6: 'BRANCO' };
 // PosicaoLamina: ESQUERDA=1, FRENTE=2, DIREITA=3
 const INT_POSICAO    = { 1: 'ESQUERDA', 2: 'FRENTE', 3: 'DIREITA' };
+// PadraoLamina: NENHUM=0, CASA=1, NAVIO=2, ESTRELA=3
+const PADRAO_TO_INT  = { NENHUM: 0, CASA: 1, NAVIO: 2, ESTRELA: 3 };
 
 const AUTO_ROTATE_SPEED  = 2.0;
 const RESUME_DELAY_MS    = 2500;
@@ -55,6 +57,67 @@ function normLaminaCor(v) {
 
 export function normPosicao(v) {
   return typeof v === 'number' ? (INT_POSICAO[v] ?? 'FRENTE') : (v ?? 'FRENTE');
+}
+
+// ─── Padrões (decal na face externa da lâmina) ───────────────────────────────
+// As artes em img/padroes/ são traço preto sobre fundo transparente, com o
+// ícone deslocado do centro. Recortamos o bounding box do ícone e o pintamos
+// de branco (source-in) para poder tingir via material.color (preto em lâminas
+// claras, branco em escuras).
+
+const PADRAO_CACHE = new Map(); // int → Promise<{ texture, aspect }>
+
+function carregarPadrao(n) {
+  if (!PADRAO_CACHE.has(n)) {
+    PADRAO_CACHE.set(n, new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const { data } = ctx.getImageData(0, 0, c.width, c.height);
+        let minX = c.width, minY = c.height, maxX = -1, maxY = -1;
+        for (let y = 0; y < c.height; y++) {
+          for (let x = 0; x < c.width; x++) {
+            if (data[(y * c.width + x) * 4 + 3] > 8) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (maxX < minX) { reject(new Error(`padrao ${n} sem pixels visíveis`)); return; }
+        const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.08);
+        const sx = Math.max(0, minX - pad);
+        const sy = Math.max(0, minY - pad);
+        const w  = Math.min(c.width, maxX + pad) - sx;
+        const h  = Math.min(c.height, maxY + pad) - sy;
+        const out = document.createElement('canvas');
+        out.width = w;
+        out.height = h;
+        const octx = out.getContext('2d');
+        octx.drawImage(img, sx, sy, w, h, 0, 0, w, h);
+        octx.globalCompositeOperation = 'source-in';
+        octx.fillStyle = '#fff';
+        octx.fillRect(0, 0, w, h);
+        resolve({ texture: new THREE.CanvasTexture(out), aspect: w / h });
+      };
+      img.onerror = () => reject(new Error(`falha ao carregar padrao ${n}`));
+      img.src = `/img/padroes/padrao${n}-2.png`;
+    }));
+  }
+  return PADRAO_CACHE.get(n);
+}
+
+function normPadraoInt(v) {
+  return typeof v === 'number' ? v : (PADRAO_TO_INT[v] ?? 0);
+}
+
+function luminancia(hex) {
+  return ((hex >> 16) & 255) * 0.299 + ((hex >> 8) & 255) * 0.587 + (hex & 255) * 0.114;
 }
 
 // ─── Tampa ───────────────────────────────────────────────────────────────────
@@ -123,6 +186,31 @@ function criarBloco(corVal, laminas, yOffset, delta = 0) {
       m.position.set(xBlade, bodyCenterY, 0);
     }
     group.add(m);
+
+    const padraoInt = normPadraoInt(lamina.padrao);
+    if (padraoInt > 0) {
+      const iconColor = luminancia(lHex) < 100 ? 0xffffff : 0x111111;
+      carregarPadrao(padraoInt).then(({ texture, aspect }) => {
+        if (!group.parent) return; // cena já foi reconstruída — decal órfão
+        const dH = bodyH * 0.45;
+        const decal = new THREE.Mesh(
+          new THREE.PlaneGeometry(dH * aspect, dH),
+          new THREE.MeshBasicMaterial({ map: texture, transparent: true, color: iconColor }),
+        );
+        const off = BLADE_T / 2 + 0.005;
+        if (face === 'FRENTE') {
+          decal.position.set(0, bodyCenterY, zBlade + off);
+        } else if (face === 'ESQUERDA') {
+          decal.position.set(-xBlade - off, bodyCenterY, 0);
+          decal.rotation.y = -Math.PI / 2;
+        } else {
+          decal.position.set(xBlade + off, bodyCenterY, 0);
+          decal.rotation.y = Math.PI / 2;
+        }
+        decal.renderOrder = group.renderOrder;
+        group.add(decal);
+      }).catch((e) => console.warn('[pedidoViewer] padrão indisponível:', e));
+    }
   });
 
   return group;
@@ -148,7 +236,7 @@ function descartarObj(obj) {
 }
 
 // Cor do ambiente do viewer — casa com o tema escuro do design system (surface-2 ≈ #1a1a25).
-const AMBIENTE_BG = 0x14141d;
+const AMBIENTE_BG = 0xffffff;
 
 function adicionarLuzes(scene) {
   // Hemisfério: céu frio em cima, rebatida quente embaixo — dá volume sem estourar as cores.

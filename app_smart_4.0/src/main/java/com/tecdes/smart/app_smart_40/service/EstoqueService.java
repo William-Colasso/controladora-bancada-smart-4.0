@@ -120,4 +120,16 @@ public class EstoqueService {
         publisher.publishEvent(new EstoqueMudou()); // após commit, o coordenador reavalia o grid
     }
 
+    /**
+     * Primeira posição VAZIA do magazine de estoque, ou -1 se não houver. Consultada pelo handshake
+     * do CLP (EstoqueClpService) para escolher onde guardar — mantém o acesso ao banco fora do CLP.
+     */
+    public int primeiraPosicaoLivre() {
+        return estoqueRepository.findPosicoesVazias()
+                .stream()
+                .map(e -> e.getPosicao())
+                .findFirst()
+                .orElse(-1);
+    }
+
 }
