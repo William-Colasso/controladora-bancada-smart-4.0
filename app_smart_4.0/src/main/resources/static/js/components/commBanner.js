@@ -6,7 +6,7 @@
 // Uso (antes de sse.connect()):
 //   import { initCommBanner } from '../components/commBanner.js';
 //   initCommBanner(sse);
-export function initCommBanner(sse, { graceMs = 4000, limiteMs = 2500 } = {}) {
+export function initCommBanner(sse, { graceMs = 4000, limiteMs = 10000 } = {}) {
   const el = document.createElement('div');
   el.className = 'comm-banner';
   el.hidden = true;
@@ -20,13 +20,19 @@ export function initCommBanner(sse, { graceMs = 4000, limiteMs = 2500 } = {}) {
   let ultimoPulso = 0;
   const inicio = Date.now();
   sse.on('estacao-heartbeat', () => { ultimoPulso = Date.now(); });
-
-  setInterval(() => {
+  //sse.on('estacao-heartbeat', ()=> console.log("AAA"))
+  const intervalId = setInterval(() => {
     const agora = Date.now();
     const sem = ultimoPulso === 0
-      ? agora - inicio > graceMs      // nunca pulsou desde o load
-      : agora - ultimoPulso > limiteMs; // pulsava e parou
+      ? (agora - inicio) > graceMs      // nunca pulsou desde o load
+      : (agora - ultimoPulso) > limiteMs; // pulsava e parou
     el.hidden = !sem;
     document.body.dataset.comunicacao = sem ? 'off' : 'on';
   }, 1000);
+
+  return () => {
+    clearInterval(intervalId);
+    sse.off?.('estacao-heartbeat', onHeartbeat); // se sse.on tiver um `off` correspondente
+    el.remove();
+  };
 }

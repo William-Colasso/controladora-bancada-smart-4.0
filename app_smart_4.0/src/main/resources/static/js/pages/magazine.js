@@ -74,6 +74,7 @@ function renderEstoque() {
 estoqueGrid.addEventListener('mousedown', (e) => {
   const bloco = e.target.closest('.bloco--estoque');
   if (!bloco) return;
+  toggleSelecao(bloco.dataset.pos)
   selecting = true;
   e.preventDefault(); // sem drag de imagem/texto
 });

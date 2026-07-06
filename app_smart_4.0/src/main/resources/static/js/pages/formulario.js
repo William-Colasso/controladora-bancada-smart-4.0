@@ -37,6 +37,7 @@ function buildPreviewPedido() {
       cor: b.cor,
       laminas: (b.laminas ?? []).map((l) => ({
         cor: l.cor,
+        padrao: l.padrao,
         posicaoNoBloco: l.posicao, // payload usa 'posicao'; viewer usa 'posicaoNoBloco'
       })),
     })),
