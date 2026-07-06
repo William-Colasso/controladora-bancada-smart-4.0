@@ -31,4 +31,6 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     // Histórico da posição de expedição: Pedido.expedicao (FK) persiste mesmo após a
     // posição ser liberada, então "todos que passaram por ela" é uma consulta direta.
     List<Pedido> findByExpedicaoPosicaoOrderByDataEntradaProducaoDesc(Integer posicao);
+    // Recompor a fila no boot: pedidos PENDENTE na ordem em que foram criados.
+    List<Pedido> findByStatusOrderByDataCriacaoAsc(StatusPedido status);
 }
