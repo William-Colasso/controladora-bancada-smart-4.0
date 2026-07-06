@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
-import com.tecdes.smart.app_smart_40.service.SmartService;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,10 +22,6 @@ public class PedidoController {
 
     private final PedidoConsumerList pedidoConsumerList;
     private final PedidoService pedidoService;
-    private final SmartService smartService;
-
-    
-    
 
     // GET /api/pedidos
     @GetMapping
