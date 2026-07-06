@@ -1,6 +1,7 @@
 package com.tecdes.smart.app_smart_40.controller;
 
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,5 +53,18 @@ public class ExpedicaoController {
     @GetMapping("/livre")
     public ResponseEntity<Boolean> posicaoLivre() {
         return ResponseEntity.ok(expedicaoService.existePosicaoLivre());
+    }
+
+    /** Limpa manualmente a posição (banco + zera a OP no magazine do CLP). Página magazine. */
+    @DeleteMapping("/{posicao}")
+    public ResponseEntity<Void> limparPosicao(@PathVariable int posicao) {
+        expedicaoService.limparPosicao(posicao);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** Histórico: todos os pedidos que já passaram pela posição (mais recente primeiro). */
+    @GetMapping("/{posicao}/pedidos")
+    public ResponseEntity<List<PedidoResponseDTO>> historico(@PathVariable int posicao) {
+        return ResponseEntity.ok(expedicaoService.historicoDaPosicao(posicao));
     }
 }

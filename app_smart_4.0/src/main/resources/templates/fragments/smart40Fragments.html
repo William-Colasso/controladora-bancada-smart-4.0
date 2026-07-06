@@ -34,6 +34,8 @@
 
     <!-- Base CSS (reset + tokens + navbar + cards + toast) -->
     <link rel="stylesheet" th:href="@{/css/base.css}" />
+    <!-- Alerta global de comunicação parada com o CLP (usado pelas telas SSE) -->
+    <link rel="stylesheet" th:href="@{/css/components/comm-banner.css}" />
 
     <!-- Favicon -->
     <link rel="icon" th:href="@{/img/Smart_4.0.png}" type="image/png" />
@@ -72,6 +74,13 @@
         <span>Dashboard</span>
       </a>
 
+      <a th:href="@{/magazine}"
+         class="nav-link"
+         th:classappend="${activePage == 'magazine'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Magazine</span>
+      </a>
+
       <a th:href="@{/estacoes}"
          class="nav-link"
          th:classappend="${activePage == 'estacoes'} ? 'nav-link--active' : ''">
@@ -97,6 +106,13 @@
 
     <!-- ── Ações utilitárias ──────────────────────────────────── -->
     <div class="navbar__actions">
+
+      <!-- Configuração da comunicação (CLPs + tampa) -->
+      <a th:href="@{/configuracao}" class="nav-btn"
+         title="Configuração"
+         th:classappend="${activePage == 'configuracao'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-gear"></i>
+      </a>
 
       <!-- Refresh -->
       <button type="button" class="nav-btn nav-btn--refresh"

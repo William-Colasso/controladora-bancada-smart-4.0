@@ -1,11 +1,19 @@
+// Página DASHBOARD — monitor SOMENTE LEITURA de estoque e expedição (a edição vive em /magazine).
+// Estoque: grid do banco + espelho do magazine no CLP (divergências). Expedição: clique numa
+// posição abre o histórico de pedidos que passaram por ela (destaque no atual).
+// Dados iniciais via SSR; ao vivo via SSE ('estoque'/'expedicao'/'estacao-all').
 import { Api } from '../core/api.js';
 import { Toast } from '../core/toast.js';
 import { createSse } from '../core/sse.js';
 import { COR_INT_TO_NAME } from '../core/enums.js';
 import {
-  createEstoqueCell, createExpedicaoCell, renderEstoqueCell, renderExpedicaoCell,
+  createExpedicaoCell, renderEstoqueCell, renderExpedicaoCell,
   createClpEstoqueCell, renderClpEstoqueCell,
 } from '../components/blocoCell.js';
+import { createPedidoViewer } from '../components/pedidoViewer.js';
+import { buildDetailHTML } from '../components/pedidoDetail.js';
+import { initCommBanner } from '../components/commBanner.js';
+import { formatOP } from '../core/format.js';
 
 const ESTOQUE_TOTAL = 28;
 const EXPEDICAO_TOTAL = 12;
@@ -15,17 +23,12 @@ const state = {
   expedicao: [],
   estoqueClp: null,     // snapshot do magazine lido do CLP (array de 28 ints), null até o 1º evento
   clpRecebido: false,
-  selectedPos: new Set(),
-  activeColor: null,
 };
 
 const estoqueGrid = document.getElementById('estoqueGrid');
 const clpEstoqueGrid = document.getElementById('clpEstoqueGrid');
 const clpDivergencias = document.getElementById('clpDivergencias');
 const expedicaoGrid = document.getElementById('expedicaoGrid');
-const applyBtn = document.getElementById('applyColorBtn');
-const selectionInfo = document.getElementById('selectionInfo');
-const colorBtns = document.querySelectorAll('.color-btn[data-color]');
 
 const stats = {
   PRETO: document.getElementById('statPreto'),
@@ -43,79 +46,20 @@ const expOcupado = document.getElementById('expOcupado');
 const expTotal = document.getElementById('expTotal');
 const expFill = document.getElementById('expFill');
 
-function toggleSelecao(pos) {
-  if (state.selectedPos.has(pos)) state.selectedPos.delete(pos);
-  else state.selectedPos.add(pos);
-  document.getElementById(`bloco-est-${pos}`)?.classList.toggle('bloco--selected', state.selectedPos.has(pos));
-  syncSelecaoUI();
-}
-
-function limparSelecao() {
-  state.selectedPos.forEach((pos) => {
-    document.getElementById(`bloco-est-${pos}`)?.classList.remove('bloco--selected');
-  });
-  state.selectedPos.clear();
-  syncSelecaoUI();
-}
-
-function syncSelecaoUI() {
-  const n = state.selectedPos.size;
-  if (selectionInfo) {
-    selectionInfo.textContent = n === 0
-      ? 'Nenhum selecionado'
-      : `${n} bloco${n > 1 ? 's' : ''} selecionado${n > 1 ? 's' : ''}`;
-  }
-  if (applyBtn) applyBtn.disabled = n === 0 || state.activeColor === null;
-}
-
-
-
-var selecting = false;
+// ── Estoque (somente leitura) ────────────────────────────────────────────────
 function renderEstoque() {
   const byPos = {};
   state.estoque.forEach((e) => { byPos[e.posicao] = e; });
 
-  if (!estoqueGrid.dataset.listenerRegistrado) {
-    estoqueGrid.addEventListener("mousedown", (e) => {
-      selecting = true;
-      ifBlocoToggle(e);
-    });
-
-    document.addEventListener("mouseup", () => {
-      selecting = false;
-    });
-
-    estoqueGrid.addEventListener("mouseenter", (e) => {
-      if (e.target.classList.contains("bloco--estoque") && selecting) {
-        toggleSelecao(e.target.dataset.pos);
-      }
-    }, true); // capture: true — ver nota abaixo
-
-    function ifBlocoToggle(e) {
-      if (e.target.classList.contains("bloco--estoque") && selecting) {
-        toggleSelecao(e.target.dataset.pos);
-      }
-    }
-
-    estoqueGrid.dataset.listenerRegistrado = 'true';
-  }
   for (let pos = 1; pos <= ESTOQUE_TOTAL; pos++) {
     let cell = document.getElementById(`bloco-est-${pos}`);
     if (!cell) {
-      cell = createEstoqueCell(pos, toggleSelecao);
+      cell = document.createElement('div');
+      cell.id = `bloco-est-${pos}`;
+      cell.className = 'bloco bloco--vazio';
       estoqueGrid.appendChild(cell);
-      cell.addEventListener("mouseenter", () => {
-        if (selecting) {
-          toggleSelecao(pos) // usa o pos do closure — mais direto
-        }
-      })
-    } else {
-      cell.dataset.pos = pos; // só garante que o dataset.pos está atualizado
     }
-
-
-    renderEstoqueCell(cell, pos, byPos[pos]?.corBloco ?? 0, state.selectedPos.has(pos));
-
+    renderEstoqueCell(cell, pos, byPos[pos]?.corBloco ?? 0, false);
   }
   renderStatsEstoque();
   renderEstoqueClp(); // divergência depende do banco também → re-render quando o banco muda
@@ -170,6 +114,7 @@ function renderStatsEstoque() {
   });
 }
 
+// ── Expedição: clique → histórico da posição ─────────────────────────────────
 function renderExpedicao() {
   const byPos = {};
   state.expedicao.forEach((e) => { byPos[e.posicao] = e; });
@@ -180,6 +125,9 @@ function renderExpedicao() {
       cell = createExpedicaoCell(pos);
       expedicaoGrid.appendChild(cell);
     }
+    cell.dataset.pos = pos;
+    cell.classList.add('bloco--historico'); // cursor/hover: posição clicável
+    cell.title = `Ver histórico da posição ${pos}`;
     renderExpedicaoCell(cell, pos, byPos[pos]?.pedidoResponseDTO ?? null);
   }
   renderStatsExpedicao();
@@ -192,6 +140,75 @@ function renderStatsExpedicao() {
   if (expFill) expFill.style.width = `${((ocupados / EXPEDICAO_TOTAL) * 100).toFixed(1)}%`;
 }
 
+// ─── Modal de histórico (lista + detalhe 3D do pedido selecionado) ───────────
+const modal = document.getElementById('historico-modal');
+const histLista = document.getElementById('historico-lista');
+const histTitulo = document.getElementById('historico-titulo');
+let modalViewer = null;
+const getModalViewer = () =>
+  (modalViewer ??= createPedidoViewer(document.getElementById('historico-viewer')));
+
+let historico = [];   // pedidos da posição aberta (mais recente primeiro)
+let atualId = null;   // id do pedido atualmente guardado na posição (destaque)
+
+function itemHistoricoHTML(p, selecionado) {
+  const atual = p.id === atualId;
+  return `
+    <button type="button" class="hist-item${atual ? ' hist-item--atual' : ''}${selecionado ? ' hist-item--selected' : ''}"
+            data-pedido-id="${p.id}">
+      <span class="hist-item__op">OP ${formatOP(p.ordemProducao)}</span>
+      <span class="hist-item__meta">#${p.id}</span>
+      ${atual ? '<span class="hist-item__tag">NA POSIÇÃO</span>' : ''}
+    </button>`;
+}
+
+function selecionarPedido(id) {
+  const pedido = historico.find((p) => p.id === id);
+  if (!pedido) return;
+  histLista.querySelectorAll('.hist-item').forEach((el) => {
+    el.classList.toggle('hist-item--selected', Number(el.dataset.pedidoId) === id);
+  });
+  document.getElementById('historico-info').innerHTML = buildDetailHTML(pedido);
+  getModalViewer().update(pedido);
+}
+
+async function abrirHistorico(pos) {
+  try {
+    historico = (await Api.get(`/api/expedicao/${pos}/pedidos`)) ?? [];
+    const slot = state.expedicao.find((e) => e.posicao === pos);
+    atualId = slot?.pedidoResponseDTO?.id ?? null;
+
+    histTitulo.textContent = `Expedição · Posição ${pos}`;
+
+    if (historico.length === 0) {
+      histLista.innerHTML = '<p class="hist-vazio">Nenhum pedido passou por esta posição ainda.</p>';
+      document.getElementById('historico-info').innerHTML = '';
+      getModalViewer().update(null);
+    } else {
+      // Destaque no atual: ele vem primeiro na seleção default (senão o mais recente).
+      const inicial = historico.find((p) => p.id === atualId) ?? historico[0];
+      histLista.innerHTML = historico.map((p) => itemHistoricoHTML(p, p.id === inicial.id)).join('');
+      selecionarPedido(inicial.id);
+    }
+    modal.showModal();
+  } catch (err) {
+    Toast.error(err.message || 'Falha ao carregar o histórico');
+  }
+}
+
+expedicaoGrid.addEventListener('click', (e) => {
+  const cell = e.target.closest('.bloco--historico');
+  if (!cell) return;
+  abrirHistorico(Number(cell.dataset.pos));
+});
+histLista?.addEventListener('click', (e) => {
+  const item = e.target.closest('.hist-item');
+  if (item) selecionarPedido(Number(item.dataset.pedidoId));
+});
+document.getElementById('historicoClose')?.addEventListener('click', () => modal.close());
+modal?.addEventListener('click', (e) => { if (e.target === modal) modal.close(); });
+
+// ── Dados: SSR inicial + SSE ao vivo ─────────────────────────────────────────
 function carregarDadosIniciais() {
   try {
     const estoqueEl = document.getElementById('initialEstoque');
@@ -203,7 +220,6 @@ function carregarDadosIniciais() {
   }
 }
 
-// Tempo real via SSE (substitui o antigo polling de 3 s). O backend empurra o grid quando ele muda.
 const sse = createSse();
 sse.on('estoque', (d) => {
   state.estoque = d.posicoes || [];
@@ -222,68 +238,6 @@ sse.on('estacao-all', (d) => {
   renderEstoqueClp();
 });
 
-// Refresh pontual (one-shot, não é polling) para feedback imediato após uma mutação local,
-// sem esperar o próximo ciclo do produtor SSE.
-async function refreshEstoque() {
-  try {
-    state.estoque = (await Api.get('/api/estoque')) || [];
-    renderEstoque();
-  } catch (err) {
-    console.error('[Dashboard] refreshEstoque:', err);
-  }
-}
-
-colorBtns.forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const cor = btn.dataset.color;
-    state.activeColor = state.activeColor === cor ? null : cor;
-    colorBtns.forEach((b) => b.classList.toggle('color-btn--active', b.dataset.color === state.activeColor));
-    syncSelecaoUI();
-  });
-});
-
-if (applyBtn) {
-  applyBtn.addEventListener('click', async () => {
-    if (!state.activeColor || state.selectedPos.size === 0) return;
-
-    applyBtn.disabled = true;
-    const textoOriginal = applyBtn.textContent;
-    applyBtn.textContent = '…';
-
-    const posicoes = [...state.selectedPos];
-    const erros = [];
-    for (const pos of posicoes) {
-      try {
-        if (state.activeColor === 'VAZIO') {
-          await Api.put(`/api/estoque/remover/${pos}`);
-        } else {
-          await Api.put('/api/estoque/adicionar', { posicao: pos, corBloco: state.activeColor });
-        }
-      } catch (err) {
-        erros.push(`Pos. ${pos}: ${err.message}`);
-      }
-    }
-
-    if (erros.length === 0) {
-      Toast.success(`Cor aplicada em ${posicoes.length} bloco${posicoes.length > 1 ? 's' : ''}`);
-    } else {
-      Toast.error(`${erros.length} erro(s). ${erros[0]}`);
-    }
-
-    await refreshEstoque();
-    limparSelecao();
-    applyBtn.textContent = textoOriginal;
-  });
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    limparSelecao();
-    state.activeColor = null;
-    colorBtns.forEach((b) => b.classList.remove('color-btn--active'));
-    syncSelecaoUI();
-  }
-});
-
 carregarDadosIniciais();
+initCommBanner(sse); // sem heartbeat → banner "sem comunicação" + indicadores vermelhos
 sse.connect();

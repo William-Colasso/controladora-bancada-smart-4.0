@@ -1,13 +1,17 @@
 package com.tecdes.smart.app_smart_40.service;
 
+import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoMudou;
 import com.tecdes.smart.app_smart_40.dto.request.ExpedicaoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
+import com.tecdes.smart.app_smart_40.service.clp.ExpedicaoClpWriter;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
 import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +25,14 @@ public class ExpedicaoService {
 
     private final ExpedicaoRepository expedicaoRepository;
     private final PedidoRepository pedidoRepository;
+    private final ExpedicaoClpWriter expedicaoClpWriter;
+    // Mutação → marcador p/ ClpEventoCoordinator (que decide se o grid SSE muda).
+    private final ApplicationEventPublisher publisher;
 
     public ExpedicaoResponseDTO atualizarExpedicao(Expedicao expedicao) {
-        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
+        ExpedicaoResponseDTO salvo = ExpedicaoResponseDTO.fromEntity(expedicaoRepository.save(expedicao));
+        publisher.publishEvent(new ExpedicaoMudou());
+        return salvo;
     }
 
     // readOnly: mantém a sessão Hibernate aberta durante o map (inicializa o proxy lazy de Pedido).
@@ -70,6 +79,7 @@ public class ExpedicaoService {
             pedido.setDataEntradaExpedicao(LocalDateTime.now());
             pedidoRepository.save(pedido);
         }
+        publisher.publishEvent(new ExpedicaoMudou());
     }
 
     /** Libera a posição física de expedição {@code posicao} (remove o pedido vinculado). */
@@ -80,5 +90,27 @@ public class ExpedicaoService {
 
         expedicao.setPedidoAtual(null);
         expedicaoRepository.save(expedicao);
+        publisher.publishEvent(new ExpedicaoMudou());
+    }
+
+    /**
+     * Limpeza manual (página magazine): libera a posição no banco e zera a OP gravada nela no
+     * magazine do CLP de EXPEDIÇÃO (best-effort — CLP fora só loga, igual às demais escritas).
+     */
+    public void limparPosicao(int posicao) {
+        removerDaPosicao(posicao);
+        expedicaoClpWriter.escreverPosicao(posicao, 0);
+    }
+
+    /**
+     * Todos os pedidos que já passaram pela posição (Pedido.expedicao persiste após a liberação),
+     * mais recente primeiro. readOnly: inicializa blocos/lâminas lazy dentro da sessão.
+     */
+    @Transactional(readOnly = true)
+    public List<PedidoResponseDTO> historicoDaPosicao(int posicao) {
+        return pedidoRepository.findByExpedicaoPosicaoOrderByDataEntradaProducaoDesc(posicao)
+                .stream()
+                .map(PedidoResponseDTO::fromEntity)
+                .toList();
     }
 }

@@ -147,14 +147,29 @@ function descartarObj(obj) {
   obj.children?.forEach(descartarObj);
 }
 
+// Cor do ambiente do viewer — casa com o tema escuro do design system (surface-2 ≈ #1a1a25).
+const AMBIENTE_BG = 0x14141d;
+
 function adicionarLuzes(scene) {
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const d1 = new THREE.DirectionalLight(0xffffff, 0.7);
-  d1.position.set(4, 6, 5);
-  scene.add(d1);
-  const d2 = new THREE.DirectionalLight(0xffffff, 0.3);
-  d2.position.set(-4, 2, -4);
-  scene.add(d2);
+  // Hemisfério: céu frio em cima, rebatida quente embaixo — dá volume sem estourar as cores.
+  scene.add(new THREE.HemisphereLight(0x9db4d8, 0x2a2433, 0.9));
+
+  // Key light com sombra suave (o chão ShadowMaterial recebe).
+  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  key.position.set(4, 7, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -5;
+  key.shadow.camera.right = 5;
+  key.shadow.camera.top = 5;
+  key.shadow.camera.bottom = -5;
+  key.shadow.radius = 4;
+  scene.add(key);
+
+  // Rim/fill frio por trás para descolar o objeto do fundo escuro.
+  const rim = new THREE.DirectionalLight(0x6f8ecb, 0.35);
+  rim.position.set(-4, 2, -4);
+  scene.add(rim);
 }
 
 // Percorre todos os descendentes e define renderOrder, garantindo que blocos
@@ -183,6 +198,9 @@ function construirCena(root, pedido) {
   const tampa = criarTampa(pedido.corTampa, totalH);
   definirOrdem(tampa, blocos.length);
   root.add(tampa);
+
+  // Toda a pilha projeta sombra no chão (ShadowMaterial da cena).
+  root.traverse((node) => { if (node.isMesh) node.castShadow = true; });
 }
 
 // ─── API pública ─────────────────────────────────────────────────────────────
@@ -201,17 +219,45 @@ export function createPedidoViewer(container) {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0xe8e1f2, 1);
+  renderer.setClearColor(AMBIENTE_BG, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(0, 1.0, 8);
+  camera.position.set(0, 1.4, 8);
 
   const scene = new THREE.Scene();
+  // Fog sutil funde a borda do "palco" com o fundo — o objeto parece num ambiente, não num vácuo.
+  scene.fog = new THREE.Fog(AMBIENTE_BG, 14, 26);
   adicionarLuzes(scene);
 
   const root = new THREE.Group();
   scene.add(root);
+
+  // Chão invisível que só recebe sombra + anel de referência discreto (ambiente de bancada).
+  const chao = new THREE.Mesh(
+    new THREE.CircleGeometry(7, 48),
+    new THREE.ShadowMaterial({ opacity: 0.35 }),
+  );
+  chao.rotation.x = -Math.PI / 2;
+  chao.receiveShadow = true;
+  scene.add(chao);
+
+  const anel = new THREE.Mesh(
+    new THREE.RingGeometry(2.4, 2.46, 64),
+    new THREE.MeshBasicMaterial({ color: 0x2a2a3a, side: THREE.DoubleSide }),
+  );
+  anel.rotation.x = -Math.PI / 2;
+  scene.add(anel);
+
+  // O root é centralizado em Y (position.y = -totalH/2); o chão acompanha a base da pilha.
+  const posicionarChao = (pedido) => {
+    const nBlocos = pedido?.blocos?.length ?? 0;
+    const y = nBlocos ? -(BH * nBlocos) / 2 - 0.02 : -0.02;
+    chao.position.y = y;
+    anel.position.y = y + 0.005;
+  };
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enablePan      = false;
@@ -248,6 +294,7 @@ export function createPedidoViewer(container) {
     update(pedido) {
       container.classList.toggle('pedido-viewer--vazio', !pedido);
       construirCena(root, pedido);
+      posicionarChao(pedido);
     },
     dispose() {
       cancelAnimationFrame(raf);
@@ -255,6 +302,10 @@ export function createPedidoViewer(container) {
       ro.disconnect();
       controls.dispose();
       limparGrupo(root);
+      chao.geometry.dispose();
+      chao.material.dispose();
+      anel.geometry.dispose();
+      anel.material.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },

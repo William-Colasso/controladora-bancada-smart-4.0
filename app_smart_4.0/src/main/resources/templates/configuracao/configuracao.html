@@ -1,0 +1,141 @@
+<!doctype html>
+<!--
+  configuracao.html
+  =============================================================
+  Configuração da comunicação da bancada:
+    — Rede dos CLPs: base (3 primeiros octetos) compartilhada +
+      octeto final editável por estação (sugestão .10/.20/.30/.40)
+    — Controladora de tampa (ESP32): liga/desliga + IP
+
+  Controller: PageController#configuracao (sem model)
+  APIs: GET/PUT /api/clp/ips[/{estacao}] · GET/PUT /api/config/tampa
+  =============================================================
+-->
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Configuração — Smart 4.0</title>
+    <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+    <link rel="stylesheet" th:href="@{/css/configuracao.css}" />
+  </head>
+
+  <body>
+    <div th:replace="~{fragments/smart40Fragments :: navbar('configuracao')}"></div>
+
+    <main class="config-page">
+
+      <header class="config-header">
+        <h1><i class="fa-solid fa-gear"></i> Configuração · Comunicação</h1>
+        <p>Endereços dos CLPs das estações e controladora de tampa. As mudanças valem
+           imediatamente, sem reiniciar a aplicação.</p>
+      </header>
+
+      <!-- ============================================================
+           REDE DOS CLPs
+           ============================================================ -->
+      <section class="card">
+        <div class="card__header">
+          <span class="card__title"><i class="fa-solid fa-network-wired"></i> Rede dos CLPs</span>
+          <span class="section-meta">S7 · porta 102</span>
+        </div>
+        <div class="card__body">
+
+          <div class="config-row config-row--base">
+            <label for="rede-base">Base da rede</label>
+            <input type="text" id="rede-base" class="config-input config-input--base"
+                   placeholder="10.74.241" autocomplete="off" />
+            <span class="config-hint">3 primeiros octetos, compartilhados pelas 4 estações</span>
+          </div>
+
+          <div class="config-divider"></div>
+
+          <!-- Uma linha por estação: final sugerido .10/.20/.30/.40 -->
+          <div class="config-row config-row--estacao" data-estacao="estoque" data-sugestao="10">
+            <label>Estoque</label>
+            <span class="config-preview"><span class="config-preview__base">—</span>.<input
+                type="text" class="config-input config-input--final" inputmode="numeric"
+                maxlength="3" autocomplete="off" /></span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-ip">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-row config-row--estacao" data-estacao="processo" data-sugestao="20">
+            <label>Processo</label>
+            <span class="config-preview"><span class="config-preview__base">—</span>.<input
+                type="text" class="config-input config-input--final" inputmode="numeric"
+                maxlength="3" autocomplete="off" /></span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-ip">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-row config-row--estacao" data-estacao="montagem" data-sugestao="30">
+            <label>Montagem</label>
+            <span class="config-preview"><span class="config-preview__base">—</span>.<input
+                type="text" class="config-input config-input--final" inputmode="numeric"
+                maxlength="3" autocomplete="off" /></span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-ip">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-row config-row--estacao" data-estacao="expedicao" data-sugestao="40">
+            <label>Expedição</label>
+            <span class="config-preview"><span class="config-preview__base">—</span>.<input
+                type="text" class="config-input config-input--final" inputmode="numeric"
+                maxlength="3" autocomplete="off" /></span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-ip">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-actions">
+            <button type="button" class="btn btn--primary" id="salvarTodosBtn">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar todas as estações
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================================
+           CONTROLADORA DE TAMPA (ESP32)
+           ============================================================ -->
+      <section class="card">
+        <div class="card__header">
+          <span class="card__title"><i class="fa-solid fa-jar"></i> Controladora de tampa</span>
+          <span class="section-meta">ESP32 · HTTP</span>
+        </div>
+        <div class="card__body">
+
+          <div class="config-row">
+            <label for="tampa-switch">Instalada nesta bancada</label>
+            <label class="switch">
+              <input type="checkbox" id="tampa-switch" />
+              <span class="switch__slider"></span>
+            </label>
+            <span class="config-hint">Desligada: o seletor de tampa é ignorado ao enviar pedidos</span>
+          </div>
+
+          <div class="config-row">
+            <label for="tampa-ip">IP da controladora</label>
+            <input type="text" id="tampa-ip" class="config-input config-input--base"
+                   placeholder="10.74.241.245" autocomplete="off" />
+            <button type="button" class="btn btn--primary btn--sm" id="salvarTampaBtn">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim" id="tampaBadge">—</span>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <script type="module" th:src="@{/js/pages/configuracao.js}"></script>
+  </body>
+</html>
