@@ -120,6 +120,28 @@ public class PageController {
         }
 
         /**
+         * GET /magazine
+         * Controle manual dos magazines: estoque (28 posições, cor) e expedição
+         * (12 posições, limpar). Dados iniciais SSR; ao vivo via SSE.
+         */
+        @GetMapping("/magazine")
+        public String magazine(Model model) {
+                model.addAttribute("estoqueJson", toJson(estoqueService.getTodos()));
+                model.addAttribute("expedicaoJson", toJson(expedicaoService.listarTodos()));
+                return "magazine/magazine";
+        }
+
+        /**
+         * GET /configuracao
+         * Configuração da comunicação: IPs dos CLPs (base + final por estação) e
+         * controladora de tampa (ESP32). Sem model — tudo via /api/clp/ips e /api/config/tampa.
+         */
+        @GetMapping("/configuracao")
+        public String configuracao() {
+                return "configuracao/configuracao";
+        }
+
+        /**
          * GET /Dashboard
          * Exibe o dashboard com dados iniciais de estoque e expedição.
          */

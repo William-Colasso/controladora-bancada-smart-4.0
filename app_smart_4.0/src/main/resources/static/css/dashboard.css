@@ -116,6 +116,15 @@
   border-color: rgba(90, 179, 0, 0.3);
 }
 
+/* Posição de expedição clicável (abre o histórico da posição) */
+.bloco--historico { cursor: pointer; }
+.bloco--historico:hover {
+  transform: scale(1.08);
+  z-index: 2;
+  border-color: var(--color-border-2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
 /* Posição do grid do CLP cuja cor diverge do banco — contorno tracejado por cima da cor. */
 .bloco--divergente {
   outline: 2px dashed var(--color-yellow);

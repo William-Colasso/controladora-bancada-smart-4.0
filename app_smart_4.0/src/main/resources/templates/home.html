@@ -74,48 +74,12 @@
         <span class="badge badge--dim">Em breve</span>
       </div>
 
-      <!-- Conexão com o CLP -->
-      <div class="home-status__connect">
-        <div class="clp-ip-input" id="estoque-clp-ip">
-          <h3>Estoque: </h3>
-          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.10)" />
-          <button type="button" class="btn-conectar-clp  btn btn--primary">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar IP
-          </button>
-          <span class="clp-status-badge badge badge--dim">
-            <i class="fa-solid fa-circle-question"></i> Desconhecido
-          </span>
-        </div>
-        <div class="clp-ip-input" id="processo-clp-ip">
-          <h3>Processo: </h3>
-          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.20)" />
-          <button type="button" class="btn-conectar-clp  btn btn--primary">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar IP
-          </button>
-          <span class="clp-status-badge badge badge--dim">
-            <i class="fa-solid fa-circle-question"></i> Desconhecido
-          </span>
-        </div>
-        <div class="clp-ip-input" id="montagem-clp-ip">
-          <h3>Montagem: </h3>
-          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.30)" />
-          <button type="button" class="btn-conectar-clp  btn btn--primary">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar IP
-          </button>
-          <span class="clp-status-badge badge badge--dim">
-            <i class="fa-solid fa-circle-question"></i> Desconhecido
-          </span>
-        </div>
-        <div class="clp-ip-input" id="expedicao-clp-ip">
-          <h3>Expedição: </h3>
-          <input type="text"  class="home-status__input ip-clp" placeholder="IP do CLP (ex: 10.74.241.40)" />
-          <button type="button" class="btn-conectar-clp  btn btn--primary">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar IP
-          </button>
-          <span class="clp-status-badge badge badge--dim">
-            <i class="fa-solid fa-circle-question"></i> Desconhecido
-          </span>
-        </div>
+      <!-- IPs dos CLPs agora vivem na página de configuração -->
+      <div class="home-status__connect home-status__connect--link">
+        <span><i class="fa-solid fa-network-wired"></i> Endereços dos CLPs e tampa</span>
+        <a th:href="@{/configuracao}" class="btn btn--primary btn--sm">
+          <i class="fa-solid fa-gear"></i> Abrir configuração
+        </a>
       </div>
 
       <!-- Espaço reservado para a visualização futura da bancada física -->
@@ -131,7 +95,9 @@
         </span>
       </div>
 
-      <button style="margin: auto;margin-top: 1rem; display: block; flex: 1;" class="btn btn--primary">Ir para página de status completa</button>
+      <a th:href="@{/estacoes}" style="margin: auto;margin-top: 1rem;" class="btn btn--primary">
+        Ir para página de status completa
+      </a>
     </section>
 
   </main>

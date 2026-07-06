@@ -63,7 +63,8 @@ public class ClpIpRegistry {
         return novo;
     }
 
-    private static String validar(String ip) {
+    /** Validação de IPv4 compartilhada (também usada pelo {@code TampaConfigRegistry}). */
+    static String validar(String ip) {
         if (ip == null || ip.isBlank()) {
             throw new IllegalArgumentException("IP é obrigatório.");
         }

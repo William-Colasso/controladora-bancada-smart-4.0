@@ -1,0 +1,55 @@
+/* ============================================================
+   Componente: comm-banner — alerta global de comunicação parada
+   com o CLP. Faixa industrial fixa sob a navbar, com listras de
+   perigo nas bordas; some sozinho quando os pulsos voltam.
+   ============================================================ */
+
+.comm-banner {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 16px;
+  background:
+    repeating-linear-gradient(-45deg,
+      rgba(252, 5, 24, 0.16) 0 10px,
+      transparent 10px 20px),
+    rgba(252, 5, 24, 0.10);
+  border-top: 1px solid rgba(252, 5, 24, 0.5);
+  border-bottom: 1px solid rgba(252, 5, 24, 0.5);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-red);
+}
+
+.comm-banner i {
+  animation: comm-blink 1.2s steps(2, start) infinite;
+}
+@keyframes comm-blink {
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .comm-banner i { animation: none; }
+}
+
+.comm-banner__msg { font-weight: 700; }
+
+.comm-banner__hint {
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.comm-banner__hint a { color: var(--color-accent); }
+
+/* Hook global: sem comunicação → indicadores "Ao vivo" ficam vermelhos e param de pulsar */
+body[data-comunicacao='off'] .refresh-dot {
+  background: var(--color-red);
+  animation: none;
+}

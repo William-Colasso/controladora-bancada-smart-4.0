@@ -32,6 +32,12 @@ public class ExpedicaoServiceTest {
     @Mock
     private PedidoRepository pedidoRepository;
 
+    @Mock
+    private com.tecdes.smart.app_smart_40.service.clp.ExpedicaoClpWriter expedicaoClpWriter;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher publisher;
+
     @InjectMocks
     private ExpedicaoService expedicaoService;
 

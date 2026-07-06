@@ -5,8 +5,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoMudou;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
@@ -37,6 +39,7 @@ public class PedidoService {
     // Usado apenas para a checagem otimista de disponibilidade em criar();
     // a reserva/baixa de expedição em si acontece em SmartService.enviarParaProducao().
     private final ExpedicaoService expedicaoService;
+    private final ApplicationEventPublisher publisher;
     // -------------------------------------------------------------------------
     // CREATE
     // -------------------------------------------------------------------------
@@ -254,6 +257,9 @@ public class PedidoService {
         pedido.setStatus(StatusPedido.CONCLUIDO);
         pedido.setDataEntradaExpedicao(LocalDateTime.now());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
+
+        // O grid de expedição exibe o pedido vinculado → status mudou = grid pode mudar.
+        publisher.publishEvent(new ExpedicaoMudou());
 
         return PedidoResponseDTO.fromEntity(pedidoSalvo);
     }
