@@ -5,8 +5,11 @@
    Reusa tokens de vars.css e o componente .badge (base.css).
    ============================================================ */
 
+
+
+
 .estacoes {
-  max-width: 1100px;
+  max-width: calc(100% - 10rem);
   margin: 0 auto;
   padding: 32px 24px;
 }
@@ -37,6 +40,7 @@
 
 .estacoes__grid {
   display: grid;
+  
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
 }
