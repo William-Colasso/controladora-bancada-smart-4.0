@@ -13,12 +13,14 @@
 }
 
 .formulario-sidebar {
+  min-width:clamp(300px,600px,800px);
   position: sticky;
   top: 72px; /* abaixo da navbar */
 }
 
 .formulario-sidebar__body {
   padding: 14px !important;
+  width: 100%;
 }
 
 .preview-hint {

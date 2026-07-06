@@ -4,6 +4,8 @@
    perigo nas bordas; some sozinho quando os pulsos voltam.
    ============================================================ */
 
+.comm-banner[hidden] { display: none; } /* display:flex abaixo vence o [hidden] do UA — precisa desta regra */
+
 .comm-banner {
   position: sticky;
   top: 0;
