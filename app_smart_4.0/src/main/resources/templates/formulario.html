@@ -13,22 +13,26 @@
     — Montar e enviar o payload REST para /api/pedidos
   =============================================================
 -->
-<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
 
 <head>
   <title>Novo Pedido — Smart 4.0</title>
   <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
   <link rel="stylesheet" th:href="@{/css/formulario.css}" />
+  <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
 </head>
 
 <body>
 
-  <!-- Enums injetados pelo Thymeleaf para uso no JS -->
   <script th:inline="javascript">
     /*<![CDATA[*/
-    const CORES_LAMINAS   = /*[[${coresLaminas}]]*/ [];
-    const PADROES_LAMINA  = /*[[${padroes}]]*/ [];
-    const POSICOES_LAMINA = /*[[${posicoes}]]*/ [];
+    window.SMART_ENUMS = {
+      coresLaminas: /*[[${coresLaminas}]]*/[],
+      padroes:      /*[[${padroes}]]*/[],
+      posicoes:     /*[[${posicoes}]]*/[],
+    };
+    // Modo edição: JSON (Jackson) do pedido, ou null para criação.
+    window.PEDIDO_EDIT = /*[[${pedidoEditJson}]]*/ null;
     /*]]>*/
   </script>
 
@@ -46,164 +50,97 @@
       </div>
     </div>
 
-    <!-- STEP 01 -->
-    <div class="form-step">
-      <div class="form-step__header">
-        <div class="step-number">01</div>
-        <span class="step-title">Dados do Pedido</span>
-      </div>
-      <div class="form-step__body">
-        <div class="field-grid">
-          <div class="field">
-            <label class="field-lbl" for="tipo-pedido">Tipo de Pedido</label>
-            <select id="tipo-pedido" class="field-ctrl">
-              <option th:each="tipo : ${tiposPedido}"
-                      th:value="${tipo.value}"
-                      th:text="${tipo.name()}"></option>
-            </select>
+    <div class="formulario-layout">
+
+      <!-- ── Coluna do formulário ──────────────────────────────── -->
+      <div class="formulario-form">
+
+        <!-- STEP 01 -->
+        <div class="form-step">
+          <div class="form-step__header">
+            <div class="step-number">01</div>
+            <span class="step-title">Dados do Pedido</span>
           </div>
-          <div class="field">
-            <label class="field-lbl" for="cor-tampa">Cor da Tampa</label>
-            <select id="cor-tampa" class="field-ctrl">
-              <option th:each="cor : ${coresTampa}"
-                      th:value="${cor.value}"
-                      th:text="${cor.name()}"></option>
-            </select>
+          <div class="form-step__body">
+            <div class="field-grid">
+              <div class="field">
+                <label class="field-lbl" for="ordem-producao">Número de OP</label>
+                <input id="ordem-producao" type="number" min="1" step="1" class="field-ctrl"
+                       th:value="${proximaOrdem}" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label class="field-lbl" for="tipo-pedido">Tipo de Pedido</label>
+                <select id="tipo-pedido" class="field-ctrl">
+                  <option th:each="tipo : ${tiposPedido}" th:value="${tipo.value}" th:text="${tipo.name()}"></option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-lbl" for="cor-tampa">Cor da Tampa</label>
+                <select id="cor-tampa" class="field-ctrl">
+                  <option th:each="cor : ${coresTampa}" th:value="${cor.value}" th:text="${cor.name()}"></option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- STEP 02 -->
-    <div class="form-step">
-      <div class="form-step__header">
-        <div class="step-number">02</div>
-        <span class="step-title">Configuração dos Blocos</span>
-      </div>
-      <div class="form-step__body">
-        <div id="blocos-container">
-
-          <!-- BLOCO 1 — sempre ativo -->
-          <div class="bloco-card" id="bloco-1">
-            <div class="bloco-head">
-              <span class="bloco-badge">B-01</span>
-              <span class="bloco-title">Bloco 01</span>
-            </div>
-            <div class="bloco-body">
-              <div class="field">
-                <label class="field-lbl">Cor do Bloco</label>
-                <select class="field-ctrl cor-bloco-sel">
-                  <option th:each="cor : ${coresBlocos}"
-                          th:value="${cor.value}"
-                          th:text="${cor.name()}"></option>
-                </select>
-              </div>
-              <div class="laminas-bar">
-                <span class="laminas-lbl">Lâminas</span>
-                <button type="button" class="btn-add-lam" onclick="addLamina(this)">+ Lâmina (0/3)</button>
-              </div>
-              <div class="lam-col-headers">
-                <div class="lam-col-hdr">Cor</div>
-                <div class="lam-col-hdr">Padrão</div>
-                <div class="lam-col-hdr">Posição</div>
-                <div></div>
-              </div>
-              <div class="laminas-list">
-                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
-              </div>
+        <!-- STEP 02 -->
+        <div class="form-step">
+          <div class="form-step__header">
+            <div class="step-number">02</div>
+            <span class="step-title">Configuração dos Blocos</span>
+          </div>
+          <div class="form-step__body">
+            <div id="blocos-container">
+              <th:block th:each="n : ${#numbers.sequence(1, 3)}">
+                <div th:replace="~{fragments/components :: blocoCard(${n}, ${n > 1})}"></div>
+              </th:block>
             </div>
           </div>
+        </div><!-- /step 02 -->
 
-          <!-- BLOCO 2 — ativo para DUPLO / TRIPLO -->
-          <div class="bloco-card inactive" id="bloco-2">
-            <div class="bloco-head">
-              <span class="bloco-badge">B-02</span>
-              <span class="bloco-title">Bloco 02</span>
-            </div>
-            <div class="bloco-body">
-              <div class="field">
-                <label class="field-lbl">Cor do Bloco</label>
-                <select class="field-ctrl cor-bloco-sel">
-                  <option th:each="cor : ${coresBlocos}"
-                          th:value="${cor.value}"
-                          th:text="${cor.name()}"></option>
-                </select>
-              </div>
-              <div class="laminas-bar">
-                <span class="laminas-lbl">Lâminas</span>
-                <button type="button" class="btn-add-lam" onclick="addLamina(this)">+ Lâmina (0/3)</button>
-              </div>
-              <div class="lam-col-headers">
-                <div class="lam-col-hdr">Cor</div>
-                <div class="lam-col-hdr">Padrão</div>
-                <div class="lam-col-hdr">Posição</div>
-                <div></div>
-              </div>
-              <div class="laminas-list">
-                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
-              </div>
-            </div>
+        <!-- Ações -->
+        <div class="submit-row">
+          <button type="button" class="btn btn--primary" id="btn-submit">
+            <i class="fa-solid fa-paper-plane" style="margin-right:6px;font-size:10px"></i>
+            Enviar Pedido
+          </button>
+          <button type="button" class="btn btn--ghost" id="btn-clear">Limpar</button>
+        </div>
+
+        <!-- Painel de resposta -->
+        <div id="resp-panel">
+          <div class="resp-head">
+            <i class="fa-solid fa-terminal" style="color:var(--color-accent);font-size:11px"></i>
+            <span id="resp-title">Resposta</span>
           </div>
-
-          <!-- BLOCO 3 — ativo apenas para TRIPLO -->
-          <div class="bloco-card inactive" id="bloco-3">
-            <div class="bloco-head">
-              <span class="bloco-badge">B-03</span>
-              <span class="bloco-title">Bloco 03</span>
-            </div>
-            <div class="bloco-body">
-              <div class="field">
-                <label class="field-lbl">Cor do Bloco</label>
-                <select class="field-ctrl cor-bloco-sel">
-                  <option th:each="cor : ${coresBlocos}"
-                          th:value="${cor.value}"
-                          th:text="${cor.name()}"></option>
-                </select>
-              </div>
-              <div class="laminas-bar">
-                <span class="laminas-lbl">Lâminas</span>
-                <button type="button" class="btn-add-lam" onclick="addLamina(this)">+ Lâmina (0/3)</button>
-              </div>
-              <div class="lam-col-headers">
-                <div class="lam-col-hdr">Cor</div>
-                <div class="lam-col-hdr">Padrão</div>
-                <div class="lam-col-hdr">Posição</div>
-                <div></div>
-              </div>
-              <div class="laminas-list">
-                <div class="empty-lam">Nenhuma lâmina adicionada.</div>
-              </div>
-            </div>
+          <div class="resp-body">
+            <pre id="resp-body"></pre>
           </div>
+        </div>
 
-        </div><!-- /blocos-container -->
-      </div>
-    </div><!-- /step 02 -->
+      </div><!-- /formulario-form -->
 
-    <!-- Ações -->
-    <div class="submit-row">
-      <button type="button" class="btn-submit" id="btn-submit" onclick="enviarPedido()">
-        <i class="fa-solid fa-paper-plane" style="margin-right:6px;font-size:10px"></i>
-        Enviar Pedido
-      </button>
-      <button type="button" class="btn-clear" onclick="limparForm()">Limpar</button>
-    </div>
+      <!-- ── Coluna do preview 3D (sticky) ─────────────────────── -->
+      <div class="formulario-sidebar">
+        <div class="form-step">
+          <div class="form-step__header">
+            <div class="step-number">03</div>
+            <span class="step-title">Preview 3D</span>
+          </div>
+          <div class="form-step__body formulario-sidebar__body">
+            <div class="pedido-viewer" id="formulario-viewer"></div>
+            <p class="preview-hint">Arraste para girar · Scroll para zoom</p>
+          </div>
+        </div>
+      </div><!-- /formulario-sidebar -->
 
-    <!-- Painel de resposta -->
-    <div id="resp-panel">
-      <div class="resp-head">
-        <i class="fa-solid fa-terminal" style="color:var(--color-accent);font-size:11px"></i>
-        <span id="resp-title">Resposta</span>
-      </div>
-      <div class="resp-body">
-        <pre id="resp-body"></pre>
-      </div>
-    </div>
+    </div><!-- /formulario-layout -->
 
   </main>
 
-  <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
-  <script th:src="@{/js/formulario.js}"></script>
+  <script type="module" th:src="@{/js/pages/formulario.js}"></script>
 
 </body>
+
 </html>

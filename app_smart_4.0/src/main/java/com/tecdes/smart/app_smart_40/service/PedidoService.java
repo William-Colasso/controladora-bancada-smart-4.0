@@ -5,14 +5,17 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoMudou;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.BlocoRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.request.LaminaRequestDTO;
+import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Pedido;
@@ -31,11 +34,12 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PedidoService {
 
-    private final EstoqueService estoqueService;
     private final PedidoRepository pedidoRepository;
     private final EstoqueRepository estoqueRepository;
-    // ADICIONADO: injeção do ExpedicaoService para registrar expedição ao concluir
+    // Usado apenas para a checagem otimista de disponibilidade em criar();
+    // a reserva/baixa de expedição em si acontece em SmartService.enviarParaProducao().
     private final ExpedicaoService expedicaoService;
+    private final ApplicationEventPublisher publisher;
     // -------------------------------------------------------------------------
     // CREATE
     // -------------------------------------------------------------------------
@@ -49,6 +53,10 @@ public class PedidoService {
 
         List<BlocoRequestDTO> blocoDTOs = dto.blocos();
 
+        // CHECAGEM OTIMISTA: aqui só validamos disponibilidade — a reserva real de
+        // estoque e expedição acontece em SmartService.enviarParaProducao(). Logo,
+        // entre criar() e o envio à produção outro pedido pode esgotar o recurso
+        // (overselling); essa falha tardia é tratada lá com EstoqueInsuficienteException.
         if (!blocosSuficientesEmEstoque(blocoDTOs)) {
             throw new EstoqueInsuficienteException(
                     "Cores requisitadas não se encontram presentes");
@@ -73,7 +81,8 @@ public class PedidoService {
            
         });
 
-        pedido.setOrdemProducao(pedidoRepository.proximaOrdemProducao());
+        // OP escolhida pelo usuário (valida unicidade) ou auto (MAX+1).
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), null));
 
         pedido.setStatus(StatusPedido.PENDENTE);
         System.out.println("Data de entrada: " + pedido.getDataCriacao() + "OP: " + pedido.getOrdemProducao());
@@ -152,17 +161,46 @@ public class PedidoService {
     // -------------------------------------------------------------------------
 
     public PedidoResponseDTO atualizar(Long id, PedidoRequestDTO dto) {
-        if (!pedidoRepository.existsById(id)) {
-            throw new PedidoNotFoundException("Pedido não encontrado: " + id);
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
+
+        // Só pedidos ainda não enviados à produção podem ser editados.
+        if (pedido.getStatus() != StatusPedido.PENDENTE) {
+            throw new IllegalStateException("Só é possível editar pedidos pendentes.");
         }
 
+        // Mesmas validações do criar() (estoque é checagem otimista — ver comentário em criar()).
         if (!validarTipoPedidoRequest(dto)) {
             throw new IllegalArgumentException(
                     "Quantidade de blocos não corresponde ao tipo de pedido.");
         }
+        if (!blocosSuficientesEmEstoque(dto.blocos())) {
+            throw new EstoqueInsuficienteException(
+                    "Cores requisitadas não se encontram presentes");
+        }
+        if (!validarLaminas(dto.blocos())) {
+            throw new IllegalArgumentException(
+                    "Lâminas propostas mal formadas, em posição incorreta ou faltante");
+        }
 
-        Pedido pedido = dto.toEntity();
-        pedido.setId(id);
+        // Muta in place preservando id/status/dataCriacao. A OP pode ser trocada
+        // (valida unicidade, ignorando a própria OP atual); se null, preserva.
+        pedido.setOrdemProducao(resolverOrdemProducao(dto.ordemProducao(), pedido.getOrdemProducao()));
+        pedido.setTipoPedido(dto.tipoPedido());
+        pedido.setCorTampa(dto.corTampa());
+
+        List<Bloco> novosBlocos = dto.blocos().stream()
+                .map(BlocoRequestDTO::toEntity)
+                .toList();
+        novosBlocos.forEach(bloco -> {
+            bloco.setPedido(pedido);
+            if (bloco.getLaminas() != null) {
+                bloco.getLaminas().forEach(lamina -> lamina.setBloco(bloco));
+            }
+        });
+        // clear + addAll na coleção gerenciada → orphanRemoval apaga os blocos antigos.
+        pedido.getBlocos().clear();
+        pedido.getBlocos().addAll(novosBlocos);
 
         return PedidoResponseDTO.fromEntity(pedidoRepository.save(pedido));
     }
@@ -187,6 +225,26 @@ public class PedidoService {
         return pedido.blocos().size() == pedido.tipoPedido().getValue();
     }
 
+    // Próxima OP livre (MAX+1) — sugerida ao formulário e usada quando o usuário não escolhe.
+    public Integer proximaOrdemProducao() {
+        return pedidoRepository.proximaOrdemProducao();
+    }
+
+    // Resolve a OP a persistir: se o usuário escolheu uma, valida positividade e unicidade
+    // (ignorando `atual`, a OP que já pertence ao próprio pedido em edição); senão, auto MAX+1.
+    private Integer resolverOrdemProducao(Integer escolhida, Integer atual) {
+        if (escolhida == null || escolhida.equals(atual)) {
+            return atual != null ? atual : pedidoRepository.proximaOrdemProducao();
+        }
+        if (escolhida < 1) {
+            throw new IllegalArgumentException("Ordem de produção deve ser um número positivo.");
+        }
+        if (pedidoRepository.existsByOrdemProducao(escolhida)) {
+            throw new IllegalArgumentException("Ordem de produção " + escolhida + " já está em uso.");
+        }
+        return escolhida;
+    }
+
     public PedidoResponseDTO concluir(Long id) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new PedidoNotFoundException("Pedido não encontrado: " + id));
@@ -199,6 +257,9 @@ public class PedidoService {
         pedido.setStatus(StatusPedido.CONCLUIDO);
         pedido.setDataEntradaExpedicao(LocalDateTime.now());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
+
+        // O grid de expedição exibe o pedido vinculado → status mudou = grid pode mudar.
+        publisher.publishEvent(new ExpedicaoMudou());
 
         return PedidoResponseDTO.fromEntity(pedidoSalvo);
     }

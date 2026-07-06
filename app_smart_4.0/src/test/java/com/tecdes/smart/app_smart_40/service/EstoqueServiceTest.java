@@ -1,11 +1,11 @@
 package com.tecdes.smart.app_smart_40.service;
 
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
-import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
+import com.tecdes.smart.app_smart_40.service.clp.EstoqueClpWriter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +26,12 @@ class EstoqueServiceTest {
 
     @Mock
     private EstoqueRepository estoqueRepository;
+
+    @Mock
+    private EstoqueClpWriter clpWriter;
+
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher publisher;
 
     @InjectMocks
     private EstoqueService estoqueService;
@@ -214,31 +220,5 @@ class EstoqueServiceTest {
 
         assertThat(ex.getMessage()).isEqualTo("Posição 3 já está vazia!");
         verify(estoqueRepository, never()).save(any());
-    }
-
-    // retirarEstoque
-
-    @Test
-    @DisplayName("retirarEstoque - repassa ids corretos e retorna linhas afetadas")
-    void retirarEstoque_idsCorretos_retornaLinhasAfetadas() {
-        EstoqueResponseDTO est1 = new EstoqueResponseDTO(10L, 1, CorBloco.PRETO);
-        EstoqueResponseDTO est2 = new EstoqueResponseDTO(20L, 2, CorBloco.AZUL);
-        List<BlocoResponseDTO> blocos = List.of(
-                new BlocoResponseDTO(1L, est1, CorBloco.PRETO, List.of()),
-                new BlocoResponseDTO(2L, est2, CorBloco.AZUL, List.of())
-        );
-        List<Long> ids = List.of(10L, 20L);
-        when(estoqueRepository.retirarDoEstoque(ids)).thenReturn(2);
-
-        assertThat(estoqueService.retirarEstoque(blocos)).isEqualTo(2);
-        verify(estoqueRepository).retirarDoEstoque(ids);
-    }
-
-    @Test
-    @DisplayName("retirarEstoque - retorna zero quando lista vazia")
-    void retirarEstoque_listaVazia_retornaZero() {
-        when(estoqueRepository.retirarDoEstoque(List.of())).thenReturn(0);
-
-        assertThat(estoqueService.retirarEstoque(List.of())).isZero();
     }
 }

@@ -73,7 +73,7 @@ public class Pedido {
         }
     }
 
-    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Bloco> blocos;
 
@@ -82,6 +82,9 @@ public class Pedido {
     @JoinColumn(name = "id_expedicao", nullable = true)
     @JsonIgnore
     private Expedicao expedicao;
+
+    @Column(name = "dt_entrada_producao", nullable = true)
+    private LocalDateTime dataEntradaProducao;
 
     @Column(name = "dt_entrada_expedicao", nullable = true)
     private LocalDateTime dataEntradaExpedicao;

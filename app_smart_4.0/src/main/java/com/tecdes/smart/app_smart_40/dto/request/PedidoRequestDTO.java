@@ -8,12 +8,13 @@ import com.tecdes.smart.app_smart_40.model.enums.CorTampa;
 import com.tecdes.smart.app_smart_40.model.enums.TipoPedido;
 
 public record PedidoRequestDTO(TipoPedido tipoPedido,
-        CorTampa corTampa, List<BlocoRequestDTO> blocos) {
+        CorTampa corTampa, Integer ordemProducao, List<BlocoRequestDTO> blocos) {
 
     public Pedido toEntity() {
         return Pedido.builder()
                 .tipoPedido(this.tipoPedido)
                 .corTampa(this.corTampa)
+                .ordemProducao(this.ordemProducao)
                 .dataCriacao(LocalDateTime.now())
 
                 .blocos(this.blocos.stream().map(BlocoRequestDTO::toEntity).toList())
@@ -24,6 +25,7 @@ public record PedidoRequestDTO(TipoPedido tipoPedido,
         return new PedidoRequestDTO(
                 pedido.getTipoPedido(),
                 pedido.getCorTampa(),
+                pedido.getOrdemProducao(),
                 pedido.getBlocos().stream()
                         .map(BlocoRequestDTO::fromEntity)
                         .toList());

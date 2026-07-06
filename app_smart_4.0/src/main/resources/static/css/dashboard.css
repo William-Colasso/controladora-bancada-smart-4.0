@@ -1,9 +1,3 @@
-/* ============================================================
-   SMART 4.0 — Dashboard: Estoque + Expedição
-   ============================================================ */
-@import url("./base.css");
-
-/* ---- Layout principal do dashboard ---- */
 .dashboard {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -13,15 +7,9 @@
   padding: 24px;
 }
 
-/* Seção Estoque ocupa coluna esquerda, Expedição coluna direita */
-.section--estoque {
-  grid-column: 1;
-}
-.section--expedicao {
-  grid-column: 2;
-}
+.section--estoque { grid-column: 1; }
+.section--expedicao { grid-column: 2; }
 
-/* ---- Cabeçalho de seção ---- */
 .section-header {
   display: flex;
   align-items: center;
@@ -34,7 +22,6 @@
   align-items: center;
   gap: 10px;
 }
-
 .section-title h2 {
   font-family: var(--font-mono);
   font-size: 13px;
@@ -43,7 +30,6 @@
   text-transform: uppercase;
   color: var(--color-text);
 }
-
 .section-title .section-icon {
   width: 32px;
   height: 32px;
@@ -62,21 +48,13 @@
   color: var(--color-muted);
 }
 
-/* ---- Grid de blocos ---- */
 .blocos-grid {
   display: grid;
   gap: 6px;
 }
+.blocos-grid--estoque { grid-template-columns: repeat(6, 1fr); }
+.blocos-grid--expedicao { grid-template-columns: repeat(4, 1fr); }
 
-.blocos-grid--estoque {
-  grid-template-columns: repeat(6, 1fr); /* 28 posições: 4 linhas × 7 colunas */
-}
-
-.blocos-grid--expedicao {
-  grid-template-columns: repeat(4, 1fr); /* 12 posições: 3 linhas × 4 colunas */
-}
-
-/* ---- Bloco individual ---- */
 .bloco {
   aspect-ratio: 1;
   border-radius: var(--radius-sm);
@@ -97,11 +75,7 @@
   cursor: default;
 }
 
-/* Blocos de estoque são clicáveis */
-.bloco--estoque {
-  cursor: pointer;
-}
-
+.bloco--estoque { cursor: pointer; }
 .bloco--estoque:hover {
   transform: scale(1.08);
   z-index: 2;
@@ -117,15 +91,14 @@
   z-index: 3;
 }
 
-/* Variantes de cor */
 .bloco--vazio {
   background: var(--color-surface-2);
   color: var(--color-dim);
 }
 .bloco--preto {
-  background: #1a1a1a;
-  color: #888;
-  border-color: #333;
+  background: var(--color-preto-solid);
+  color: var(--color-text-faint);
+  border-color: var(--color-preto-line);
 }
 .bloco--vermelho {
   background: rgba(252, 5, 24, 0.18);
@@ -137,20 +110,35 @@
   color: var(--color-accent);
   border-color: rgba(43, 146, 213, 0.35);
 }
-
-/* Bloco de expedição com pedido */
 .bloco--ocupado {
   background: rgba(90, 179, 0, 0.15);
   color: var(--color-green);
   border-color: rgba(90, 179, 0, 0.3);
 }
 
+/* Posição de expedição clicável (abre o histórico da posição) */
+.bloco--historico { cursor: pointer; }
+.bloco--historico:hover {
+  transform: scale(1.08);
+  z-index: 2;
+  border-color: var(--color-border-2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Posição do grid do CLP cuja cor diverge do banco — contorno tracejado por cima da cor. */
+.bloco--divergente {
+  outline: 2px dashed var(--color-yellow);
+  outline-offset: -2px;
+}
+
+/* Segundo card da coluna de estoque (grid do CLP), empilhado abaixo do banco. */
+.card--clp-estoque { margin-top: 16px; }
+
 .bloco__pos {
   font-size: 9px;
   opacity: 0.5;
   line-height: 1;
 }
-
 .bloco__label {
   font-size: 8px;
   opacity: 0.7;
@@ -163,7 +151,6 @@
   padding: 0 2px;
 }
 
-/* ---- Paleta de cores (toolbar de ação) ---- */
 .color-toolbar {
   display: flex;
   align-items: center;
@@ -190,35 +177,23 @@
   height: 28px;
   border-radius: var(--radius-sm);
   border: 2px solid transparent;
-  transition:
-    transform var(--transition),
-    border-color var(--transition);
+  transition: transform var(--transition), border-color var(--transition);
   position: relative;
 }
-.color-btn:hover {
-  transform: scale(1.15);
-}
+.color-btn:hover { transform: scale(1.15); }
 .color-btn--active {
   border-color: white;
   transform: scale(1.15);
 }
 
-.color-btn--preto {
-  background: #333;
-}
-.color-btn--vermelho {
-  background: var(--color-red);
-}
-.color-btn--azul {
-  background: var(--color-accent);
-}
+.color-btn--preto { background: var(--color-preto-line); }
+.color-btn--vermelho { background: var(--color-red); }
+.color-btn--azul { background: var(--color-accent); }
 .color-btn--vazio {
   background: var(--color-surface);
   border-color: var(--color-border-2);
 }
-.color-btn--vazio.color-btn--active {
-  border-color: var(--color-muted);
-}
+.color-btn--vazio.color-btn--active { border-color: var(--color-muted); }
 
 .color-toolbar__divider {
   width: 1px;
@@ -226,33 +201,7 @@
   background: var(--color-border);
 }
 
-.apply-btn {
-  margin-left: auto;
-  padding: 6px 14px;
-  background: var(--color-accent);
-  color: white;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  transition:
-    opacity var(--transition),
-    transform var(--transition);
-}
-.apply-btn:hover {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-.apply-btn:active {
-  transform: translateY(0);
-}
-.apply-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-  transform: none;
-}
+#applyColorBtn { margin-left: auto; }
 
 .selection-info {
   font-family: var(--font-mono);
@@ -261,7 +210,6 @@
   padding: 0 4px;
 }
 
-/* ---- Estatísticas (mini chart textual) ---- */
 .stats-bar {
   display: flex;
   gap: 12px;
@@ -288,43 +236,27 @@
   font-weight: 700;
   color: var(--color-text);
 }
-.stat-label {
-  color: var(--color-muted);
-}
+.stat-label { color: var(--color-muted); }
 
-/* ---- Ocupação bar ---- */
 .ocupacao-bar {
   height: 4px;
   background: var(--color-surface-2);
   border-radius: 2px;
   overflow: hidden;
   margin-bottom: 16px;
-  display: flex; /* <- isso resolve */
+  display: flex;
 }
 
 .ocupacao-bar__fill {
   height: 100%;
   transition: width 500ms ease;
-  /* sem border-radius aqui — overflow: hidden no pai já cuida das pontas */
 }
 
-.fill-vazio {
-  background-color: var(--cor-vazio);
-}
+.fill-vazio { background-color: var(--cor-vazio); }
+.fill-vermelho { background-color: var(--cor-vermelho); }
+.fill-preto { background-color: var(--cor-preto); }
+.fill-azul { background-color: var(--cor-azul); }
 
-.fill-vermelho {
-  background-color: var(--cor-vermelho);
-}
-
-.fill-preto {
-  background-color: var(--cor-preto);
-}
-
-.fill-azul {
-  background-color: var(--cor-azul);
-}
-
-/* ---- Expedição — bloco com pedido ---- */
 .exp-bloco__op {
   font-size: 7px;
   font-weight: 700;
@@ -334,7 +266,6 @@
   line-height: 1;
 }
 
-/* ---- Auto-refresh status ---- */
 .refresh-indicator {
   display: flex;
   align-items: center;
@@ -352,43 +283,20 @@
   animation: pulse 2s infinite;
 }
 @keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-/* ============================================================
-   RESPONSIVIDADE
-   ============================================================ */
 @media (max-width: 1200px) {
-  .dashboard {
-    grid-template-columns: 1fr;
-  }
+  .dashboard { grid-template-columns: 1fr; }
   .section--estoque,
-  .section--expedicao {
-    grid-column: 1;
-  }
-  .blocos-grid--estoque {
-    grid-template-columns: repeat(7, 1fr);
-  }
+  .section--expedicao { grid-column: 1; }
+  .blocos-grid--estoque { grid-template-columns: repeat(7, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .dashboard {
-    padding: 16px;
-    gap: 16px;
-  }
-  .blocos-grid--estoque {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .blocos-grid--expedicao {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  .color-toolbar {
-    flex-wrap: wrap;
-  }
+  .dashboard { padding: 16px; gap: 16px; }
+  .blocos-grid--estoque { grid-template-columns: repeat(4, 1fr); }
+  .blocos-grid--expedicao { grid-template-columns: repeat(4, 1fr); }
+  .color-toolbar { flex-wrap: wrap; }
 }

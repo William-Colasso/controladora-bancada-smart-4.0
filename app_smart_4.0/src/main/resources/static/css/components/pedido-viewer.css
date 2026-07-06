@@ -1,0 +1,33 @@
+/* ── Pedido Viewer — wrapper do canvas Three.js ────────────────────────── */
+
+.pedido-viewer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #15161a;
+  border: 1px solid var(--color-border);
+}
+
+.pedido-viewer canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Exibido antes de um pedido ser passado para viewer.update() */
+.pedido-viewer--vazio::before {
+  content: 'Selecione um pedido';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}

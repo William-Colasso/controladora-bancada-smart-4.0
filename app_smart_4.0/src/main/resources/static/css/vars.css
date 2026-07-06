@@ -32,6 +32,16 @@
   --color-yellow: #fece00;
   --color-red:    #fc0518;
 
+  --success: var(--color-green);
+  --danger:  var(--color-red);
+
+  /* Tons sólidos auxiliares (ex-hardcoded) */
+  --color-preto-solid: #1a1a1a;
+  --color-preto-line:  #333;
+  --color-text-faint:  #888;
+  --color-bar-preto:   #555;
+  --color-branco:      #ddd;
+
   /* --- Tipografia --- */
   --font-mono: 'Space Mono', monospace;
   --font-sans: 'DM Sans', sans-serif;

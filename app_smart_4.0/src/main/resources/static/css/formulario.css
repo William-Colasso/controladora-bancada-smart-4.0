@@ -1,44 +1,46 @@
-/* ============================================================
-   SMART 4.0 — Formulário: Novo Pedido
-   Alinhado ao design system (vars.css + base.css)
-   ============================================================ */
-@import url('./base.css');
-
-/* ---- Layout da página ---- */
 .formulario-page {
   padding: 28px 32px;
   min-height: calc(100vh - 60px);
-  max-width: 1100px;
+  max-width: 1260px;
   margin: 0 auto;
 }
 
-/* ---- Cabeçalho da página ---- */
-.page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  margin-bottom: 28px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--color-border);
+.formulario-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
 }
 
-.page-title {
+.formulario-sidebar {
+  min-width:clamp(300px,600px,800px);
+  position: sticky;
+  top: 72px; /* abaixo da navbar */
+}
+
+.formulario-sidebar__body {
+  padding: 14px !important;
+  width: 100%;
+}
+
+.preview-hint {
+  margin-top: 10px;
   font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  color: var(--color-text);
-}
-.page-title span {
-  color: var(--color-accent);
-}
-.page-subtitle {
-  font-size: 13px;
-  color: var(--color-muted);
-  margin-top: 4px;
+  font-size: 9px;
+  color: var(--color-dim);
+  text-align: center;
+  letter-spacing: 0.06em;
 }
 
-/* ---- Steps (painéis de seção) ---- */
+@media (max-width: 960px) {
+  .formulario-layout {
+    grid-template-columns: 1fr;
+  }
+  .formulario-sidebar {
+    position: static;
+  }
+}
+
 .form-step {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -86,60 +88,12 @@
   padding: 22px;
 }
 
-/* ---- Field grid ---- */
 .field-grid {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  min-width: 180px;
-}
-
-.field-lbl {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-muted);
-}
-
-.field-ctrl {
-  padding: 9px 12px;
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  width: 100%;
-  transition: border-color var(--transition), box-shadow var(--transition);
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  /* Seta custom */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237070a0' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-}
-.field-ctrl:focus {
-  outline: none;
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-lo);
-}
-.field-ctrl option {
-  background: var(--color-surface-2);
-  color: var(--color-text);
-}
-
-/* ---- Blocos container ---- */
 #blocos-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -147,12 +101,9 @@
 }
 
 @media (max-width: 900px) {
-  #blocos-container {
-    grid-template-columns: 1fr;
-  }
+  #blocos-container { grid-template-columns: 1fr; }
 }
 
-/* ---- Bloco card ---- */
 .bloco-card {
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
@@ -160,11 +111,7 @@
   overflow: hidden;
   transition: border-color var(--transition), opacity var(--transition);
 }
-
-.bloco-card:not(.inactive):hover {
-  border-color: var(--color-border-2);
-}
-
+.bloco-card:not(.inactive):hover { border-color: var(--color-border-2); }
 .bloco-card.inactive {
   opacity: 0.35;
   pointer-events: none;
@@ -200,16 +147,12 @@
   color: var(--color-muted);
 }
 
-.bloco-body {
-  padding: 14px;
-}
-
+.bloco-body { padding: 14px; }
 .bloco-body .field {
   min-width: unset;
   margin-bottom: 14px;
 }
 
-/* ---- Lâminas ---- */
 .laminas-bar {
   display: flex;
   justify-content: space-between;
@@ -298,9 +241,7 @@
   outline: none;
   border-color: var(--color-accent);
 }
-.lam-sel option {
-  background: var(--color-surface-2);
-}
+.lam-sel option { background: var(--color-surface-2); }
 
 .empty-lam {
   font-family: var(--font-mono);
@@ -312,7 +253,6 @@
   text-align: center;
 }
 
-/* ---- Botão remover lâmina ---- */
 .btn-rm-lam {
   display: flex;
   align-items: center;
@@ -335,7 +275,6 @@
   border-color: rgba(252, 5, 24, 0.5);
 }
 
-/* ---- Barra de ações (submit) ---- */
 .submit-row {
   display: flex;
   gap: 10px;
@@ -343,52 +282,6 @@
   margin-top: 8px;
 }
 
-.btn-submit {
-  padding: 10px 24px;
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: opacity var(--transition), transform var(--transition);
-}
-.btn-submit:hover:not(:disabled) {
-  opacity: 0.85;
-  transform: translateY(-1px);
-}
-.btn-submit:active { transform: translateY(0); }
-.btn-submit:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-clear {
-  padding: 10px 18px;
-  background: transparent;
-  color: var(--color-muted);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background var(--transition), color var(--transition), border-color var(--transition);
-}
-.btn-clear:hover {
-  background: var(--color-surface-2);
-  color: var(--color-text);
-  border-color: var(--color-border-2);
-}
-
-/* ---- Painel de resposta ---- */
 #resp-panel {
   display: none;
   margin-top: 20px;
@@ -398,13 +291,8 @@
   box-shadow: var(--shadow-card);
   overflow: hidden;
 }
-
-#resp-panel.ok {
-  border-left: 3px solid var(--color-green);
-}
-#resp-panel.err {
-  border-left: 3px solid var(--color-red);
-}
+#resp-panel.ok { border-left: 3px solid var(--color-green); }
+#resp-panel.err { border-left: 3px solid var(--color-red); }
 
 .resp-head {
   display: flex;
@@ -419,9 +307,7 @@
   letter-spacing: 0.08em;
 }
 
-.resp-body {
-  padding: 16px 20px;
-}
+.resp-body { padding: 16px 20px; }
 
 pre {
   white-space: pre-wrap;
@@ -435,22 +321,8 @@ pre {
   line-height: 1.7;
 }
 
-/* ============================================================
-   RESPONSIVIDADE
-   ============================================================ */
 @media (max-width: 768px) {
-  .formulario-page {
-    padding: 16px;
-  }
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-  .field-grid {
-    flex-direction: column;
-  }
-  #blocos-container {
-    grid-template-columns: 1fr;
-  }
+  .formulario-page { padding: 16px; }
+  .field-grid { flex-direction: column; }
+  #blocos-container { grid-template-columns: 1fr; }
 }
