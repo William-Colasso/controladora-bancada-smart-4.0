@@ -14,30 +14,25 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import com.tecdes.smart.app_smart_40.dto.request.PedidoRequestDTO;
-import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
-import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.Bloco;
-import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.Expedicao;
 import com.tecdes.smart.app_smart_40.model.Lamina;
 import com.tecdes.smart.app_smart_40.model.Pedido;
-import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
+import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.model.enums.StatusPedido;
-import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
 import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
-import com.tecdes.smart.app_smart_40.service.clp.PlcConnectionService;
-import com.tecdes.smart.app_smart_40.service.clp.PlcConnector;
+import com.tecdes.smart.app_smart_40.service.clp.ClpIpRegistry;
+import com.tecdes.smart.app_smart_40.service.clp.TampaConfigRegistry;
+import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
+import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
 import jakarta.transaction.Transactional;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@Setter
-@Getter
+@Slf4j
 public class SmartService {
 
     private final PedidoService pedidoService;
@@ -46,67 +41,71 @@ public class SmartService {
 
     private final PedidoRepository pedidoRepository;
     private final ExpedicaoService expedicaoService;
-    private final EstoqueRepository estoqueRepository;
     private final EstoqueService estoqueService;
+    private final ClpIpRegistry ipRegistry;
+    private final TampaConfigRegistry tampaConfig;
     private static final int TOTAL_SHORTS = 30;
     private static final int TOTAL_BYTES = TOTAL_SHORTS * 2;
-
-    private String ipClp = "10.74.241.10";
 
     @Transactional
     public void enviarParaProducao(Long idPedido) {
         Pedido pedido = pedidoRepository.findById(idPedido).orElseThrow();
 
-        // ── 1. Reserva posição de expedição ──────────────────────────────
-        // CORRIGIDO: expedicao já foi vinculada no criar() — não buscar nova aqui.
-        // Se a expedição ainda não foi vinculada (pedido PENDENTE), vincula agora.
+        // É aqui — e só aqui — que o pedido "consome" recursos: reserva a posição
+        // de expedição e dá baixa no estoque. criar() apenas valida disponibilidade
+        // (checagem otimista), não reserva nada.
+        reservarExpedicao(pedido);
+        pedido.setStatus(StatusPedido.PRODUCAO);
+        pedido.setDataEntradaProducao(java.time.LocalDateTime.now());
+        consumirEstoque(pedido);
+
+        // Salva diretamente a entidade gerenciada pelo JPA (não via
+        // pedidoService.atualizar(), que recriava a entidade sem pedido nos
+        // blocos → PropertyValueException).
+        pedidoRepository.save(pedido);
+
+        enviarParaClp(pedido);
+    }
+
+    // Reserva a posição de expedição de forma lazy: a vinculação só acontece aqui,
+    // no envio à produção. Se o pedido ainda está PENDENTE (expedicao == null),
+    // pega a primeira posição livre agora.
+    private void reservarExpedicao(Pedido pedido) {
         if (pedido.getExpedicao() == null) {
             Expedicao expedicao = expedicaoService.primeiraExpedicaoLivre().toEntity();
             pedido.setExpedicao(expedicao);
-            expedicao.setPedido(pedido);
+            expedicao.setPedidoAtual(pedido);
             expedicaoService.atualizarExpedicao(expedicao);
         }
+    }
 
-        // ── 2. Muda status ────────────────────────────────────────────────
-        pedido.setStatus(StatusPedido.PRODUCAO);
+    // Dá baixa no estoque de cada bloco. A regra de negócio (encontrar posição,
+    // blindar contra overselling, marcar VAZIO) vive no EstoqueService.
+    private void consumirEstoque(Pedido pedido) {
+        pedido.getBlocos().forEach(estoqueService::vincularEDarBaixa);
+    }
 
-        // ── 3. Garante estoque vinculado a cada bloco ─────────────────────
-        // CORRIGIDO: findFirstByCorBloco sem ORDER BY é não-determinístico.
-        // Usa a posição já salva no bloco — só preenche se estiver nula.
-        pedido.getBlocos().forEach(bloco -> {
-            if (bloco.getEstoque() == null) {
-                Estoque estoque = estoqueRepository.findFirstByCorBloco(bloco.getCor());
-                bloco.setEstoque(estoque);
-                estoque.setCorBloco(CorBloco.VAZIO);
-                estoqueRepository.save(estoque);
-            }
-        });
-
-        // ── 4. Salva o pedido atualizado ──────────────────────────────────
-        // CORRIGIDO: era pedidoService.atualizar() que recriava a entidade
-        // sem pedido nos blocos → PropertyValueException.
-        // Agora salva diretamente a entidade gerenciada pelo JPA.
-        pedidoRepository.save(pedido);
-
-        // ── 5. Serializa e envia ao CLP ───────────────────────────────────
+    // Serializa o pedido e envia ao CLP. Falha de conexão/escrita é logada e não
+    // derruba a transação de consumo já persistida acima.
+    private void enviarParaClp(Pedido pedido) {
         byte[] buffer = converterParaBytes(pedido);
         printHex(buffer);
 
-        // CORRIGIDO: disconnect() era chamado antes do null-check,
-        // causando NullPointerException se a conexão nunca foi aberta.
+        // O payload do pedido (writeBlock DB9) e as flags de início vão para o CLP da estação
+        // ESTOQUE; o IP vem do mesmo ClpIpRegistry usado pela leitura SSE (alterável em runtime).
+        String ipClp = ipRegistry.getIp(EstacoesCLP.ESTOQUE);
         PlcConnector connector = plcConnectionService.getConnection(ipClp);
-
         if (connector != null) {
             try {
                 connector.writeBlock(9, 2, 60, buffer);
-                System.out.println("Dados enviados para o CLP: " + ipClp);
+                log.info("Dados enviados para o CLP: {}", ipClp);
                 enviarTampa(pedido.getCorTampa().getValue());
                 iniciarExecucaoPedido(ipClp);
             } catch (Exception ex) {
-                System.err.println("Erro ao enviar dados para o CLP: " + ex.getMessage());
+                log.error("Erro ao enviar dados para o CLP: {}", ex.getMessage());
             }
         } else {
-            System.err.println("CLP não disponível: " + ipClp);
+            log.warn("CLP não disponível: {}", ipClp);
         }
     }
 
@@ -211,11 +210,16 @@ public class SmartService {
     }
 
     public void enviarTampa(int tampa) {
-        System.out.println("\n\nSELETOR DE TAMPAS INSTALADO NA BANCADA\n\n");
+        // Controladora de tampa existe só em algumas bancadas: desabilitada na config → no-op
+        // silencioso (não é erro; ver /configuracao).
+        if (!tampaConfig.isHabilitada()) {
+            log.debug("Seletor de tampa desabilitado na configuração — comando ignorado.");
+            return;
+        }
         // Passo 2) Selecionar a tampa via POST
         try {
             RestTemplate apiSeletorTampa = new RestTemplate();
-            String url = "http://10.74.241.245/api/move_pos";
+            String url = "http://" + tampaConfig.getIp() + "/api/move_pos";
 
             // 1. Definir o cabeçalho como application/x-www-form-urlencoded
             HttpHeaders headers = new HttpHeaders();

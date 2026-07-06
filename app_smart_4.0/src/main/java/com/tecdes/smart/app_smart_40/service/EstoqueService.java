@@ -3,16 +3,21 @@ package com.tecdes.smart.app_smart_40.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-import com.tecdes.smart.app_smart_40.dto.response.BlocoResponseDTO;
+import com.tecdes.smart.app_smart_40.dto.event.EstoqueMudou;
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
+import com.tecdes.smart.app_smart_40.exception.EstoqueInsuficienteException;
 import com.tecdes.smart.app_smart_40.exception.PosicaoEstoqueNotFoundException;
+import com.tecdes.smart.app_smart_40.model.Bloco;
 import com.tecdes.smart.app_smart_40.model.Estoque;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
+import com.tecdes.smart.app_smart_40.service.clp.EstoqueClpWriter;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -20,6 +25,9 @@ import lombok.RequiredArgsConstructor;
 public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
+    private final EstoqueClpWriter clpWriter;
+    // Mutação → marcador p/ ClpEventoCoordinator (que decide se o grid SSE muda).
+    private final ApplicationEventPublisher publisher;
 
     public List<EstoqueResponseDTO> getDisponivel() {
         return estoqueRepository.findByCorBlocoNot(CorBloco.VAZIO)
@@ -54,7 +62,10 @@ public class EstoqueService {
                         "Posição " + dto.posicao() + " não existe!"));
 
         pos.setCorBloco(dto.corBloco());
-        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        clpWriter.escreverPosicao(dto.posicao(), dto.corBloco().getValue()); // banco→CLP (best-effort)
+        publisher.publishEvent(new EstoqueMudou());
+        return salvo;
     }
 
     public EstoqueResponseDTO removerBloco(Byte nrPosicao) {
@@ -74,14 +85,51 @@ public class EstoqueService {
         }
 
         pos.setCorBloco(CorBloco.VAZIO);
-        return EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
+        clpWriter.escreverPosicao(nrPosicao.intValue(), CorBloco.VAZIO.getValue()); // banco→CLP (best-effort)
+        publisher.publishEvent(new EstoqueMudou());
+        return salvo;
     }
 
-    public int retirarEstoque(List<BlocoResponseDTO> blocosDTOs) {
-        List<Long> blocos = blocosDTOs.stream()
-                .map(b -> b.estoque().id())
-                .toList();
-        blocos.forEach(bloco -> System.out.println(bloco));
-        return estoqueRepository.retirarDoEstoque(blocos);
+    /**
+     * Vincula uma posição de estoque ao bloco e dá baixa nela (marca como VAZIO).
+     *
+     * <p>É idempotente: se o bloco já tem estoque vinculado, não faz nada — assim
+     * reenviar um pedido à produção não consome estoque duas vezes.
+     *
+     * <p>BLINDAGEM: a posição pode ter sido esgotada por outro pedido entre a
+     * checagem otimista de {@code PedidoService.criar()} e este momento
+     * (overselling); por isso o null-check lança {@link EstoqueInsuficienteException}
+     * com a cor faltante (mapeada para HTTP 422 pelo GlobalExceptionHandler).
+     */
+    @Transactional
+    public void vincularEDarBaixa(Bloco bloco) {
+        if (bloco.getEstoque() != null) {
+            return;
+        }
+
+        Estoque estoque = estoqueRepository.findFirstByCorBloco(bloco.getCor());
+        if (estoque == null) {
+            throw new EstoqueInsuficienteException(
+                    "Sem estoque disponível para a cor " + bloco.getCor());
+        }
+
+        bloco.setEstoque(estoque);
+        estoque.setCorBloco(CorBloco.VAZIO);
+        estoqueRepository.save(estoque);
+        publisher.publishEvent(new EstoqueMudou()); // após commit, o coordenador reavalia o grid
     }
+
+    /**
+     * Primeira posição VAZIA do magazine de estoque, ou -1 se não houver. Consultada pelo handshake
+     * do CLP (EstoqueClpService) para escolher onde guardar — mantém o acesso ao banco fora do CLP.
+     */
+    public int primeiraPosicaoLivre() {
+        return estoqueRepository.findPosicoesVazias()
+                .stream()
+                .map(e -> e.getPosicao())
+                .findFirst()
+                .orElse(-1);
+    }
+
 }

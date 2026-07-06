@@ -1,0 +1,29 @@
+# Imagens e mídia pesada
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.webp
+*.mp4
+*.ico
+
+# Pastas de assets/uploads
+src/main/resources/static/images/
+src/main/resources/static/uploads/
+public/images/
+
+# Dependências e build (Java/Spring)
+target/
+.mvn/
+*.jar
+*.class
+
+# Node (se usar no frontend)
+node_modules/
+dist/
+build/
+
+# Logs e cache
+*.log
+.cache/

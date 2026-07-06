@@ -14,6 +14,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
+    <!-- Three.js via importmap — deve vir antes de qualquer <script type="module"> -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/"
+      }
+    }
+    </script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,6 +34,8 @@
 
     <!-- Base CSS (reset + tokens + navbar + cards + toast) -->
     <link rel="stylesheet" th:href="@{/css/base.css}" />
+    <!-- Alerta global de comunicação parada com o CLP (usado pelas telas SSE) -->
+    <link rel="stylesheet" th:href="@{/css/components/comm-banner.css}" />
 
     <!-- Favicon -->
     <link rel="icon" th:href="@{/img/Smart_4.0.png}" type="image/png" />
@@ -36,15 +48,15 @@
 
        Parâmetro:
          activePage — string que identifica qual link deve ficar ativo.
-                      Valores: 'dashboard' | 'pedidos' | 'formulario'
+                      Valores: 'dashboard' | 'estacoes' | 'pedidos' | 'formulario'
 
        Estrutura:
-         [Logo + nome]   [Dashboard · Pedidos · Novo Pedido]   [Refresh · Fechar]
+         [Logo + nome]   [Dashboard · Estações · Pedidos · Novo Pedido]   [Refresh · Fechar]
   ================================================================ -->
   <nav class="navbar" th:fragment="navbar(activePage)">
 
     <!-- ── Marca ──────────────────────────────────────────────── -->
-    <a th:href="@{/dashboard}" class="navbar__brand">
+    <a th:href="@{/}" class="navbar__brand">
       <img th:src="@{/img/Smart_4.0.png}" alt="Smart 4.0" class="navbar__logo" />
       <div>
         <div>Smart 4.0</div>
@@ -60,6 +72,20 @@
          th:classappend="${activePage == 'dashboard'} ? 'nav-link--active' : ''">
         <i class="fa-solid fa-table-cells-large"></i>
         <span>Dashboard</span>
+      </a>
+
+      <a th:href="@{/magazine}"
+         class="nav-link"
+         th:classappend="${activePage == 'magazine'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Magazine</span>
+      </a>
+
+      <a th:href="@{/estacoes}"
+         class="nav-link"
+         th:classappend="${activePage == 'estacoes'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-industry"></i>
+        <span>Estações</span>
       </a>
 
       <a th:href="@{/pedidos}"
@@ -80,6 +106,13 @@
 
     <!-- ── Ações utilitárias ──────────────────────────────────── -->
     <div class="navbar__actions">
+
+      <!-- Configuração da comunicação (CLPs + tampa) -->
+      <a th:href="@{/configuracao}" class="nav-btn"
+         title="Configuração"
+         th:classappend="${activePage == 'configuracao'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-gear"></i>
+      </a>
 
       <!-- Refresh -->
       <button type="button" class="nav-btn nav-btn--refresh"
@@ -104,9 +137,7 @@
        FRAGMENT: scriptDeps
        Scripts comuns. Coloque antes de </body> em todas as páginas.
   ================================================================ -->
-  <th:block th:fragment="scriptDeps">
-    <script th:src="@{/js/smart40-utils.js}"></script>
-  </th:block>
+  <th:block th:fragment="scriptDeps"></th:block>
 
 </body>
 </html>

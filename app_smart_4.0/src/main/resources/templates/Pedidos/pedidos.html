@@ -22,6 +22,7 @@
   <title>Pedidos — Smart 4.0</title>
   <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
   <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
+  <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
 </head>
 
 <body>
@@ -49,6 +50,24 @@
         <span>Atualização automática</span>
       </div>
     </div>
+
+    <!-- ============================================================
+         FILA DE PRODUÇÃO — ordem em que os pedidos serão feitos.
+         Preenchida por pedidos.js (GET /api/pedidos/fila).
+         ============================================================ -->
+    <section class="fila-panel" id="filaPanel" aria-label="Fila de produção">
+      <div class="fila-panel__head">
+        <span class="fila-panel__title">
+          <i class="fa-solid fa-list-ol"></i> Fila de produção
+        </span>
+        <span class="fila-panel__hint">Linha de montagem · 01 = em produção</span>
+      </div>
+      <div class="fila-panel__body" id="filaBody">
+        <div class="fila-empty">
+          <div class="spinner"></div><span>Carregando fila…</span>
+        </div>
+      </div>
+    </section>
 
     <!-- ============================================================
          FILTROS POR STATUS
@@ -111,14 +130,21 @@
           <i class="fa-solid fa-circle-info" style="margin-right:8px;color:var(--color-accent)"></i>
           Detalhes do pedido
         </span>
+        <a id="detailEdit" class="btn btn--ghost" href="#" hidden
+           title="Editar pedido (apenas PENDENTE)">
+          <i class="fa-solid fa-pen" style="margin-right:6px;font-size:10px"></i>Editar
+        </a>
         <button type="button" class="details-panel__close" id="detailClose"
                 title="Fechar detalhes">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div class="details-panel__body" id="detailBody">
-        <!-- Preenchido dinamicamente por pedidos.js -->
+      <div class="details-panel__body">
+        <div class="detail-layout">
+          <div class="pedido-viewer" id="detailViewer"></div>
+          <div class="detail-info" id="detailInfo"></div>
+        </div>
       </div>
 
     </div>
@@ -128,8 +154,7 @@
   <!-- ============================================================
        SCRIPTS
        ============================================================ -->
-  <div th:replace="~{fragments/smart40Fragments :: scriptDeps}"></div>
-  <script th:src="@{/js/pedidos.js}"></script>
+  <script type="module" th:src="@{/js/pages/pedidos.js}"></script>
 
 </body>
 </html>
