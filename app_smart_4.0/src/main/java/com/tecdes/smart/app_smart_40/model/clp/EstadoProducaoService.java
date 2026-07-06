@@ -39,7 +39,7 @@ public class EstadoProducaoService {
     /**
      * Instante (epoch ms) da última leitura bem-sucedida do CLP em qualquer estação. Sinaliza
      * "frescor de leitura": os produtores de {@code estacao-all} só publicam enquanto está recente,
-     * e o front mostra "Aguardando comunicação CLP" quando para. Atualizado em cada {@code processData}.
+     * e o front mostra "Aguardando comunicação CLP" quando para. Atualizado em cada {@code lerVariaveis}.
      */
     private volatile long ultimoLeituraMillis;
 
