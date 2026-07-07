@@ -1,0 +1,50 @@
+@charset "UTF-8";
+
+/* DM Sans — normal weights (300 fallback → 400) */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/DM-Sans-400-normal-4.woff2') format('woff2'),
+       url('/fonts/DM-Sans-400-normal-5.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/DM-Sans-500-normal-6.woff2') format('woff2'),
+       url('/fonts/DM-Sans-500-normal-7.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/DM-Sans-600-normal-8.woff2') format('woff2'),
+       url('/fonts/DM-Sans-600-normal-9.woff2') format('woff2');
+}
+
+/* Space Mono */
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/Space-Mono-400-normal-10.woff2') format('woff2'),
+       url('/fonts/Space-Mono-400-normal-11.woff2') format('woff2'),
+       url('/fonts/Space-Mono-400-normal-12.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/Space-Mono-700-normal-13.woff2') format('woff2'),
+       url('/fonts/Space-Mono-700-normal-14.woff2') format('woff2'),
+       url('/fonts/Space-Mono-700-normal-15.woff2') format('woff2');
+}
