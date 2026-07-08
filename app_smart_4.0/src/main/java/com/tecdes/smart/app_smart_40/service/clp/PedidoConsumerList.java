@@ -17,7 +17,6 @@ import com.tecdes.smart.app_smart_40.repository.PedidoRepository;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
 import com.tecdes.smart.app_smart_40.service.SmartService;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,8 +41,12 @@ public class PedidoConsumerList {
     private final PedidoService pedidoService;
     private final PedidoRepository pedidoRepository;
 
+    // Sem @Transactional: a comunicação com o CLP (Thread.sleep de 800ms em enviarParaProducao,
+    // socket em escreverPosicao) não pode rodar segurando uma conexão JDBC. Cada passo que toca o
+    // banco é transacional por conta própria — findFirst/findById (repo readOnly), concluir()
+    // (@Transactional) e o persist de enviarParaProducao (TransactionTemplate). Pedido.expedicao é
+    // @ManyToOne EAGER, então tratarEmProducao lê a posição sem sessão aberta; o fluxo é idempotente.
     @Scheduled(fixedDelayString = "${delay.order.queue:1000}")
-    @Transactional
     public void processOrder() {
         log.debug("Fila de pedidos: {}", pedidos);
 

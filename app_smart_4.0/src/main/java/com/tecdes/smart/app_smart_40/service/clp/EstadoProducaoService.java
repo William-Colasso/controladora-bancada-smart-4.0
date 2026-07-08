@@ -1,4 +1,4 @@
-package com.tecdes.smart.app_smart_40.model.clp;
+package com.tecdes.smart.app_smart_40.service.clp;
 
 import org.springframework.stereotype.Component;
 

@@ -22,7 +22,7 @@ import com.tecdes.smart.app_smart_40.dto.event.EstacaoStatusEvent;
 import com.tecdes.smart.app_smart_40.dto.event.EstoqueGridEvent;
 import com.tecdes.smart.app_smart_40.dto.event.EstoqueMudou;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ProcessoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
