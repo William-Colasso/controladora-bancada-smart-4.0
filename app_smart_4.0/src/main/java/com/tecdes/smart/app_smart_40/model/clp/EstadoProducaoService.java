@@ -28,8 +28,8 @@ public class EstadoProducaoService {
 
     private boolean pedidoEmCurso;
 
-    /** Quando true, as estações não escrevem flags no PLC (modo somente-leitura). */
-    private boolean readOnly;
+    /** Quando true, as estações não escrevem flags no PLC (modo somente-leitura). Boot em somente-leitura. */
+    private boolean readOnly = true;
 
     private boolean blockFinished;
 

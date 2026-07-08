@@ -137,6 +137,9 @@ async function enviarPedido() {
     const data = EDIT_ID
       ? await Api.put(`/api/pedidos/${EDIT_ID}`, buildPayload())
       : await Api.post('/api/pedidos', buildPayload());
+
+    
+      
     showResponse(true, EDIT_ID ? 200 : 201, data);
   } catch (err) {
     const panel   = document.getElementById('resp-panel');
