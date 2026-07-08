@@ -26,8 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>O estado autoritativo de "o que está rodando" é o <b>banco</b>
  * ({@code status == PRODUCAO}), não a fila em memória — assim um restart com um
- * pedido em curso não faz a fila sobrepor outro na bancada. A fila apenas
- * decide qual pedido PENDENTE enviar em seguida.
+ * pedido em curso não faz a fila sobrepor outro na bancada.
  */
 @Component
 @RequiredArgsConstructor
@@ -72,7 +71,6 @@ public class PedidoConsumerList {
 
         switch (pedido.getStatus()) {
             case CONCLUIDO -> pedidos.poll();                       // já terminou → avança
-            case PENDENTE -> smartService.enviarParaProducao(head); // dispara → vira PRODUCAO
             default -> { /* PRODUCAO é tratado no passo 1 */ }
         }
     }
@@ -125,15 +123,11 @@ public class PedidoConsumerList {
 
     /**
      * Recompõe a fila em memória a partir do banco (fonte da verdade) no boot: um eventual pedido
-     * em PRODUCAO (órfão de reset) na cabeça, seguido dos PENDENTE em ordem de criação. Sem isto,
-     * um restart perderia a fila e os pendentes nunca seriam enviados.
      */
     @EventListener(ApplicationReadyEvent.class)
     public void recomporFila() {
         pedidoRepository.findFirstByStatus(StatusPedido.PRODUCAO)
                 .ifPresent(p -> pedidos.add(p.getId()));
-        pedidoRepository.findByStatusOrderByDataCriacaoAsc(StatusPedido.PENDENTE)
-                .forEach(p -> pedidos.add(p.getId()));
         log.info("Fila recomposta do banco: {}", pedidos);
     }
 
