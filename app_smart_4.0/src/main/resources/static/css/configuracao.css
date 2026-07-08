@@ -13,7 +13,7 @@
 
 .config-header h1 {
   font-family: var(--font-mono);
-  font-size: 18px;
+  font-size: 1rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text);
@@ -24,7 +24,7 @@
 .config-header h1 i { color: var(--color-accent); }
 .config-header p {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 0.722rem;
   color: var(--color-muted);
   max-width: 60ch;
 }
@@ -40,7 +40,7 @@
 }
 .config-row > label:first-child {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.611rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -55,7 +55,7 @@
   border-radius: var(--radius-sm);
   color: var(--color-text);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 0.722rem;
   padding: 8px 10px;
   transition: border-color var(--transition);
 }
@@ -69,7 +69,7 @@
 /* Preview mono "10.74.241.[ 10 ]" */
 .config-preview {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 0.722rem;
   color: var(--color-text);
   display: inline-flex;
   align-items: center;
@@ -78,7 +78,7 @@
 .config-preview__base { color: var(--color-muted); }
 
 .config-hint {
-  font-size: 11px;
+  font-size: 0.611rem;
   color: var(--color-dim);
 }
 

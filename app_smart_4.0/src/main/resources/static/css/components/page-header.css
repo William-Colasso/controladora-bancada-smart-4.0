@@ -9,7 +9,7 @@
 
 .page-title {
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: 1.222rem;
   font-weight: 700;
   letter-spacing: -0.04em;
   color: var(--color-text);
@@ -17,7 +17,7 @@
 .page-title span { color: var(--color-accent); }
 
 .page-subtitle {
-  font-size: 13px;
+  font-size: 0.722rem;
   color: var(--color-muted);
   margin-top: 4px;
 }
