@@ -137,5 +137,38 @@ if (salvarTampaBtn) {
   });
 }
 
+// ── Modo de comunicação (somente-leitura vs. leitura+escrita) ─────────────────
+const leituraSwitch = document.getElementById('leitura-switch');
+const leituraBadge = document.getElementById('leituraBadge');
+
+function mostrarModo(readOnly) {
+  leituraSwitch.checked = !readOnly; // switch = "permitir escrita"
+  setBadge(leituraBadge, readOnly ? 'dim' : 'green',
+    readOnly ? 'somente-leitura' : 'leitura+escrita',
+    readOnly ? 'fa-lock' : 'fa-lock-open');
+}
+
+async function carregarModo() {
+  try {
+    const cfg = await Api.get('/api/clp/somente-leitura'); // { readOnly }
+    mostrarModo(!!cfg.readOnly);
+  } catch (_) { /* indisponível — switch fica no default */ }
+}
+
+if (leituraSwitch) {
+  leituraSwitch.addEventListener('change', async () => {
+    const ativo = !leituraSwitch.checked; // ativo = somente-leitura
+    try {
+      const cfg = await Api.put(`/api/clp/somente-leitura?ativo=${ativo}`);
+      mostrarModo(!!cfg.readOnly);
+      Toast.success(cfg.readOnly ? 'CLP em somente-leitura' : 'Escrita no CLP liberada');
+    } catch (err) {
+      leituraSwitch.checked = !leituraSwitch.checked; // reverte
+      Toast.error(err.message || 'Falha ao mudar o modo');
+    }
+  });
+}
+
 carregarIps();
 carregarTampa();
+carregarModo();
