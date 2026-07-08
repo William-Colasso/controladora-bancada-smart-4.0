@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import com.tecdes.smart.app_smart_40.model.Pedido;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -140,7 +139,7 @@ public class ExpedicaoServiceTest {
     void primeiraExpedicaoLivre_semPosicaoLivre_lancaExcecao() {
         when(expedicaoRepository.findFirstByPedidoAtualIsNull()).thenReturn(Optional.empty());
 
-        assertThrows(NoSuchElementException.class,
+        assertThrows(IllegalStateException.class,
                 () -> expedicaoService.primeiraExpedicaoLivre());
     }
 
@@ -153,7 +152,7 @@ public class ExpedicaoServiceTest {
         Pedido pedido = Pedido.builder()
                 .id(5L).ordemProducao(42).status(StatusPedido.PRODUCAO).blocos(List.of()).build();
         when(expedicaoRepository.findByPosicao(3)).thenReturn(Optional.of(exp));
-        when(pedidoRepository.findByOrdemProducao(42)).thenReturn(List.of(pedido));
+        when(pedidoRepository.findByOrdemProducao(42)).thenReturn(Optional.of(pedido));
 
         expedicaoService.guardarNaPosicao(3, 42);
 
@@ -171,7 +170,7 @@ public class ExpedicaoServiceTest {
         Pedido pedido = Pedido.builder()
                 .id(5L).ordemProducao(42).status(StatusPedido.CONCLUIDO).blocos(List.of()).build();
         when(expedicaoRepository.findByPosicao(3)).thenReturn(Optional.of(exp));
-        when(pedidoRepository.findByOrdemProducao(42)).thenReturn(List.of(pedido));
+        when(pedidoRepository.findByOrdemProducao(42)).thenReturn(Optional.of(pedido));
 
         expedicaoService.guardarNaPosicao(3, 42);
 

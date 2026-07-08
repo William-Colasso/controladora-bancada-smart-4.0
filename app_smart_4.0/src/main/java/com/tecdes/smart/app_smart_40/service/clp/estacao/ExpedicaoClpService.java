@@ -3,7 +3,7 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
@@ -182,7 +182,7 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
             }
         }
 
-        if (!estado.isReadOnly() && (!expedicaoCLP.isAdicionarExpedicao() || !expedicaoCLP.isRemoverExpedicao())) {
+        if (!estado.isReadOnly() && !expedicaoCLP.isAdicionarExpedicao() && !expedicaoCLP.isRemoverExpedicao()) {
             try {
                 connector.writeBit(9, 2, 0, false); // RecebidoExpedicao = FALSE
             } catch (Exception e) {

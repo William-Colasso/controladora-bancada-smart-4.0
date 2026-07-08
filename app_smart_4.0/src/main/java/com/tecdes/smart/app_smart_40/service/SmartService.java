@@ -10,6 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -26,7 +28,6 @@ import com.tecdes.smart.app_smart_40.service.clp.TampaConfigRegistry;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,27 +45,43 @@ public class SmartService {
     private final EstoqueService estoqueService;
     private final ClpIpRegistry ipRegistry;
     private final TampaConfigRegistry tampaConfig;
+    private final PlatformTransactionManager txManager;
+    // Um RestTemplate por instância reusa o pool de conexões HTTP (não recriar por chamada).
+    // ponytail: campo direto; extrair @Bean só quando houver segundo consumidor.
+    private final RestTemplate apiSeletorTampa = new RestTemplate();
     private static final int TOTAL_SHORTS = 30;
     private static final int TOTAL_BYTES = TOTAL_SHORTS * 2;
 
-    @Transactional
+    // O que a comunicação com o CLP precisa, materializado enquanto a sessão JPA está aberta
+    // (payload já serializado + valor da tampa), para não tocar em lazy fora da transação.
+    private record PayloadProducao(byte[] buffer, int tampa) {}
+
+    // Persistência (reserva + baixa + save) roda numa transação CURTA via TransactionTemplate; a
+    // comunicação com o CLP (socket + Thread.sleep de 800ms) fica FORA dela, para não segurar a
+    // conexão JDBC do pool durante o I/O de rede. TransactionTemplate (e não @Transactional no
+    // método) porque este bean chama a si mesmo — self-invocation não passa pelo proxy do Spring.
     public void enviarParaProducao(Long idPedido) {
-        Pedido pedido = pedidoRepository.findById(idPedido).orElseThrow();
+        PayloadProducao payload = new TransactionTemplate(txManager).execute(status -> {
+            Pedido pedido = pedidoRepository.findById(idPedido).orElseThrow();
 
-        // É aqui — e só aqui — que o pedido "consome" recursos: reserva a posição
-        // de expedição e dá baixa no estoque. criar() apenas valida disponibilidade
-        // (checagem otimista), não reserva nada.
-        reservarExpedicao(pedido);
-        pedido.setStatus(StatusPedido.PRODUCAO);
-        pedido.setDataEntradaProducao(java.time.LocalDateTime.now());
-        consumirEstoque(pedido);
+            // É aqui — e só aqui — que o pedido "consome" recursos: reserva a posição
+            // de expedição e dá baixa no estoque. criar() apenas valida disponibilidade
+            // (checagem otimista), não reserva nada.
+            reservarExpedicao(pedido);
+            pedido.setStatus(StatusPedido.PRODUCAO);
+            pedido.setDataEntradaProducao(java.time.LocalDateTime.now());
+            consumirEstoque(pedido);
 
-        // Salva diretamente a entidade gerenciada pelo JPA (não via
-        // pedidoService.atualizar(), que recriava a entidade sem pedido nos
-        // blocos → PropertyValueException).
-        pedidoRepository.save(pedido);
+            // Salva diretamente a entidade gerenciada pelo JPA (não via
+            // pedidoService.atualizar(), que recriava a entidade sem pedido nos
+            // blocos → PropertyValueException).
+            pedidoRepository.save(pedido);
 
-        enviarParaClp(pedido);
+            // Serializa o payload com a sessão aberta (blocos/lâminas são lazy).
+            return new PayloadProducao(converterParaBytes(pedido), pedido.getCorTampa().getValue());
+        });
+
+        enviarParaClp(payload);
     }
 
     // Reserva a posição de expedição de forma lazy: a vinculação só acontece aqui,
@@ -85,11 +102,10 @@ public class SmartService {
         pedido.getBlocos().forEach(estoqueService::vincularEDarBaixa);
     }
 
-    // Serializa o pedido e envia ao CLP. Falha de conexão/escrita é logada e não
-    // derruba a transação de consumo já persistida acima.
-    private void enviarParaClp(Pedido pedido) {
-        byte[] buffer = converterParaBytes(pedido);
-        printHex(buffer);
+    // Envia ao CLP o payload já serializado. Roda FORA da transação (ver enviarParaProducao):
+    // falha de conexão/escrita é logada e não afeta o consumo já persistido.
+    private void enviarParaClp(PayloadProducao payload) {
+        printHex(payload.buffer());
 
         // O payload do pedido (writeBlock DB9) e as flags de início vão para o CLP da estação
         // ESTOQUE; o IP vem do mesmo ClpIpRegistry usado pela leitura SSE (alterável em runtime).
@@ -97,9 +113,9 @@ public class SmartService {
         PlcConnector connector = plcConnectionService.getConnection(ipClp);
         if (connector != null) {
             try {
-                connector.writeBlock(9, 2, 60, buffer);
+                connector.writeBlock(9, 2, 60, payload.buffer());
                 log.info("Dados enviados para o CLP: {}", ipClp);
-                enviarTampa(pedido.getCorTampa().getValue());
+                enviarTampa(payload.tampa());
                 iniciarExecucaoPedido(ipClp);
             } catch (Exception ex) {
                 log.error("Erro ao enviar dados para o CLP: {}", ex.getMessage());
@@ -188,24 +204,22 @@ public class SmartService {
         try {
 
             // Inicializa as flags da estação ESTOQUE
-            // plcConnector.connect();
-            plcConnector.writeBit(9, 0, 0, Boolean.parseBoolean("FALSE"));
-            plcConnector.writeBit(9, 64, 0, Boolean.parseBoolean("FALSE"));
-            plcConnector.writeBit(9, 64, 1, Boolean.parseBoolean("FALSE"));
-            plcConnector.writeBit(9, 62, 0, Boolean.parseBoolean("FALSE"));
+            plcConnector.writeBit(9, 0, 0, false);
+            plcConnector.writeBit(9, 64, 0, false);
+            plcConnector.writeBit(9, 64, 1, false);
+            plcConnector.writeBit(9, 62, 0, false);
 
-            // plcConnector.writeBit(9, 62, 0, Boolean.parseBoolean("FALSE"));
             // Iniciar pedido
-            System.out.println("SETAR FLAG INICIAR PEDIDO");
-            plcConnector.writeBit(9, 62, 0, Boolean.parseBoolean("TRUE"));
+            log.debug("SETAR FLAG INICIAR PEDIDO");
+            plcConnector.writeBit(9, 62, 0, true);
 
             Thread.sleep(800);
 
-            System.out.println("RESETAR FLAG INICIAR PEDIDO");
-            plcConnector.writeBit(9, 62, 0, Boolean.parseBoolean("FALSE"));
+            log.debug("RESETAR FLAG INICIAR PEDIDO");
+            plcConnector.writeBit(9, 62, 0, false);
 
         } catch (Exception ex) {
-
+            log.error("Erro ao iniciar execução no CLP {}: {}", ipClp, ex.getMessage());
         }
     }
 
@@ -218,7 +232,6 @@ public class SmartService {
         }
         // Passo 2) Selecionar a tampa via POST
         try {
-            RestTemplate apiSeletorTampa = new RestTemplate();
             String url = "http://" + tampaConfig.getIp() + "/api/move_pos";
 
             // 1. Definir o cabeçalho como application/x-www-form-urlencoded
@@ -233,12 +246,8 @@ public class SmartService {
             // 3. Criar a entidade com cabeçalhos e corpo
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
 
-            // 4. Tente ler a resposta primeiro como String para ver o que o ESP32 está
-            // realmente enviando
-            ResponseEntity<String> rawResponse = apiSeletorTampa.postForEntity(url, request, String.class);
-            System.out.println("Resposta Bruta do ESP32: " + rawResponse.getBody());
-
-            // 5. Agora, para a sua lógica de negócio, usamos o Map
+            // Um único POST — o debug que lia a resposta como String antes disso fazia o ESP32
+            // executar o movimento duas vezes.
             ResponseEntity<Map> response = apiSeletorTampa.postForEntity(url, request, Map.class);
             Map<String, Object> body = response.getBody();
 

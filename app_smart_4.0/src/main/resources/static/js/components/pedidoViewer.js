@@ -236,7 +236,7 @@ function descartarObj(obj) {
 }
 
 // Cor do ambiente do viewer — casa com o tema escuro do design system (surface-2 ≈ #1a1a25).
-const AMBIENTE_BG = 0xffffff;
+const AMBIENTE_BG = 0xededed;
 
 function adicionarLuzes(scene) {
   // Hemisfério: céu frio em cima, rebatida quente embaixo — dá volume sem estourar as cores.

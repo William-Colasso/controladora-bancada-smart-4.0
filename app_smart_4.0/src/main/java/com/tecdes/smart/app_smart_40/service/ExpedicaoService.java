@@ -50,7 +50,8 @@ public class ExpedicaoService {
     }
 
     public ExpedicaoResponseDTO primeiraExpedicaoLivre() {
-        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoAtualIsNull().get());
+        return ExpedicaoResponseDTO.fromEntity(expedicaoRepository.findFirstByPedidoAtualIsNull()
+                .orElseThrow(() -> new IllegalStateException("Nenhuma posição de expedição livre.")));
     }
 
     /**
@@ -63,8 +64,6 @@ public class ExpedicaoService {
                         "Posição de expedição " + posicao + " não existe!"));
 
         Pedido pedido = pedidoRepository.findByOrdemProducao(ordemProducao)
-                .stream()
-                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Pedido com ordem de produção " + ordemProducao + " não encontrado!"));
 
