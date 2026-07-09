@@ -51,6 +51,17 @@ export function renderClpEstoqueCell(cell, pos, corInt, divergente) {
   cell.innerHTML = `<span class="bloco__pos">${pos}</span>`;
 }
 
+// Célula somente-leitura do grid "Expedição (CLP)": mostra a OP guardada no magazine do CLP
+// (0 = vazio) e marca divergência (OP diferente da do banco) com bloco--divergente.
+export function renderClpExpedicaoCell(cell, pos, op, divergente) {
+  cell.classList.remove('bloco--vazio', 'bloco--ocupado', 'skeleton', 'bloco--divergente');
+  cell.classList.add(op > 0 ? 'bloco--ocupado' : 'bloco--vazio');
+  if (divergente) cell.classList.add('bloco--divergente');
+  cell.innerHTML = op > 0
+    ? `<span class="bloco__pos">${pos}</span><span class="exp-bloco__op">OP ${formatOP(op)}</span>`
+    : `<span class="bloco__pos">${pos}</span>`;
+}
+
 export function renderExpedicaoCell(cell, pos, pedido) {
   cell.classList.remove('bloco--vazio', 'bloco--ocupado', 'skeleton');
   if (pedido) {

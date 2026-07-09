@@ -8,7 +8,7 @@ import { createSse } from '../core/sse.js';
 import { COR_INT_TO_NAME } from '../core/enums.js';
 import {
   createExpedicaoCell, renderEstoqueCell, renderExpedicaoCell,
-  createClpEstoqueCell, renderClpEstoqueCell,
+  createClpEstoqueCell, renderClpEstoqueCell, renderClpExpedicaoCell,
 } from '../components/blocoCell.js';
 import { createPedidoViewer } from '../components/pedidoViewer.js';
 import { buildDetailHTML } from '../components/pedidoDetail.js';
@@ -22,13 +22,18 @@ const state = {
   estoque: [],
   expedicao: [],
   estoqueClp: null,     // snapshot do magazine lido do CLP (array de 28 ints), null até o 1º evento
+  expedicaoClp: null,   // magazine de expedição do CLP (array de 12 OPs), null até o 1º evento
   clpRecebido: false,
 };
 
 const estoqueGrid = document.getElementById('estoqueGrid');
 const clpEstoqueGrid = document.getElementById('clpEstoqueGrid');
-const clpDivergencias = document.getElementById('clpDivergencias');
+const clpEstoqueDivergencias = document.getElementById('clpEstoqueDivergencias');
+const clpExpedicaoGrid = document.getElementById('clpExpedicaoGrid');
+const clpExpedicaoDivergencias = document.getElementById('clpExpedicaoDivergencias');
+
 const expedicaoGrid = document.getElementById('expedicaoGrid');
+
 
 const stats = {
   PRETO: document.getElementById('statPreto'),
@@ -71,7 +76,7 @@ function renderEstoqueClp() {
   if (!clpEstoqueGrid) return;
 
   if (!state.clpRecebido) {
-    if (clpDivergencias) clpDivergencias.textContent = 'Sem comunicação com o CLP';
+    if (clpEstoqueDivergencias) clpEstoqueDivergencias.textContent = 'Sem comunicação com o CLP';
     return;
   }
 
@@ -80,7 +85,7 @@ function renderEstoqueClp() {
 
   let divergencias = 0;
   for (let pos = 1; pos <= ESTOQUE_TOTAL; pos++) {
-    let cell = document.getElementById(`bloco-clp-${pos}`);
+    let cell = document.getElementById(`bloco-clp-estoque${pos}`);
     if (!cell) {
       cell = createClpEstoqueCell(pos);
       clpEstoqueGrid.appendChild(cell);
@@ -93,8 +98,44 @@ function renderEstoqueClp() {
     renderClpEstoqueCell(cell, pos, corClp, divergente);
   }
 
-  if (clpDivergencias) {
-    clpDivergencias.textContent = divergencias === 0
+  if (clpEstoqueDivergencias) {
+    clpEstoqueDivergencias.textContent = divergencias === 0
+      ? 'Sincronizado com o banco'
+      : `${divergencias} divergência${divergencias > 1 ? 's' : ''} vs. banco`;
+  }
+}
+
+
+// Grid do CLP de expedição (somente leitura): OP guardada em cada posição do magazine e destaque
+// das que divergem do banco (OP do pedidoResponseDTO). Fonte = SSE estacao-all da estação EXPEDICAO.
+function renderExpedicaoClp() {
+  if (!clpExpedicaoGrid) return;
+
+  if (!state.clpRecebido) {
+    if (clpExpedicaoDivergencias) clpExpedicaoDivergencias.textContent = 'Sem comunicação com o CLP';
+    return;
+  }
+
+  const bancoByPos = {};
+  state.expedicao.forEach((e) => { bancoByPos[e.posicao] = e; });
+
+  let divergencias = 0;
+  for (let pos = 1; pos <= EXPEDICAO_TOTAL; pos++) {
+    let cell = document.getElementById(`bloco-clp-expedicao${pos}`);
+    if (!cell) {
+      cell = createExpedicaoCell(pos);
+      cell.id = `bloco-clp-expedicao${pos}`;
+      clpExpedicaoGrid.appendChild(cell);
+    }
+    const opClp = state.expedicaoClp?.[pos - 1] ?? 0;
+    const opBanco = bancoByPos[pos]?.pedidoResponseDTO?.ordemProducao ?? 0;
+    const divergente = opClp !== opBanco;
+    if (divergente) divergencias++;
+    renderClpExpedicaoCell(cell, pos, opClp, divergente);
+  }
+
+  if (clpExpedicaoDivergencias) {
+    clpExpedicaoDivergencias.textContent = divergencias === 0
       ? 'Sincronizado com o banco'
       : `${divergencias} divergência${divergencias > 1 ? 's' : ''} vs. banco`;
   }
@@ -131,6 +172,7 @@ function renderExpedicao() {
     renderExpedicaoCell(cell, pos, byPos[pos]?.pedidoResponseDTO ?? null);
   }
   renderStatsExpedicao();
+  renderExpedicaoClp(); // divergência depende do banco também → re-render quando o banco muda
 }
 
 function renderStatsExpedicao() {
@@ -232,10 +274,16 @@ sse.on('expedicao', (d) => {
 // Estoque do CLP: o bean *CLP completo chega por estação; filtramos a estação ESTOQUE e usamos
 // o magazine (posicoesOcupadas) — array de 28 ints (índice c → posição c+1, valor = cor).
 sse.on('estacao-all', (d) => {
-  if (d.estacao !== 'estoque') return;
-  state.estoqueClp = d.dados?.posicoesOcupadas ?? null;
-  state.clpRecebido = true;
-  renderEstoqueClp();
+  if (d.estacao === 'estoque') {
+    state.estoqueClp = d.dados?.posicoesOcupadas ?? null;
+    state.clpRecebido = true;
+    renderEstoqueClp();
+  } else if (d.estacao === 'expedicao') {
+    // magazine de expedição do CLP: orderExpedicao = array de 12 OPs (0 = posição vazia)
+    state.expedicaoClp = d.dados?.orderExpedicao ?? null;
+    state.clpRecebido = true;
+    renderExpedicaoClp();
+  }
 });
 
 carregarDadosIniciais();
