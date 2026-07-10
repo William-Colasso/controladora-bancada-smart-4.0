@@ -42,7 +42,7 @@ public class Expedicao {
     @Column(name = "nr_posicao", nullable = false, unique = true)
     private Integer posicao;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_pedido_atual", nullable = true)
     @JsonIgnore
     private Pedido pedidoAtual;
