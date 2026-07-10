@@ -1,6 +1,7 @@
 package com.tecdes.smart.app_smart_40.service.clp;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -23,7 +24,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Fila de pedidos: serializa a produção em "um pedido por vez" na bancada.
  *
- * <p>O estado autoritativo de "o que está rodando" é o <b>banco</b>
+ * <p>
+ * O estado autoritativo de "o que está rodando" é o <b>banco</b>
  * ({@code status == PRODUCAO}), não a fila em memória — assim um restart com um
  * pedido em curso não faz a fila sobrepor outro na bancada. A fila apenas
  * decide qual pedido PENDENTE enviar em seguida.
@@ -41,18 +43,23 @@ public class PedidoConsumerList {
     private final PedidoService pedidoService;
     private final PedidoRepository pedidoRepository;
 
-    // Sem @Transactional: a comunicação com o CLP (Thread.sleep de 800ms em enviarParaProducao,
-    // socket em escreverPosicao) não pode rodar segurando uma conexão JDBC. Cada passo que toca o
-    // banco é transacional por conta própria — findFirst/findById (repo readOnly), concluir()
-    // (@Transactional) e o persist de enviarParaProducao (TransactionTemplate). Pedido.expedicao é
-    // @ManyToOne EAGER, então tratarEmProducao lê a posição sem sessão aberta; o fluxo é idempotente.
+    // Sem @Transactional: a comunicação com o CLP (Thread.sleep de 800ms em
+    // enviarParaProducao,
+    // socket em escreverPosicao) não pode rodar segurando uma conexão JDBC. Cada
+    // passo que toca o
+    // banco é transacional por conta própria — findFirst/findById (repo readOnly),
+    // concluir()
+    // (@Transactional) e o persist de enviarParaProducao (TransactionTemplate).
+    // Pedido.expedicao é
+    // @ManyToOne EAGER, então tratarEmProducao lê a posição sem sessão aberta; o
+    // fluxo é idempotente.
     @Scheduled(fixedDelayString = "${delay.order.queue:1000}")
     public void processOrder() {
         log.debug("Fila de pedidos: {}", pedidos);
 
         // 1) Bancada ocupada? O banco é a fonte da verdade — inclui um pedido
-        //    em PRODUCAO órfão de reset que já não está na fila. Enquanto houver
-        //    um rodando, NUNCA enviamos outro.
+        // em PRODUCAO órfão de reset que já não está na fila. Enquanto houver
+        // um rodando, NUNCA enviamos outro.
         Optional<Pedido> emProducao = pedidoRepository.findFirstByStatus(StatusPedido.PRODUCAO);
         if (emProducao.isPresent()) {
             tratarEmProducao(emProducao.get());
@@ -74,14 +81,16 @@ public class PedidoConsumerList {
         }
 
         switch (pedido.getStatus()) {
-            case CONCLUIDO -> pedidos.poll();                       // já terminou → avança
+            case CONCLUIDO -> pedidos.poll(); // já terminou → avança
             case PENDENTE -> smartService.enviarParaProducao(head); // dispara → vira PRODUCAO
-            default -> { /* PRODUCAO é tratado no passo 1 */ }
+            default -> {
+                /* PRODUCAO é tratado no passo 1 */ }
         }
     }
 
     /**
-     * Pedido em produção: se o CLP de expedição confirma a peça guardada, grava posição+OP no
+     * Pedido em produção: se o CLP de expedição confirma a peça guardada, grava
+     * posição+OP no
      * magazine e conclui (idempotente). Avança a fila se este for o head.
      */
     private void tratarEmProducao(Pedido pedido) {
@@ -99,7 +108,8 @@ public class PedidoConsumerList {
             expedicaoClpWriter.escreverPosicao(posicao, op);
 
             // O auto-sync (ExpedicaoService.guardarNaPosicao) pode ter concluído antes;
-            // a checagem evita o IllegalStateException de concluir() e o try blinda a corrida.
+            // a checagem evita o IllegalStateException de concluir() e o try blinda a
+            // corrida.
             if (pedido.getStatus() != StatusPedido.CONCLUIDO) {
                 pedidoService.concluir(pedido.getId());
             }
@@ -114,21 +124,34 @@ public class PedidoConsumerList {
     }
 
     /**
-     * Peça guardada = o magazine do CLP na posição reservada mostra a OP (valor de nível, relido
-     * a cada ciclo e retido no DB do CLP → sobrevive a restart), OU o CLP ainda reporta a OP
-     * corrente ({@code numeroOP}). Cobre tanto "a peça já está lá" quanto "acabou de passar".
+     * Peça guardada = o magazine do CLP na posição reservada mostra a OP (valor de
+     * nível, relido
+     * a cada ciclo e retido no DB do CLP → sobrevive a restart), OU o CLP ainda
+     * reporta a OP
+     * corrente ({@code numeroOP}). Cobre tanto "a peça já está lá" quanto "acabou
+     * de passar".
      */
     private boolean pecaGuardada(int posicao, int op) {
         int[] magazine = expedicaoCLP.getOrderExpedicao();
         boolean noMagazine = magazine != null
                 && posicao >= 1 && posicao <= magazine.length
                 && magazine[posicao - 1] == op;
+
+        System.out.println("\n\n\n\n\n\n\nPeça Guardada");
+        System.out.println("POS: " + posicao);
+        System.out.println("OP: " + op);
+        System.out.println("MAGAZINE: " + Arrays.toString(magazine));
+        System.out.println("NoMAGAZINE: " + noMagazine);
+
+        System.out.println("\n\n\n\n\n\n\nPeça Guardada FIM");
         return noMagazine || op == expedicaoCLP.getNumeroOP();
     }
 
     /**
-     * Recompõe a fila em memória a partir do banco no boot: apenas um eventual pedido em PRODUCAO
-     * (órfão de reset), para a reconciliação concluí-lo. PENDENTEs NÃO voltam à fila — produzir de
+     * Recompõe a fila em memória a partir do banco no boot: apenas um eventual
+     * pedido em PRODUCAO
+     * (órfão de reset), para a reconciliação concluí-lo. PENDENTEs NÃO voltam à
+     * fila — produzir de
      * novo exige um novo POST do operador.
      */
     @EventListener(ApplicationReadyEvent.class)
@@ -142,7 +165,10 @@ public class PedidoConsumerList {
         pedidos.add(id);
     }
 
-    /** Snapshot ordenado dos ids na fila (head = em produção). Para exibição no frontend. */
+    /**
+     * Snapshot ordenado dos ids na fila (head = em produção). Para exibição no
+     * frontend.
+     */
     public List<Long> filaAtual() {
         return new ArrayList<>(pedidos);
     }
