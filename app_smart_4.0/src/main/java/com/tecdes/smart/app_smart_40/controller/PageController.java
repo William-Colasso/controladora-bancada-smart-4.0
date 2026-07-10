@@ -7,6 +7,7 @@ import com.tecdes.smart.app_smart_40.model.enums.*;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
+import com.tecdes.smart.app_smart_40.service.clp.TampaConfigRegistry;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -33,6 +34,7 @@ public class PageController {
         private final ExpedicaoService expedicaoService;
         private final PedidoService pedidoService;
         private final ObjectMapper objectMapper;
+        private final TampaConfigRegistry tampaConfigRegistry;
 
         /**
          * GET /
@@ -79,6 +81,8 @@ public class PageController {
                 model.addAttribute("tiposPedido", TipoPedido.values());
                 model.addAttribute("coresTampa", CorTampa.values());
 
+
+                model.addAttribute("tampaHabilitada", tampaConfigRegistry.isHabilitada());
                 // ── Dados para os selects de lâmina (injetados via Thymeleaf inline) ─
                 // Formato: List<Map<String,Object>> → { nome, valor }
                 List<Map<String, Object>> coresLaminas = Arrays.stream(CorLamina.values())

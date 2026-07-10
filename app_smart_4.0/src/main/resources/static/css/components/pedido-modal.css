@@ -13,6 +13,7 @@
   padding: 0;
   width: min(820px, 92vw);
   max-width: 92vw;
+  margin: auto;
 }
 
 .pedido-modal::backdrop {
@@ -36,7 +37,7 @@
   background: none;
   border: none;
   color: var(--color-muted);
-  font-size: 16px;
+  font-size: 0.889rem;
   cursor: pointer;
 }
 
@@ -99,17 +100,17 @@
   border-left: 3px solid var(--color-green);
 }
 .hist-item__tag {
-  font-size: 8px;
+  font-size: 0.444rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--color-green);
 }
 
-.hist-item__op { font-size: 13px; font-weight: 700; }
-.hist-item__meta { font-size: 10px; color: var(--color-muted); }
+.hist-item__op { font-size: 0.722rem; font-weight: 700; }
+.hist-item__meta { font-size: 0.556rem; color: var(--color-muted); }
 
 .hist-vazio {
-  font-size: 12px;
+  font-size: 0.667rem;
   color: var(--color-muted);
   padding: 8px 4px;
 }

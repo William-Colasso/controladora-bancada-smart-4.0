@@ -104,15 +104,13 @@ class PedidoConsumerListTest {
     }
 
     @Test
-    @DisplayName("recomporFila - órfão em PRODUCAO na cabeça, depois PENDENTE por ordem de criação")
+    @DisplayName("recomporFila - só o órfão em PRODUCAO volta à fila; PENDENTEs ficam de fora")
     void recomporFila_reconstroiDoBanco() {
         when(pedidoRepository.findFirstByStatus(StatusPedido.PRODUCAO))
                 .thenReturn(Optional.of(Pedido.builder().id(10L).build()));
-        when(pedidoRepository.findByStatusOrderByDataCriacaoAsc(StatusPedido.PENDENTE))
-                .thenReturn(List.of(Pedido.builder().id(20L).build(), Pedido.builder().id(30L).build()));
 
         consumer.recomporFila();
 
-        assertThat(consumer.filaAtual()).containsExactly(10L, 20L, 30L);
+        assertThat(consumer.filaAtual()).containsExactly(10L);
     }
 }

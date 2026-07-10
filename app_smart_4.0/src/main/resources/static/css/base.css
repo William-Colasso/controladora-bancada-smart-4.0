@@ -447,7 +447,7 @@ html, body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -466,7 +466,7 @@ button {
   border: none;
   background: none;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: .875rem;
 }
 
 .page-wrapper {

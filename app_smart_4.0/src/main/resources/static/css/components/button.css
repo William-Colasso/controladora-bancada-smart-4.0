@@ -11,7 +11,7 @@
   border: none;
   border-radius: var(--radius-md);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.611rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -50,6 +50,6 @@
 
 .btn--sm {
   padding: 6px 14px;
-  font-size: 10px;
+  font-size: 0.556rem;
   letter-spacing: 0.08em;
 }

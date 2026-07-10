@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class PlcConnectionService {
-    private static final Map<String, PlcConnector> conexoes = new ConcurrentHashMap<>();
+    private final Map<String, PlcConnector> conexoes = new ConcurrentHashMap<>();
 
     public synchronized PlcConnector getConnection(String ip) {
         // lógica de obter/abrir conexão
@@ -41,7 +41,7 @@ public class PlcConnectionService {
             } 
     }
 
-    public void closeAll() { 
+    public synchronized void closeAll() {
         System.out.println("=============================");
             System.out.println("ENCERRAR CONEXÕES COM OS CLPs");
             System.out.println("=============================");

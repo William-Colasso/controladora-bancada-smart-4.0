@@ -2,6 +2,7 @@ package com.tecdes.smart.app_smart_40.controller;
 
 import com.tecdes.smart.app_smart_40.service.clp.PedidoConsumerList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -97,11 +98,13 @@ public class PedidoController {
     @Operation(summary = "Enfileira para produção",
             description = "**Não** envia direto ao CLP: adiciona o id à fila; o consumidor (a cada ~1s) dispara `enviarParaProducao` quando o pedido chega ao head e nada está em PRODUCAO. Aí reserva posição de expedição, baixa o estoque e grava a OP no CLP de estoque.")
     @PostMapping("/{id}")
-    public ResponseEntity<String> enviarParaProducao(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> enviarParaProducao(@PathVariable Long id) {
 
         pedidoConsumerList.addOrder(id);
 
-        return ResponseEntity.status(201).body(new String("OK")); // todo
+        // Corpo em JSON: o Api do front sempre faz res.json() — texto puro quebrava o parse
+        // e disparava toast de erro mesmo com o pedido já enfileirado.
+        return ResponseEntity.status(201).body(Map.of("status", "enfileirado"));
     }
 
 }
