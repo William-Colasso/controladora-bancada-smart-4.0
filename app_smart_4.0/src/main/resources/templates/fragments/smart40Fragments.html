@@ -24,13 +24,11 @@
     }
     </script>
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+    <!-- Fontes self-hosted (sem CDN externo) -->
+    <link rel="stylesheet" th:href="@{/fonts/fonts.css}" />
 
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- Font Awesome 6 self-hosted -->
+    <link rel="stylesheet" th:href="@{/vendor/font-awesome/css/all.min.css}" />
 
     <!-- Base CSS (reset + tokens + navbar + cards + toast) -->
     <link rel="stylesheet" th:href="@{/css/base.css}" />
