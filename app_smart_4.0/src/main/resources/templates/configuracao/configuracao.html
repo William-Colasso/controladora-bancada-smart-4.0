@@ -134,6 +134,29 @@
         </div>
       </section>
 
+      <!-- ============================================================
+           MODO DE COMUNICAÇÃO COM O CLP
+           ============================================================ -->
+      <section class="card">
+        <div class="card__header">
+          <span class="card__title"><i class="fa-solid fa-pen-to-square"></i> Modo de comunicação</span>
+          <span class="section-meta">todas as estações</span>
+        </div>
+        <div class="card__body">
+
+          <div class="config-row">
+            <label for="leitura-switch">Permitir escrita no CLP</label>
+            <label class="switch">
+              <input type="checkbox" id="leitura-switch" />
+              <span class="switch__slider"></span>
+            </label>
+            <span class="config-hint">Desligado: somente-leitura — as estações leem mas não escrevem flags (padrão)</span>
+            <span class="config-badge badge badge--dim" id="leituraBadge">—</span>
+          </div>
+
+        </div>
+      </section>
+
     </main>
 
     <script type="module" th:src="@{/js/pages/configuracao.js}"></script>

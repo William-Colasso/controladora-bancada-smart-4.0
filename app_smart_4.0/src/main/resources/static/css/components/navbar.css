@@ -2,8 +2,8 @@
   display: flex;
   align-items: center;
   gap: 0;
-  padding: 0 24px;
-  height: 60px;
+  padding: 24px;
+  height: max-content;
   background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   position: sticky;
@@ -16,7 +16,7 @@
   align-items: center;
   gap: 12px;
   font-family: var(--font-mono);
-  font-size: 15px;
+  font-size: 0.833rem;
   font-weight: 700;
   letter-spacing: -0.5px;
   color: var(--color-text);
@@ -32,7 +32,7 @@
 
 .navbar__subtitle {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 0.611rem;
   font-weight: 400;
   color: var(--color-muted);
   margin-top: 1px;
@@ -52,7 +52,7 @@
   padding: 6px 14px;
   border-radius: var(--radius-md);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.611rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--color-muted);
@@ -60,7 +60,7 @@
   white-space: nowrap;
 }
 .nav-link i {
-  font-size: 12px;
+  font-size: 0.667rem;
   opacity: 0.8;
 }
 .nav-link:hover {
@@ -130,4 +130,9 @@
   .nav-link span { display: none; }
   .nav-link { padding: 6px 10px; gap: 0; }
   .navbar__subtitle { display: none; }
+}
+
+
+.navbar span{
+  font-size: 1rem;
 }

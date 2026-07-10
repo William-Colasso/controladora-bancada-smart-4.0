@@ -27,11 +27,14 @@ public class ClpProcessamentoScheduler {
 
     private final ClpComandoService clpComandoService;
     private final SseEmitterRegistry sseRegistry;
+    private final PedidoConsumerList pedidoConsumerList;
 
     @Scheduled(fixedDelayString = "${clp.processar.interval:300}")
     public void processar() {
-        if (sseRegistry.count() == 0) {
-            return; // ninguém ouvindo o SSE → não processa (não escreve no CLP)
+        // Processa se há alguém olhando (SSE) OU se há pedido na fila a reconciliar
+        // (senão a fila nunca lê o magazine do CLP p/ concluir sem nenhuma tela aberta).
+        if (sseRegistry.count() == 0 && pedidoConsumerList.filaAtual().isEmpty()) {
+            return;
         }
         try {
             clpComandoService.processarTodas();

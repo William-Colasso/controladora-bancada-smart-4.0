@@ -1,10 +1,12 @@
 .dashboard {
+  width: clamp(50%, 70%, 80%);
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: auto 1fr;
   gap: 20px;
   min-height: calc(100vh - 60px);
   padding: 24px;
+  margin: auto;
 }
 
 .section--estoque { grid-column: 1; }
@@ -24,7 +26,7 @@
 }
 .section-title h2 {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -39,12 +41,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .section-meta {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.8rem;
   color: var(--color-muted);
 }
 
@@ -69,7 +71,7 @@
     box-shadow var(--transition),
     border-color var(--transition);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.8rem;
   font-weight: 700;
   overflow: hidden;
   cursor: default;
@@ -135,12 +137,12 @@
 .card--clp-estoque { margin-top: 16px; }
 
 .bloco__pos {
-  font-size: 9px;
+  font-size: 0.5625rem;
   opacity: 0.5;
   line-height: 1;
 }
 .bloco__label {
-  font-size: 8px;
+  font-size: 0.5rem;
   opacity: 0.7;
   line-height: 1;
   margin-top: 2px;
@@ -164,7 +166,7 @@
 
 .color-toolbar__label {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -205,7 +207,7 @@
 
 .selection-info {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--color-muted);
   padding: 0 4px;
 }
@@ -222,7 +224,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .stat-dot {
@@ -258,7 +260,7 @@
 .fill-azul { background-color: var(--cor-azul); }
 
 .exp-bloco__op {
-  font-size: 7px;
+  font-size: 0.4375rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -271,7 +273,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: var(--color-muted);
 }
 

@@ -20,7 +20,7 @@ import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoMudou;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;

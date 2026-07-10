@@ -3,7 +3,7 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.MontagemCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;

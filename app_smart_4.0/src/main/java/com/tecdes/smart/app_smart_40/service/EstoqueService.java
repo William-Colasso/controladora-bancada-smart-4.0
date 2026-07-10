@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
-    private final EstoqueClpWriter clpWriter;
+    
     // Mutação → marcador p/ ClpEventoCoordinator (que decide se o grid SSE muda).
     private final ApplicationEventPublisher publisher;
 
@@ -63,7 +63,6 @@ public class EstoqueService {
 
         pos.setCorBloco(dto.corBloco());
         EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
-        clpWriter.escreverPosicao(dto.posicao(), dto.corBloco().getValue()); // banco→CLP (best-effort)
         publisher.publishEvent(new EstoqueMudou());
         return salvo;
     }
@@ -86,7 +85,6 @@ public class EstoqueService {
 
         pos.setCorBloco(CorBloco.VAZIO);
         EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
-        clpWriter.escreverPosicao(nrPosicao.intValue(), CorBloco.VAZIO.getValue()); // banco→CLP (best-effort)
         publisher.publishEvent(new EstoqueMudou());
         return salvo;
     }

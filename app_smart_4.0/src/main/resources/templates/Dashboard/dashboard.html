@@ -21,215 +21,249 @@
   =============================================================
 -->
 <html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
-  <head>
-    <title>Dashboard — Smart 4.0</title>
-    <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
-    <link rel="stylesheet" th:href="@{/css/dashboard.css}" />
-    <!-- Modal de histórico reusa o detalhe do pedido (viewer 3D + info) e o pedido-modal -->
-    <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
-    <link rel="stylesheet" th:href="@{/css/components/pedido-modal.css}" />
-    <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
-  </head>
 
-  <body>
-    <!-- Navbar — activePage='dashboard' marca o link ativo -->
-    <div th:replace="~{fragments/smart40Fragments :: navbar('dashboard')}"></div>
+<head>
+  <title>Dashboard — Smart 4.0</title>
+  <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+  <link rel="stylesheet" th:href="@{/css/dashboard.css}" />
+  <!-- Modal de histórico reusa o detalhe do pedido (viewer 3D + info) e o pedido-modal -->
+  <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
+  <link rel="stylesheet" th:href="@{/css/components/pedido-modal.css}" />
+  <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
+</head>
 
-    <!--
+<body>
+  <!-- Navbar — activePage='dashboard' marca o link ativo -->
+  <div th:replace="~{fragments/smart40Fragments :: navbar('dashboard')}"></div>
+
+  <!--
       Dados iniciais injetados pelo servidor para evitar flash vazio.
       O JS lê esses valores no DOMContentLoaded e os usa para renderizar
       os grids antes do primeiro polling completar.
     -->
-    <input type="hidden" id="initialEstoque"  th:value="${estoqueJson}" />
-    <input type="hidden" id="initialExpedicao" th:value="${expedicaoJson}" />
+  <input type="hidden" id="initialEstoque" th:value="${estoqueJson}" />
+  <input type="hidden" id="initialExpedicao" th:value="${expedicaoJson}" />
 
-    <!-- ============================================================
+  <!-- ============================================================
          GRID PRINCIPAL DO DASHBOARD
          ============================================================ -->
-    <div class="dashboard">
-
-      <!-- ============================================================
-           COLUNA ESQUERDA — Estoque (28 posições, interativo)
-           ============================================================ -->
-      <section class="section--estoque">
-
-        <!-- Cabeçalho -->
-        <div class="section-header">
-          <div class="section-title">
-            <div class="section-icon">
-              <i class="fa-solid fa-boxes-stacked"></i>
-            </div>
-            <div>
-              <h2>Estoque (Banco)</h2>
-            </div>
-          </div>
-          <div class="refresh-indicator">
-            <div class="refresh-dot"></div>
-            <span>Ao vivo</span>
-          </div>
-        </div>
-
-        <!-- Estatísticas textuais (atualizadas pelo JS) -->
-        <div class="stats-bar">
-          <th:block th:replace="~{fragments/components :: statItem('Preto', 'background:#1a1a1a;border:1px solid #555', 'statPreto', ${estoqueStats?.get('PRETO') ?: 0})}"></th:block>
-          <th:block th:replace="~{fragments/components :: statItem('Vermelho', 'background:#fc0518', 'statVermelho', ${estoqueStats?.get('VERMELHO') ?: 0})}"></th:block>
-          <th:block th:replace="~{fragments/components :: statItem('Azul', 'background:#2b92d5', 'statAzul', ${estoqueStats?.get('AZUL') ?: 0})}"></th:block>
-          <th:block th:replace="~{fragments/components :: statItem('Vazio', 'background:#1e1e2e;border:1px solid #3a3a55', 'statVazio', ${estoqueStats?.get('VAZIO') ?: 0})}"></th:block>
-        </div>
-
-        <!-- Stacked bar — uma barra, quatro segmentos -->
-        <div class="ocupacao-bar">
-          <div class="ocupacao-bar__fill fill-preto"
-               th:style="${'width:' + ((estoqueStats?.get('PRETO') ?: 0) * 100 / 28) + '%;'}"></div>
-          <div class="ocupacao-bar__fill fill-vermelho"
-               th:style="${'width:' + ((estoqueStats?.get('VERMELHO') ?: 0) * 100 / 28) + '%;'}"></div>
-          <div class="ocupacao-bar__fill fill-azul"
-               th:style="${'width:' + ((estoqueStats?.get('AZUL') ?: 0) * 100 / 28) + '%;'}"></div>
-          <div class="ocupacao-bar__fill fill-vazio"
-               th:style="${'width:' + ((estoqueStats?.get('VAZIO') ?: 0) * 100 / 28) + '%;'}"></div>
-        </div>
-
-        <!-- Somente leitura: a edição do magazine vive em /magazine -->
-        <div class="color-toolbar" style="justify-content:flex-start;gap:12px">
-          <span class="color-toolbar__label">Legenda</span>
-          <div class="stat-item"><div class="stat-dot" style="background:var(--color-bar-preto)"></div><span class="stat-label">Preto</span></div>
-          <div class="stat-item"><div class="stat-dot" style="background:var(--color-red)"></div><span class="stat-label">Vermelho</span></div>
-          <div class="stat-item"><div class="stat-dot" style="background:var(--color-accent)"></div><span class="stat-label">Azul</span></div>
-          <a th:href="@{/magazine}" class="btn btn--ghost btn--sm" style="margin-left:auto">
-            <i class="fa-solid fa-pen-to-square"></i> Editar no magazine
-          </a>
-        </div>
-
-        <!-- Grid de blocos (BANCO/MySQL) — preenchido pelo JS -->
-        <div class="card">
-          <div class="card__header">
-            <span class="card__title">Banco · Posições 1 – 28</span>
-            <span class="section-meta">Somente visualização</span>
-          </div>
-          <div class="card__body">
-            <div class="blocos-grid blocos-grid--estoque" id="estoqueGrid">
-              <th:block th:each="i : ${#numbers.sequence(1, 28)}">
-                <div class="bloco bloco--estoque bloco--vazio skeleton"
-                     th:id="'bloco-est-' + ${i}">
-                  <span class="bloco__pos" th:text="${i}"></span>
-                </div>
-              </th:block>
-            </div>
-          </div>
-        </div>
-
-        <!-- Grid do CLP (memória do magazine, somente leitura) — preenchido pelo JS via SSE estacao-all.
-             Destaca as posições cuja cor diverge do banco. -->
-        <div class="card card--clp-estoque">
-          <div class="card__header">
-            <span class="card__title">CLP · Magazine (somente leitura)</span>
-            <span class="section-meta" id="clpDivergencias">Aguardando comunicação…</span>
-          </div>
-          <div class="card__body">
-            <div class="blocos-grid blocos-grid--estoque" id="clpEstoqueGrid">
-              <th:block th:each="i : ${#numbers.sequence(1, 28)}">
-                <div class="bloco bloco--vazio skeleton" th:id="'bloco-clp-' + ${i}">
-                  <span class="bloco__pos" th:text="${i}"></span>
-                </div>
-              </th:block>
-            </div>
-          </div>
-        </div>
-
-      </section>
-
-      <!-- ============================================================
-           COLUNA DIREITA — Expedição (12 posições, somente leitura)
-           ============================================================ -->
-      <section class="section--expedicao">
-
-        <!-- Cabeçalho -->
-        <div class="section-header">
-          <div class="section-title">
-            <div class="section-icon" style="background:rgba(90,179,0,0.12);color:#5ab300">
-              <i class="fa-solid fa-truck-ramp-box"></i>
-            </div>
-            <div>
-              <h2>Expedição</h2>
-            </div>
-          </div>
-          <div class="refresh-indicator">
-            <div class="refresh-dot"></div>
-            <span>Ao vivo</span>
-          </div>
-        </div>
-
-        <!-- Estatísticas de expedição -->
-        <div class="stats-bar">
-          <th:block th:replace="~{fragments/components :: statItem('Ocupadas', 'background:#5ab300', 'expOcupado', ${expedicaoOcupadas ?: 0})}"></th:block>
-          <th:block th:replace="~{fragments/components :: statItem('de', 'background:#1e1e2e;border:1px solid #3a3a55', 'expTotal', 12)}"></th:block>
-        </div>
-
-        <!-- Barra de ocupação -->
-        <div class="ocupacao-bar">
-          <div class="ocupacao-bar__fill" id="expFill"
-               th:style="${'background:#5ab300;width:' + ((expedicaoOcupadas ?: 0) * 100 / 12) + '%'}"></div>
-        </div>
-
-        <!-- Legenda (expedição é somente leitura; clique abre o histórico) -->
-        <div class="color-toolbar" style="justify-content:flex-start;gap:12px">
-          <span class="color-toolbar__label">Legenda</span>
-          <div class="stat-item">
-            <div class="stat-dot" style="background:rgba(90,179,0,0.5)"></div>
-            <span class="stat-label">Com pedido</span>
-          </div>
-          <div class="stat-item">
-            <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
-            <span class="stat-label">Vazio</span>
-          </div>
-          <span class="selection-info" style="margin-left:auto;color:var(--color-muted);font-size:10px">
-            Clique numa posição para ver o histórico
-          </span>
-        </div>
-
-        <!-- Grid de expedição — preenchido pelo JS -->
-        <div class="card">
-          <div class="card__header">
-            <span class="card__title">Posições 1 – 12</span>
-            <span class="section-meta">Clique = histórico da posição</span>
-          </div>
-          <div class="card__body">
-            <div class="blocos-grid blocos-grid--expedicao" id="expedicaoGrid">
-              <th:block th:each="i : ${#numbers.sequence(1, 12)}">
-                <div class="bloco bloco--vazio skeleton" th:id="'bloco-exp-' + ${i}">
-                  <span class="bloco__pos" th:text="${i}"></span>
-                </div>
-              </th:block>
-            </div>
-          </div>
-        </div>
-        <!-- Link "Ver pedidos" removido — navegação feita pela navbar -->
-
-      </section>
-    </div><!-- /.dashboard -->
-
-    <!-- Modal: histórico de pedidos de uma posição de expedição (lista + detalhe 3D).
-         Reusa o markup/estilo do pedido-modal (pedidos.css) com uma coluna extra de lista. -->
-    <dialog id="historico-modal" class="pedido-modal pedido-modal--historico">
-      <div class="pedido-modal__header">
-        <span class="pedido-modal__title" id="historico-titulo">
-          <i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;color:var(--color-accent)"></i>
-          Expedição · Posição
-        </span>
-        <button type="button" class="pedido-modal__close" id="historicoClose" title="Fechar">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="pedido-modal__body pedido-modal__body--historico">
-        <div class="hist-list" id="historico-lista"></div>
-        <div class="pedido-viewer" id="historico-viewer"></div>
-        <div class="detail-info" id="historico-info"></div>
-      </div>
-    </dialog>
+  <div class="dashboard">
 
     <!-- ============================================================
+           COLUNA ESQUERDA — Estoque (28 posições, interativo)
+           ============================================================ -->
+    <section class="section--estoque">
+
+      <!-- Cabeçalho -->
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <div>
+            <h2>Estoque (Banco)</h2>
+          </div>
+        </div>
+        <div class="refresh-indicator">
+          <div class="refresh-dot"></div>
+          <span>Ao vivo</span>
+        </div>
+      </div>
+
+      <!-- Estatísticas textuais (atualizadas pelo JS) -->
+      <div class="stats-bar">
+        <th:block
+          th:replace="~{fragments/components :: statItem('Preto', 'background:#1a1a1a;border:1px solid #555', 'statPreto', ${estoqueStats?.get('PRETO') ?: 0})}">
+        </th:block>
+        <th:block
+          th:replace="~{fragments/components :: statItem('Vermelho', 'background:#fc0518', 'statVermelho', ${estoqueStats?.get('VERMELHO') ?: 0})}">
+        </th:block>
+        <th:block
+          th:replace="~{fragments/components :: statItem('Azul', 'background:#2b92d5', 'statAzul', ${estoqueStats?.get('AZUL') ?: 0})}">
+        </th:block>
+        <th:block
+          th:replace="~{fragments/components :: statItem('Vazio', 'background:#1e1e2e;border:1px solid #3a3a55', 'statVazio', ${estoqueStats?.get('VAZIO') ?: 0})}">
+        </th:block>
+      </div>
+
+      <!-- Stacked bar — uma barra, quatro segmentos -->
+      <div class="ocupacao-bar">
+        <div class="ocupacao-bar__fill fill-preto"
+          th:style="${'width:' + ((estoqueStats?.get('PRETO') ?: 0) * 100 / 28) + '%;'}"></div>
+        <div class="ocupacao-bar__fill fill-vermelho"
+          th:style="${'width:' + ((estoqueStats?.get('VERMELHO') ?: 0) * 100 / 28) + '%;'}"></div>
+        <div class="ocupacao-bar__fill fill-azul"
+          th:style="${'width:' + ((estoqueStats?.get('AZUL') ?: 0) * 100 / 28) + '%;'}"></div>
+        <div class="ocupacao-bar__fill fill-vazio"
+          th:style="${'width:' + ((estoqueStats?.get('VAZIO') ?: 0) * 100 / 28) + '%;'}"></div>
+      </div>
+
+      <!-- Somente leitura: a edição do magazine vive em /magazine -->
+      <div class="color-toolbar" style="justify-content:flex-start;gap:12px">
+        <span class="color-toolbar__label">Legenda</span>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:var(--color-bar-preto)"></div><span class="stat-label">Preto</span>
+        </div>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:var(--color-red)"></div><span class="stat-label">Vermelho</span>
+        </div>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:var(--color-accent)"></div><span class="stat-label">Azul</span>
+        </div>
+        <a th:href="@{/magazine}" class="btn btn--ghost btn--sm" style="margin-left:auto">
+          <i class="fa-solid fa-pen-to-square"></i> Editar no magazine
+        </a>
+      </div>
+
+      <!-- Grid de blocos (BANCO/MySQL) — preenchido pelo JS -->
+      <div class="card">
+        <div class="card__header">
+          <span class="card__title">Banco · Posições 1 – 28</span>
+          <span class="section-meta">Somente visualização</span>
+        </div>
+        <div class="card__body">
+          <div class="blocos-grid blocos-grid--estoque" id="estoqueGrid">
+            <th:block th:each="i : ${#numbers.sequence(1, 28)}">
+              <div class="bloco bloco--estoque bloco--vazio skeleton" th:id="'bloco-est-' + ${i}">
+                <span class="bloco__pos" th:text="${i}"></span>
+              </div>
+            </th:block>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid do CLP (memória do magazine, somente leitura) — preenchido pelo JS via SSE estacao-all.
+             Destaca as posições cuja cor diverge do banco. -->
+      <div class="card card--clp-estoque">
+        <div class="card__header">
+          <span class="card__title">CLP · Magazine (somente leitura)</span>
+          <span class="section-meta" id="clpEstoqueDivergencias">Aguardando comunicação…</span>
+        </div>
+        <div class="card__body">
+          <div class="blocos-grid blocos-grid--estoque" id="clpEstoqueGrid">
+            <th:block th:each="i : ${#numbers.sequence(1, 28)}">
+              <div class="bloco bloco--vazio skeleton" th:id="'bloco-clp-estoque' + ${i}">
+                <span class="bloco__pos" th:text="${i}"></span>
+              </div>
+            </th:block>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================
+           COLUNA DIREITA — Expedição (12 posições, somente leitura)
+           ============================================================ -->
+    <section class="section--expedicao">
+
+      <!-- Cabeçalho -->
+      <div class="section-header">
+        <div class="section-title">
+          <div class="section-icon" style="background:rgba(90,179,0,0.12);color:#5ab300">
+            <i class="fa-solid fa-truck-ramp-box"></i>
+          </div>
+          <div>
+            <h2>Expedição</h2>
+          </div>
+        </div>
+        <div class="refresh-indicator">
+          <div class="refresh-dot"></div>
+          <span>Ao vivo</span>
+        </div>
+      </div>
+
+      <!-- Estatísticas de expedição -->
+      <div class="stats-bar">
+        <th:block
+          th:replace="~{fragments/components :: statItem('Ocupadas', 'background:#5ab300', 'expOcupado', ${expedicaoOcupadas ?: 0})}">
+        </th:block>
+        <th:block
+          th:replace="~{fragments/components :: statItem('de', 'background:#1e1e2e;border:1px solid #3a3a55', 'expTotal', 12)}">
+        </th:block>
+      </div>
+
+      <!-- Barra de ocupação -->
+      <div class="ocupacao-bar">
+        <div class="ocupacao-bar__fill" id="expFill"
+          th:style="${'background:#5ab300;width:' + ((expedicaoOcupadas ?: 0) * 100 / 12) + '%'}"></div>
+      </div>
+
+      <!-- Legenda (expedição é somente leitura; clique abre o histórico) -->
+      <div class="color-toolbar" style="justify-content:flex-start;gap:12px">
+        <span class="color-toolbar__label">Legenda</span>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:rgba(90,179,0,0.5)"></div>
+          <span class="stat-label">Com pedido</span>
+        </div>
+        <div class="stat-item">
+          <div class="stat-dot" style="background:#1e1e2e;border:1px solid #3a3a55"></div>
+          <span class="stat-label">Vazio</span>
+        </div>
+        <span class="selection-info" style="margin-left:auto;color:var(--color-muted);font-size:10px">
+          Clique numa posição para ver o histórico
+        </span>
+      </div>
+
+      <!-- Grid de expedição — preenchido pelo JS -->
+      <div class="card">
+        <div class="card__header">
+          <span class="card__title">Posições 1 – 12</span>
+          <span class="section-meta">Clique = histórico da posição</span>
+        </div>
+        <div class="card__body">
+          <div class="blocos-grid blocos-grid--expedicao" id="expedicaoGrid">
+            <th:block th:each="i : ${#numbers.sequence(1, 12)}">
+              <div class="bloco bloco--vazio skeleton" th:id="'bloco-exp-' + ${i}">
+                <span class="bloco__pos" th:text="${i}"></span>
+              </div>
+            </th:block>
+          </div>
+        </div>
+      </div>
+      <!-- Link "Ver pedidos" removido — navegação feita pela navbar -->
+
+      <div class="card card--clp-Expedicao">
+        <div class="card__header">
+          <span class="card__title">CLP · Magazine (somente leitura)</span>
+          <span class="section-meta" id="clpExpedicaoDivergencias">Aguardando comunicação…</span>
+        </div>
+        <div class="card__body">
+          <div class="blocos-grid blocos-grid--expedicao" id="clpExpedicaoGrid">
+            <th:block th:each="i : ${#numbers.sequence(1, 12)}">
+              <div class="bloco bloco--vazio skeleton" th:id="'bloco-clp-expedicao' + ${i}">
+                <span class="bloco__pos" th:text="${i}"></span>
+              </div>
+            </th:block>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div><!-- /.dashboard -->
+
+  <!-- Modal: histórico de pedidos de uma posição de expedição (lista + detalhe 3D).
+         Reusa o markup/estilo do pedido-modal (pedidos.css) com uma coluna extra de lista. -->
+  <dialog id="historico-modal" class="pedido-modal pedido-modal--historico">
+    <div class="pedido-modal__header">
+      <span class="pedido-modal__title" id="historico-titulo">
+        <i class="fa-solid fa-clock-rotate-left" style="margin-right:8px;color:var(--color-accent)"></i>
+        Expedição · Posição
+      </span>
+      <button type="button" class="pedido-modal__close" id="historicoClose" title="Fechar">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="pedido-modal__body pedido-modal__body--historico">
+      <div class="hist-list" id="historico-lista"></div>
+      <div class="pedido-viewer" id="historico-viewer"></div>
+      <div class="detail-info" id="historico-info"></div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================
          SCRIPTS
          ============================================================ -->
-    <script type="module" th:src="@{/js/pages/dashboard.js}"></script>
-  </body>
+  <script type="module" th:src="@{/js/pages/dashboard.js}"></script>
+</body>
+
 </html>
