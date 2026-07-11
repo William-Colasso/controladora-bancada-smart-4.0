@@ -20,9 +20,49 @@
     "description": "IP inicial do CLP da estação de expedição. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/expedicao, sem precisar reiniciar a aplicação."
   },
   {
+    "name": "clp.processar.base",
+    "type": "java.lang.Long",
+    "description": "Tick-base em ms do ClpProcessamentoScheduler: granularidade com que ele varre as 4 estações. Cada estação só é processada quando o seu próprio intervalo de polling (clp.processar.interval[.<estacao>]) vence. Deve ser <= o menor intervalo por estação."
+  },
+  {
     "name": "clp.processar.interval",
     "type": "java.lang.Long",
-    "description": "Intervalo em ms entre passadas de leitura/handshake dos 4 CLPs (ClpProcessamentoScheduler). Só roda enquanto houver ao menos um cliente SSE conectado; cada passada notifica o ClpEventoCoordinator, que publica eventos SSE apenas quando as variáveis mudam de estado."
+    "description": "Intervalo de polling PADRÃO por estação em ms, usado quando não há override clp.processar.interval.<estacao>. Semeia o ClpPollingRegistry no boot; alterável em runtime via PUT /api/clp/polling/{estacao}. O processamento só roda enquanto houver ao menos um cliente SSE conectado (ou pedido na fila a reconciliar)."
+  },
+  {
+    "name": "clp.processar.interval.estoque",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de estoque. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/estoque."
+  },
+  {
+    "name": "clp.processar.interval.processo",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de processo. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/processo."
+  },
+  {
+    "name": "clp.processar.interval.montagem",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de montagem. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/montagem."
+  },
+  {
+    "name": "clp.processar.interval.expedicao",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de expedição. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/expedicao."
+  },
+  {
+    "name": "clp.ping.timeout",
+    "type": "java.lang.Integer",
+    "description": "Timeout em ms do ping (probe TCP na porta 102, protocolo S7) que testa o alcance de cada estação antes de comunicar (PlcConnectionService.online). Sem resposta no prazo, a passada é pulada (não trava) e o heartbeat não pulsa → o front marca 'sem comunicação'."
+  },
+  {
+    "name": "clp.socket.connect-timeout",
+    "type": "java.lang.Integer",
+    "description": "Timeout em ms do handshake TCP ao abrir a conexão S7 no pool (PlcConnectionService/S7ProtocolClient). Evita travar ~20s (default do SO) numa estação roteável mas inalcançável na porta 102."
+  },
+  {
+    "name": "clp.socket.read-timeout",
+    "type": "java.lang.Integer",
+    "description": "Timeout em ms (SO_TIMEOUT) de cada leitura no socket S7. Evita travar indefinidamente a leitura de uma estação que caiu no meio da sessão."
   },
   {
     "name": "clp.watchdog.interval",
