@@ -81,12 +81,23 @@ public class ClpEventoCoordinator {
     // ------------------------------------------------------------------------------
 
     /**
+     * Notificação do ping (liveness): a estação respondeu (ou não) ao probe TCP na porta S7.
+     * O heartbeat passou a ser derivado do <b>ping</b> (estação alcançável = viva), não do "read
+     * completo com sucesso" — assim uma estação alcançável mas ociosa continua pulsando, e uma
+     * inalcançável fica silenciosa (o watchdog de heartbeat do front a marca offline em ≤2,5s).
+     */
+    public synchronized void aoPing(EstacoesCLP estacao, boolean online) {
+        if (online) {
+            publisher.publishEvent(new EstacaoHeartbeat(estacao.getFrontKey()));
+        }
+    }
+
+    /**
      * Notificação do write path: a estação {@code estacao} acabou de ser lida e o bean
-     * {@code dados} está atualizado. Publica heartbeat sempre; {@code estacao-all} e
-     * {@code estacao-status} só se as variáveis mudaram desde a última emissão.
+     * {@code dados} está atualizado. Publica {@code estacao-all} e {@code estacao-status} só se as
+     * variáveis mudaram desde a última emissão. (O heartbeat vem de {@link #aoPing}.)
      */
     public synchronized void aoPassadaLida(EstacoesCLP estacao, EstacaoCLP dados) {
-        publisher.publishEvent(new EstacaoHeartbeat(estacao.getFrontKey()));
         publicarAllSeMudou(estacao, dados);
         publicarStatusSeMudou(derivarStatus(estacao, dados));
     }

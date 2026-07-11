@@ -32,8 +32,8 @@ import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * O coordenador é o único ponto "mudou → publica": passada do write path (estacao-all/status
- * on-change + heartbeat sempre), mutação de banco (grid on-change) e watchdog offline.
+ * O coordenador é o único ponto "mudou → publica": ping (heartbeat quando online), passada do write
+ * path (estacao-all/status on-change), mutação de banco (grid on-change) e watchdog offline.
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ClpEventoCoordinator")
@@ -61,17 +61,26 @@ class ClpEventoCoordinatorTest {
     // ── Passada do write path ────────────────────────────────────────────────
 
     @Test
-    @DisplayName("passada publica heartbeat sempre, estacao-all/status só na mudança")
+    @DisplayName("passada publica estacao-all/status só na mudança (heartbeat vem do ping, não daqui)")
     void passadaOnChange() {
         ProcessoCLP bean = new ProcessoCLP();
         bean.setOcupado(true);
 
         coordinator.aoPassadaLida(EstacoesCLP.PROCESSO, bean); // 1ª: tudo novo → publica
-        coordinator.aoPassadaLida(EstacoesCLP.PROCESSO, bean); // igual → só heartbeat
+        coordinator.aoPassadaLida(EstacoesCLP.PROCESSO, bean); // igual → nada
 
-        verify(publisher, times(2)).publishEvent(any(EstacaoHeartbeat.class));
+        verify(publisher, never()).publishEvent(any(EstacaoHeartbeat.class));
         verify(publisher, times(1)).publishEvent(any(EstacaoAllData.class));
         verify(publisher, times(1)).publishEvent(any(EstacaoStatusEvent.class));
+    }
+
+    @Test
+    @DisplayName("aoPing pulsa heartbeat só quando online")
+    void pingHeartbeat() {
+        coordinator.aoPing(EstacoesCLP.PROCESSO, true);  // online → pulsa
+        coordinator.aoPing(EstacoesCLP.PROCESSO, false); // offline → silêncio
+
+        verify(publisher, times(1)).publishEvent(any(EstacaoHeartbeat.class));
     }
 
     @Test

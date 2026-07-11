@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -14,20 +15,28 @@ public class S7ProtocolClient {
 
     private final String plcIpAddress;
     private final int port;
+    private final int connectTimeoutMs;
+    private final int readTimeoutMs;
     private Socket socket;
     private OutputStream outputStream;
     private InputStream inputStream;
 
-    // Construtor para inicializar o cliente S7ProtocolClient com o IP e porta do CLP
-    public S7ProtocolClient(String plcIpAddress, int port) {
+    // Construtor para inicializar o cliente S7ProtocolClient com o IP e porta do CLP.
+    // connectTimeoutMs limita o handshake TCP (evita travar ~20s numa estação inalcançável);
+    // readTimeoutMs (SO_TIMEOUT) limita cada inputStream.read (evita travar numa estação que caiu).
+    public S7ProtocolClient(String plcIpAddress, int port, int connectTimeoutMs, int readTimeoutMs) {
         this.plcIpAddress = plcIpAddress;
         this.port = port;
+        this.connectTimeoutMs = connectTimeoutMs;
+        this.readTimeoutMs = readTimeoutMs;
     }
 
     public boolean connect() throws Exception {
         try {
             InetAddress address = InetAddress.getByName(plcIpAddress);
-            socket = new Socket(address, port);
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(address, port), connectTimeoutMs);
+            socket.setSoTimeout(readTimeoutMs);
             outputStream = socket.getOutputStream();
             inputStream = socket.getInputStream();
             //System.out.println("Conexão estabelecida com o CLP: " + plcIpAddress + ":" + port);
