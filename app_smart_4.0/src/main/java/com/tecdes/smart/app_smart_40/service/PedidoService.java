@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoMudou;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
@@ -143,6 +144,10 @@ public class PedidoService {
         return true;
     }
 
+    // readOnly = true mantém a sessão JPA aberta durante o mapeamento p/ DTO — sem isso, com
+    // spring.jpa.open-in-view=false, o acesso a blocos/lâminas (LAZY) quebra com
+    // LazyInitializationException (mesmo motivo do @Transactional em ExpedicaoService.listarTodos).
+    @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarTodos() {
         return pedidoRepository.findAll()
                 .stream()
@@ -150,6 +155,7 @@ public class PedidoService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public PedidoResponseDTO buscarPorId(Long id) {
         return pedidoRepository.findById(id)
                 .map(PedidoResponseDTO::fromEntity)
