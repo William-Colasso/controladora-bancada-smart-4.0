@@ -2,11 +2,14 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
+import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.EstoqueCLP;
+import com.tecdes.smart.app_smart_40.model.enums.CorBloco;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
-import com.tecdes.smart.app_smart_40.repository.EstoqueRepository;
+import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
 
@@ -14,14 +17,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Estação ESTOQUE. Handshake de operação + gestão do magazine (adicionar/remover blocos) com o CLP.
+ * Estação ESTOQUE. Handshake de operação + gestão do magazine
+ * (adicionar/remover blocos) com o CLP.
  *
- * <p>Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB9 da estação e processa.
- * O snapshot lido do PLC vive no bean {@link EstoqueCLP} (model/clp), não em campos do service.
+ * <p>
+ * Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB9 e separa as
+ * duas
+ * responsabilidades — {@link #lerVariaveis(byte[])} decodifica os bytes no bean
+ * (só leitura CLP) e
+ * {@link #processarHandshake(PlcConnector)} aplica o handshake (só escrita
+ * CLP). O snapshot lido do
+ * PLC vive no bean {@link EstoqueCLP} (model/clp), não em campos do service.
  * Sem polling agendado.
  *
- * <p><b>Sem caminho CLP→banco:</b> o banco é o mestre do magazine; este service só lê o CLP (preenche
- * o bean) e mantém o handshake CLP-side. A escrita banco→CLP fica em {@code EstoqueClpWriter},
+ * <p>
+ * <b>Sem acesso direto ao banco:</b> a única consulta ao banco
+ * ({@link EstoqueService#primeiraPosicaoLivre()})
+ * passa pelo domínio ({@link EstoqueService}) — este service não conhece
+ * repositórios. Também <b>sem
+ * caminho CLP→banco</b>: o banco é o mestre do magazine; a escrita banco→CLP
+ * fica em {@code EstoqueClpWriter},
  * acionada pelo {@code EstoqueService} quando o banco muda.
  */
 @Service
@@ -35,7 +50,7 @@ public class EstoqueClpService implements EstacaoClpHandshake {
 
     private final PlcConnectionService plcConnectionService;
     private final EstadoProducaoService estado;
-    private final EstoqueRepository estoqueRepository;
+    private final EstoqueService estoqueService;
     private final EstoqueCLP estoqueCLP;
 
     @Override
@@ -48,7 +63,10 @@ public class EstoqueClpService implements EstacaoClpHandshake {
         return estoqueCLP;
     }
 
-    /** Lê o bloco DB9 da estação ESTOQUE no IP informado e processa, sob demanda. */
+    /**
+     * Lê o bloco DB9 da estação ESTOQUE no IP informado, decodifica e processa, sob
+     * demanda.
+     */
     @Override
     public boolean lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
@@ -58,7 +76,8 @@ public class EstoqueClpService implements EstacaoClpHandshake {
         try {
             synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
                 byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-                processData(ip, dados);
+                lerVariaveis(dados);
+                processarHandshake(connector);
             }
             return true;
         } catch (Exception e) {
@@ -67,15 +86,13 @@ public class EstoqueClpService implements EstacaoClpHandshake {
         }
     }
 
-    void processData(String ip, byte[] dados) {
-        PlcConnector connector = plcConnectionService.getConnection(ip);
-        if (connector == null) {
-            return;
-        }
-
+    /**
+     * Só leitura CLP: decodifica o bloco lido no bean {@link EstoqueCLP}. Não
+     * escreve no CLP nem no banco.
+     */
+    void lerVariaveis(byte[] dados) {
         estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
 
-        // -------------- Leitura das variáveis → EstoqueCLP -------------------
         estoqueCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 
         estoqueCLP.setIniciarPedido((dados[62] & (byte) 0x01) != 0);
@@ -106,7 +123,13 @@ public class EstoqueClpService implements EstacaoClpHandshake {
         estoqueCLP.setRemoverEstoque((dados[106] & 0x02) != 0);
         estoqueCLP.setRetornoEstoqueCheio((dados[106] & 0x04) != 0);
         estoqueCLP.setCorGuardarEstoque(((dados[108] & 0xFF) << 8) | (dados[109] & 0xFF));
+    }
 
+    /**
+     * Só escrita CLP: handshake sobre o estado já decodificado no bean. Banco
+     * apenas via {@link EstoqueService}.
+     */
+    void processarHandshake(PlcConnector connector) {
         int posicaoEstoque = estoqueCLP.getPosicaoEstoque();
         int corGuardarEstoque = estoqueCLP.getCorGuardarEstoque();
 
@@ -174,8 +197,10 @@ public class EstoqueClpService implements EstacaoClpHandshake {
             }
         }
 
-        // Handshake físico do magazine no CLP (ack + byte da memória). NÃO escreve no banco:
-        // o banco é o mestre e só muda via EstoqueService/API → EstoqueClpWriter (banco→CLP).
+        // Handshake físico do magazine no CLP (ack + byte da memória). NÃO escreve no
+        // banco:
+        // o banco é o mestre e só muda via EstoqueService/API → EstoqueClpWriter
+        // (banco→CLP).
         if (posicaoEstoque > 0 && estoqueCLP.isRemoverEstoque()) {
             if (!estado.isReadOnly()) {
                 try {
@@ -204,13 +229,18 @@ public class EstoqueClpService implements EstacaoClpHandshake {
                 byte offset = (byte) (68 + (posicaoEstoque - 1));
                 try {
                     connector.writeByte(9, offset, (byte) corGuardarEstoque);
+                    EstoqueResponseDTO es = estoqueService
+                    .adicionarBloco(
+                            new EstoqueRequestDTO(posicaoEstoque, CorBloco.fromValue(corGuardarEstoque)));
+                    log.debug("EstoqueDTO adicionado: {}", es);
                 } catch (Exception e) {
                     log.error("ERRO: Na tentativa de adicionar no Estoque", e);
                 }
             }
         }
 
-        // ocupado ou retornoEstoqueCheio em TRUE E iniciarGuardarEst ativo → iniciarGuardarEst em FALSE
+        // ocupado ou retornoEstoqueCheio em TRUE E iniciarGuardarEst ativo →
+        // iniciarGuardarEst em FALSE
         if ((estoqueCLP.isOcupado() || estoqueCLP.isRetornoEstoqueCheio()) && estoqueCLP.isIniciarGuardarEst()) {
             if (!estado.isReadOnly()) {
                 try {
@@ -221,10 +251,11 @@ public class EstoqueClpService implements EstacaoClpHandshake {
             }
         }
 
-        // Estação livre E pede posição para guardar → localiza posição livre no magazine
+        // Estação livre E pede posição para guardar → localiza posição livre no
+        // magazine
         if (estoqueCLP.isPedirPosicaoEst() && !estoqueCLP.isOcupado()) {
             if (!estado.isReadOnly()) {
-                int posEstoqueLivre = primeiraPosicaoLivre();
+                int posEstoqueLivre = estoqueService.primeiraPosicaoLivre();
                 if (posEstoqueLivre > 0) {
                     try {
                         connector.writeInt(9, 66, posEstoqueLivre); // PosicaoGuardar
@@ -241,14 +272,5 @@ public class EstoqueClpService implements EstacaoClpHandshake {
                 }
             }
         }
-    }
-
-    /** Primeira posição VAZIA do magazine de estoque, ou -1 se não houver. */
-    public int primeiraPosicaoLivre() {
-        return estoqueRepository.findPosicoesVazias()
-                .stream()
-                .map(e -> e.getPosicao())
-                .findFirst()
-                .orElse(-1);
     }
 }

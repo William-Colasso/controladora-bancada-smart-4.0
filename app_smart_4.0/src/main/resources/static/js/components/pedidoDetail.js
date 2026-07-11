@@ -1,4 +1,4 @@
-import { corBlocoClass, corBlocoLabel, statusBadgeClass, tipoChipClass, normalizeStatus, normalizeTipo, normalizeCor, normalizePadrao, normalizePosicao } from '../core/enums.js';
+import { corBlocoClass, corBlocoLabel, statusBadgeClass, tipoChipClass, normalizeStatus, normalizeTipo, normalizeCor, normalizePadrao, normalizePosicao, normalizeCorBloco } from '../core/enums.js';
 import { formatCount, formatDateTime, tampaHex, formatDuracao } from '../core/format.js';
 import { patchText, patchInner } from '../core/dom.js';
 
@@ -65,7 +65,7 @@ function tempoProducaoClass(status) {
 export function buildDetailHTML(p) {
   const status   = normalizeStatus(p.status);
   const tipo     = normalizeTipo(p.tipoPedido);
-  const corTampa = normalizeCor(p.corTampa);
+  const corTampa = normalizeCorBloco(p.corTampa);
   const blocos   = p.blocos ?? [];
   return `
     <div class="info-grid">

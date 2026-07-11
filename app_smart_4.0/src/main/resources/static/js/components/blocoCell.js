@@ -51,6 +51,17 @@ export function renderClpEstoqueCell(cell, pos, corInt, divergente) {
   cell.innerHTML = `<span class="bloco__pos">${pos}</span>`;
 }
 
+// Célula somente-leitura do grid "Expedição (CLP)": mostra a OP guardada no magazine do CLP
+// (0 = vazio) e marca divergência (OP diferente da do banco) com bloco--divergente.
+export function renderClpExpedicaoCell(cell, pos, op, divergente) {
+  cell.classList.remove('bloco--vazio', 'bloco--ocupado', 'skeleton', 'bloco--divergente');
+  cell.classList.add(op > 0 ? 'bloco--ocupado' : 'bloco--vazio');
+  if (divergente) cell.classList.add('bloco--divergente');
+  cell.innerHTML = op > 0
+    ? `<span class="bloco__pos">${pos}</span><span class="exp-bloco__op">OP ${formatOP(op)}</span>`
+    : `<span class="bloco__pos">${pos}</span>`;
+}
+
 export function renderExpedicaoCell(cell, pos, pedido) {
   cell.classList.remove('bloco--vazio', 'bloco--ocupado', 'skeleton');
   if (pedido) {
@@ -62,4 +73,21 @@ export function renderExpedicaoCell(cell, pos, pedido) {
     cell.classList.add('bloco--vazio');
     cell.innerHTML = `<span class="bloco__pos">${pos}</span>`;
   }
+}
+
+// Célula de expedição da página magazine: igual à do dashboard, mas posições ocupadas ganham o
+// botão ✕ de limpar (banco + CLP). onLimpar(pos) é chamado no clique do botão.
+export function renderMagazineExpedicaoCell(cell, pos, pedido, onLimpar) {
+  renderExpedicaoCell(cell, pos, pedido);
+  if (!pedido) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'bloco__limpar';
+  btn.title = `Limpar posição ${pos}`;
+  btn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onLimpar(pos);
+  });
+  cell.appendChild(btn);
 }

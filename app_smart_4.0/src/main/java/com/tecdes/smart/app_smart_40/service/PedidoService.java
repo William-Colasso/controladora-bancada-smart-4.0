@@ -5,8 +5,11 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.tecdes.smart.app_smart_40.dto.event.ExpedicaoMudou;
 import com.tecdes.smart.app_smart_40.dto.response.PedidoResponseDTO;
 import com.tecdes.smart.app_smart_40.exception.PedidoNotFoundException;
 import com.tecdes.smart.app_smart_40.dto.response.ExpedicaoResponseDTO;
@@ -37,6 +40,7 @@ public class PedidoService {
     // Usado apenas para a checagem otimista de disponibilidade em criar();
     // a reserva/baixa de expedição em si acontece em SmartService.enviarParaProducao().
     private final ExpedicaoService expedicaoService;
+    private final ApplicationEventPublisher publisher;
     // -------------------------------------------------------------------------
     // CREATE
     // -------------------------------------------------------------------------
@@ -140,6 +144,10 @@ public class PedidoService {
         return true;
     }
 
+    // readOnly = true mantém a sessão JPA aberta durante o mapeamento p/ DTO — sem isso, com
+    // spring.jpa.open-in-view=false, o acesso a blocos/lâminas (LAZY) quebra com
+    // LazyInitializationException (mesmo motivo do @Transactional em ExpedicaoService.listarTodos).
+    @Transactional(readOnly = true)
     public List<PedidoResponseDTO> listarTodos() {
         return pedidoRepository.findAll()
                 .stream()
@@ -147,6 +155,7 @@ public class PedidoService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public PedidoResponseDTO buscarPorId(Long id) {
         return pedidoRepository.findById(id)
                 .map(PedidoResponseDTO::fromEntity)
@@ -254,6 +263,9 @@ public class PedidoService {
         pedido.setStatus(StatusPedido.CONCLUIDO);
         pedido.setDataEntradaExpedicao(LocalDateTime.now());
         Pedido pedidoSalvo = pedidoRepository.save(pedido);
+
+        // O grid de expedição exibe o pedido vinculado → status mudou = grid pode mudar.
+        publisher.publishEvent(new ExpedicaoMudou());
 
         return PedidoResponseDTO.fromEntity(pedidoSalvo);
     }

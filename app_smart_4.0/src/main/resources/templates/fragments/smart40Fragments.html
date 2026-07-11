@@ -12,7 +12,7 @@
        ================================================================ -->
   <th:block th:fragment="headDeps">
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Three.js via importmap — deve vir antes de qualquer <script type="module"> -->
     <script type="importmap">
@@ -24,16 +24,16 @@
     }
     </script>
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+    <!-- Fontes self-hosted (sem CDN externo) -->
+    <link rel="stylesheet" th:href="@{/fonts/fonts.css}" />
 
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <!-- Font Awesome 6 self-hosted -->
+    <link rel="stylesheet" th:href="@{/vendor/font-awesome/css/all.min.css}" />
 
     <!-- Base CSS (reset + tokens + navbar + cards + toast) -->
     <link rel="stylesheet" th:href="@{/css/base.css}" />
+    <!-- Alerta global de comunicação parada com o CLP (usado pelas telas SSE) -->
+    <link rel="stylesheet" th:href="@{/css/components/comm-banner.css}" />
 
     <!-- Favicon -->
     <link rel="icon" th:href="@{/img/Smart_4.0.png}" type="image/png" />
@@ -72,6 +72,13 @@
         <span>Dashboard</span>
       </a>
 
+      <a th:href="@{/magazine}"
+         class="nav-link"
+         th:classappend="${activePage == 'magazine'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Magazine</span>
+      </a>
+
       <a th:href="@{/estacoes}"
          class="nav-link"
          th:classappend="${activePage == 'estacoes'} ? 'nav-link--active' : ''">
@@ -97,6 +104,13 @@
 
     <!-- ── Ações utilitárias ──────────────────────────────────── -->
     <div class="navbar__actions">
+
+      <!-- Configuração da comunicação (CLPs + tampa) -->
+      <a th:href="@{/configuracao}" class="nav-btn"
+         title="Configuração"
+         th:classappend="${activePage == 'configuracao'} ? 'nav-link--active' : ''">
+        <i class="fa-solid fa-gear"></i>
+      </a>
 
       <!-- Refresh -->
       <button type="button" class="nav-btn nav-btn--refresh"

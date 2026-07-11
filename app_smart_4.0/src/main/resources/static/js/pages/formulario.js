@@ -11,6 +11,11 @@ if (typeof PEDIDO_EDIT === 'string') {
 }
 const EDIT_ID = PEDIDO_EDIT?.id ?? null;
 
+let TAMPA_HABILITADA = window.TAMPA_HABILITADA ?? null
+if (typeof TAMPA_HABILITADA === 'string') {
+  try { TAMPA_HABILITADA = JSON.parse(TAMPA_HABILITADA); } catch { TAMPA_HABILITADA = null }
+}
+
 const opcoesLamina = {
   cores: window.SMART_ENUMS?.coresLaminas ?? [],
   padroes: window.SMART_ENUMS?.padroes ?? [],
@@ -25,7 +30,7 @@ const OP_SUGERIDA = ordemProducaoEl?.value ?? '';
 // ─── Preview 3D ──────────────────────────────────────────────────────────────
 
 const viewerEl = document.getElementById('formulario-viewer');
-const viewer   = viewerEl ? createPedidoViewer(viewerEl) : null;
+const viewer = viewerEl ? createPedidoViewer(viewerEl) : null;
 
 // Constrói um objeto compatível com o DTO de resposta a partir do payload atual
 function buildPreviewPedido() {
@@ -37,6 +42,7 @@ function buildPreviewPedido() {
       cor: b.cor,
       laminas: (b.laminas ?? []).map((l) => ({
         cor: l.cor,
+        padrao: l.padrao,
         posicaoNoBloco: l.posicao, // payload usa 'posicao'; viewer usa 'posicaoNoBloco'
       })),
     })),
@@ -113,9 +119,9 @@ function buildPayload() {
 // ─── Resposta ─────────────────────────────────────────────────────────────────
 
 function showResponse(ok, status, body) {
-  const panel   = document.getElementById('resp-panel');
+  const panel = document.getElementById('resp-panel');
   const titleEl = document.getElementById('resp-title');
-  const bodyEl  = document.getElementById('resp-body');
+  const bodyEl = document.getElementById('resp-body');
 
   panel.style.display = 'block';
   panel.className = ok ? 'ok' : 'err';
@@ -136,9 +142,12 @@ async function enviarPedido() {
     const data = EDIT_ID
       ? await Api.put(`/api/pedidos/${EDIT_ID}`, buildPayload())
       : await Api.post('/api/pedidos', buildPayload());
+
+
+
     showResponse(true, EDIT_ID ? 200 : 201, data);
   } catch (err) {
-    const panel   = document.getElementById('resp-panel');
+    const panel = document.getElementById('resp-panel');
     const titleEl = document.getElementById('resp-title');
     panel.style.display = 'block';
     panel.className = 'err';
@@ -197,6 +206,7 @@ function limparForm() {
   syncBlocos();
 }
 
+
 // ─── Eventos ─────────────────────────────────────────────────────────────────
 
 tipoPedidoEl.addEventListener('change', syncBlocos);
@@ -219,4 +229,11 @@ if (EDIT_ID) {
   prefillEdit(PEDIDO_EDIT);
 } else {
   syncBlocos(); // chama updatePreview internamente
+}
+
+
+if (!TAMPA_HABILITADA) {
+  document.getElementById('cor-tampa').selectedIndex = 0;
+
+  document.getElementById("cor-tampa").closest(".field").style.display = 'none'
 }

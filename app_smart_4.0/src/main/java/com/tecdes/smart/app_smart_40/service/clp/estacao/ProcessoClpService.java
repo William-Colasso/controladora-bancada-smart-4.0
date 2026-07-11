@@ -3,7 +3,7 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ProcessoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
@@ -15,9 +15,10 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Estação PROCESSO. Faz o handshake de operação (RecebidoOP) com o CLP.
  *
- * <p>Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB da estação e processa.
- * O snapshot lido do PLC vive no bean {@link ProcessoCLP} (model/clp), não em campos do service.
- * Sem polling agendado.
+ * <p>Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB e separa leitura de escrita —
+ * {@link #lerVariaveis(byte[])} decodifica os bytes no bean (só leitura CLP) e
+ * {@link #processarHandshake(PlcConnector)} aplica o handshake (só escrita CLP). O snapshot lido do
+ * PLC vive no bean {@link ProcessoCLP} (model/clp), não em campos do service. Sem banco. Sem polling.
  */
 @Service
 @RequiredArgsConstructor
@@ -42,7 +43,7 @@ public class ProcessoClpService implements EstacaoClpHandshake {
         return processoCLP;
     }
 
-    /** Lê o bloco DB da estação PROCESSO no IP informado e processa, sob demanda. */
+    /** Lê o bloco DB da estação PROCESSO no IP informado, decodifica e processa, sob demanda. */
     @Override
     public boolean lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
@@ -52,7 +53,8 @@ public class ProcessoClpService implements EstacaoClpHandshake {
         try {
             synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
                 byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-                processData(ip, dados);
+                lerVariaveis(dados);
+                processarHandshake(connector);
             }
             return true;
         } catch (Exception e) {
@@ -61,15 +63,10 @@ public class ProcessoClpService implements EstacaoClpHandshake {
         }
     }
 
-    void processData(String ip, byte[] dados) {
-        PlcConnector connector = plcConnectionService.getConnection(ip);
-        if (connector == null) {
-            return;
-        }
-
+    /** Só leitura CLP: decodifica o bloco lido no bean {@link ProcessoCLP}. Não escreve no CLP nem no banco. */
+    void lerVariaveis(byte[] dados) {
         estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
 
-        // -------------- Leitura das variáveis → ProcessoCLP -------------------
         processoCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 
         processoCLP.setNumeroOP(((dados[2] & 0xFF) << 8) | (dados[3] & 0xFF));
@@ -81,7 +78,10 @@ public class ProcessoClpService implements EstacaoClpHandshake {
         processoCLP.setAguardando((dados[6] & 0x02) != 0);
         processoCLP.setManual((dados[6] & 0x04) != 0);
         processoCLP.setEmergencia((dados[6] & 0x08) != 0);
+    }
 
+    /** Só escrita CLP: handshake de RecebidoOP sobre o estado já decodificado no bean. */
+    void processarHandshake(PlcConnector connector) {
         // Se StartOP, FinishOP e CancelOP estão em FALSE, então RecebidoOP fica em FALSE
         if (!processoCLP.isStartOP() && !processoCLP.isFinishOP() && !processoCLP.isCancelOP()) {
             if (!estado.isReadOnly()) {

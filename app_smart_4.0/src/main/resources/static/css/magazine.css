@@ -1,0 +1,31 @@
+/* ============================================================
+   Magazine — deltas sobre dashboard.css (grids/toolbar reusados)
+   ============================================================ */
+
+/* Botão ✕ de limpar posição da expedição (só em posição ocupada) */
+.bloco__limpar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(252, 5, 24, 0.4);
+  background: rgba(10, 10, 15, 0.7);
+  color: var(--color-red);
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition), transform var(--transition);
+  cursor: pointer;
+}
+.bloco:hover .bloco__limpar { opacity: 1; }
+.bloco__limpar:hover { transform: scale(1.15); background: rgba(252, 5, 24, 0.25); }
+
+/* Touch (tablet/celular) não tem hover: o ✕ ficaria invisível e a posição não poderia ser limpa. */
+@media (hover: none) {
+  .bloco__limpar { opacity: 1; }
+}

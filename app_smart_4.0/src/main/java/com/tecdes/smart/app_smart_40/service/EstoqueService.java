@@ -3,8 +3,10 @@ package com.tecdes.smart.app_smart_40.service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.tecdes.smart.app_smart_40.dto.event.EstoqueMudou;
 import com.tecdes.smart.app_smart_40.dto.request.EstoqueRequestDTO;
 import com.tecdes.smart.app_smart_40.dto.response.EstoqueResponseDTO;
 import com.tecdes.smart.app_smart_40.exception.EstoqueInsuficienteException;
@@ -23,7 +25,9 @@ import lombok.RequiredArgsConstructor;
 public class EstoqueService {
 
     private final EstoqueRepository estoqueRepository;
-    private final EstoqueClpWriter clpWriter;
+    
+    // Mutação → marcador p/ ClpEventoCoordinator (que decide se o grid SSE muda).
+    private final ApplicationEventPublisher publisher;
 
     public List<EstoqueResponseDTO> getDisponivel() {
         return estoqueRepository.findByCorBlocoNot(CorBloco.VAZIO)
@@ -59,7 +63,7 @@ public class EstoqueService {
 
         pos.setCorBloco(dto.corBloco());
         EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
-        clpWriter.escreverPosicao(dto.posicao(), dto.corBloco().getValue()); // banco→CLP (best-effort)
+        publisher.publishEvent(new EstoqueMudou());
         return salvo;
     }
 
@@ -81,7 +85,7 @@ public class EstoqueService {
 
         pos.setCorBloco(CorBloco.VAZIO);
         EstoqueResponseDTO salvo = EstoqueResponseDTO.fromEntity(estoqueRepository.save(pos));
-        clpWriter.escreverPosicao(nrPosicao.intValue(), CorBloco.VAZIO.getValue()); // banco→CLP (best-effort)
+        publisher.publishEvent(new EstoqueMudou());
         return salvo;
     }
 
@@ -111,6 +115,19 @@ public class EstoqueService {
         bloco.setEstoque(estoque);
         estoque.setCorBloco(CorBloco.VAZIO);
         estoqueRepository.save(estoque);
+        publisher.publishEvent(new EstoqueMudou()); // após commit, o coordenador reavalia o grid
+    }
+
+    /**
+     * Primeira posição VAZIA do magazine de estoque, ou -1 se não houver. Consultada pelo handshake
+     * do CLP (EstoqueClpService) para escolher onde guardar — mantém o acesso ao banco fora do CLP.
+     */
+    public int primeiraPosicaoLivre() {
+        return estoqueRepository.findPosicoesVazias()
+                .stream()
+                .map(e -> e.getPosicao())
+                .findFirst()
+                .orElse(-1);
     }
 
 }

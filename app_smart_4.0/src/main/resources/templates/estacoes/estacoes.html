@@ -19,6 +19,7 @@
     <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
     <link rel="stylesheet" th:href="@{/css/estacoes.css}" />
     <link rel="stylesheet" th:href="@{/css/components/pedido-viewer.css}" />
+    <link rel="stylesheet" th:href="@{/css/components/pedido-modal.css}" />
     <!-- ponytail: reusa os estilos do detalhe (.detail-info/.info-grid/.bloco-detail-card) do popup; pedidos.css é todo class-scoped, sem vazamento. -->
     <link rel="stylesheet" th:href="@{/css/pedidos.css}" />
   </head>
@@ -33,8 +34,9 @@
           <i class="fa-solid fa-industry"></i> Estações
         </h1>
         <p class="estacoes__sub">
-          Status e dados ao vivo lidos do CLP via SSE. Defina o IP na tela inicial; a leitura e o
-          processamento rodam automaticamente enquanto esta tela estiver aberta.
+          Status e dados ao vivo lidos do CLP via SSE. Defina os IPs em
+          <a th:href="@{/configuracao}">Configuração</a>; a leitura e o processamento rodam
+          automaticamente enquanto esta tela estiver aberta.
         </p>
       </header>
 

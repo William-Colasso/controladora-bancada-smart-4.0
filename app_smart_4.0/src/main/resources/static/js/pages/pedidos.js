@@ -21,16 +21,16 @@ const state = {
   snapshot: new Map(),
 };
 
-const tableBody   = document.getElementById('pedidosTableBody');
-const filaBody    = document.getElementById('filaBody');
+const tableBody = document.getElementById('pedidosTableBody');
+const filaBody = document.getElementById('filaBody');
 const detailPanel = document.getElementById('detailPanel');
 const detailViewer = document.getElementById('detailViewer');
-const detailInfo  = document.getElementById('detailInfo');
+const detailInfo = document.getElementById('detailInfo');
 const detailClose = document.getElementById('detailClose');
-const detailEdit  = document.getElementById('detailEdit');
-const filterBtns  = document.querySelectorAll('.filter-btn[data-filter]');
+const detailEdit = document.getElementById('detailEdit');
+const filterBtns = document.querySelectorAll('.filter-btn[data-filter]');
 const countDisplay = document.getElementById('pedidosCount');
-const loadingRow  = document.getElementById('loadingRow');
+const loadingRow = document.getElementById('loadingRow');
 
 // ─── Viewer — criado uma vez ao primeiro openDetail, reutilizado no polling ──
 let viewer = null;
@@ -156,8 +156,8 @@ async function startPedido(id, btn) {
   btn.dataset.state = 'queued';
   btn.disabled = true;
   try {
-    const data = await Api.post(`/api/pedidos/${id}`);
-    Toast.success(typeof data === 'string' ? data : 'Pedido enviado à produção.');
+    await Api.post(`/api/pedidos/${id}`);
+    Toast.success('Pedido enviado à fila de produção.');
     poller.refresh();
   } catch (err) {
     btn.dataset.state = 'idle';

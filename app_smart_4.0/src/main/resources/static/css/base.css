@@ -1,11 +1,448 @@
-@import url('./vars.css');
-@import url('./components/navbar.css');
-@import url('./components/card.css');
-@import url('./components/badge.css');
-@import url('./components/button.css');
-@import url('./components/field.css');
-@import url('./components/page-header.css');
-@import url('./components/toast.css');
+/* ============================================================
+   SMART 4.0 — Design Tokens
+   ============================================================ */
+
+:root {
+  /* --- Palette --- */
+  --color-bg:        #0a0a0f;
+  --color-surface:   #111118;
+  --color-surface-2: #1a1a25;
+  --color-border:    #2a2a3a;
+  --color-border-2:  #3a3a50;
+
+  --color-text:      #e8e8f0;
+  --color-muted:     #7070a0;
+  --color-dim:       #3a3a55;
+
+  /* Brand accent */
+  --color-accent:    #2b92d5;
+  --color-accent-lo: rgba(43, 146, 213, 0.12);
+
+  /* Bloco cores */
+  --cor-preto:    #1a1a1a;
+  --cor-vermelho: #fc0518;
+  --cor-azul:     #2b92d5;
+  --cor-vazio:    #1e1e2e;
+
+  /* Status */
+  --color-green:  #5ab300;
+  --color-yellow: #fece00;
+  --color-red:    #fc0518;
+
+  --success: var(--color-green);
+  --danger:  var(--color-red);
+
+  /* Tons sólidos auxiliares (ex-hardcoded) */
+  --color-preto-solid: #1a1a1a;
+  --color-preto-line:  #333;
+  --color-text-faint:  #888;
+  --color-bar-preto:   #555;
+  --color-branco:      #ddd;
+
+  /* --- Tipografia --- */
+  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'DM Sans', sans-serif;
+
+  /* --- Espaçamento --- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* --- Sombras --- */
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.5), 0 0 0 1px var(--color-border);
+  --shadow-glow: 0 0 24px rgba(43, 146, 213, 0.18);
+
+  /* --- Transições --- */
+  --transition: 160ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* ============================================================
+   Navbar
+   ============================================================ */
+
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 24px;
+  height: 60px;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--color-text);
+  transition: opacity var(--transition);
+  flex-shrink: 0;
+}
+.navbar__brand:hover { opacity: 0.8; }
+
+.navbar__logo {
+  width: 32px;
+  height: 32px;
+}
+
+.navbar__subtitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-muted);
+  margin-top: 1px;
+}
+
+.navbar__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 auto;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+.nav-link i {
+  font-size: 12px;
+  opacity: 0.8;
+}
+.nav-link:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.nav-link--active {
+  background: var(--color-surface-2);
+  color: var(--color-text) !important;
+  position: relative;
+}
+.nav-link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--color-accent);
+}
+
+.nav-link--cta {
+  border: 1px solid var(--color-border);
+}
+.nav-link--cta:hover {
+  border-color: rgba(43, 146, 213, 0.35);
+  background: var(--color-accent-lo);
+  color: var(--color-accent) !important;
+}
+.nav-link--cta.nav-link--active {
+  border-color: rgba(43, 146, 213, 0.35);
+  background: var(--color-accent-lo);
+  color: var(--color-accent) !important;
+}
+.nav-link--cta.nav-link--active::after {
+  background: var(--color-accent);
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  transition: background var(--transition), color var(--transition);
+}
+.nav-btn:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+.nav-btn--danger:hover { color: var(--color-red); }
+.nav-btn--refresh:hover { color: var(--color-accent); }
+
+@media (max-width: 768px) {
+  .navbar { padding: 0 16px; }
+  .nav-link span { display: none; }
+  .nav-link { padding: 6px 10px; gap: 0; }
+  .navbar__subtitle { display: none; }
+}
+
+/* Celular estreito: só o logo cabe ao lado dos 8 botões — some com o texto da marca. */
+@media (max-width: 480px) {
+  .navbar { padding: 0 12px; }
+  .navbar__brand > div { display: none; }
+  .navbar__nav { gap: 0; }
+  .nav-link { padding: 6px 8px; }
+  .nav-btn { width: 32px; height: 32px; }
+  .navbar__actions { gap: 4px; }
+}
+
+/* ============================================================
+   Card
+   ============================================================ */
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card__title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.card__body {
+  padding: 20px;
+}
+
+/* ============================================================
+   Badge
+   ============================================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.badge--blue   { background: rgba(43,146,213,0.15); color: var(--color-accent); }
+.badge--green  { background: rgba(90,179,0,0.15);   color: var(--color-green); }
+.badge--yellow { background: rgba(254,206,0,0.15);  color: var(--color-yellow); }
+.badge--red    { background: rgba(252,5,24,0.15);   color: var(--color-red); }
+.badge--dim    { background: var(--color-surface-2); color: var(--color-muted); }
+
+/* ============================================================
+   Button
+   ============================================================ */
+
+/* O atributo `hidden` precisa vencer o display da .btn (senão o botao aparece mesmo com [hidden]). */
+.btn[hidden] {
+  display: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition),
+              background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.btn--primary {
+  padding: 10px 24px;
+  background: var(--color-accent);
+  color: #fff;
+}
+.btn--primary:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.btn--primary:active { transform: translateY(0); }
+.btn--primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn--ghost {
+  padding: 10px 18px;
+  background: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+.btn--ghost:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border-color: var(--color-border-2);
+}
+
+.btn--sm {
+  padding: 6px 14px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================================
+   Field
+   ============================================================ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.field-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.field-ctrl {
+  padding: 9px 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237070a0' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.field-ctrl:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-lo);
+}
+.field-ctrl option {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+/* ============================================================
+   Page Header
+   ============================================================ */
+
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.page-title {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: var(--color-text);
+}
+.page-title span { color: var(--color-accent); }
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--color-muted);
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  animation: toastIn 200ms ease forwards;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+}
+.toast--success { border-left: 3px solid var(--color-green); }
+.toast--error   { border-left: 3px solid var(--color-red); }
+.toast--info    { border-left: 3px solid var(--color-accent); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   Base / Reset
+   ============================================================ */
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -20,7 +457,7 @@ html, body {
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 18px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -39,7 +476,7 @@ button {
   border: none;
   background: none;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: .875rem;
 }
 
 .page-wrapper {

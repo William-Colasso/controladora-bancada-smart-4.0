@@ -1,0 +1,92 @@
+{"properties": [
+  {
+    "name": "clp.ip.estoque",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de estoque. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/estoque, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.ip.processo",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de processo. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/processo, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.ip.montagem",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de montagem. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/montagem, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.ip.expedicao",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de expedição. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/expedicao, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.processar.base",
+    "type": "java.lang.Long",
+    "description": "Tick-base em ms do ClpProcessamentoScheduler: granularidade com que ele varre as 4 estações. Cada estação só é processada quando o seu próprio intervalo de polling (clp.processar.interval[.<estacao>]) vence. Deve ser <= o menor intervalo por estação."
+  },
+  {
+    "name": "clp.processar.interval",
+    "type": "java.lang.Long",
+    "description": "Intervalo de polling PADRÃO por estação em ms, usado quando não há override clp.processar.interval.<estacao>. Semeia o ClpPollingRegistry no boot; alterável em runtime via PUT /api/clp/polling/{estacao}. O processamento só roda enquanto houver ao menos um cliente SSE conectado (ou pedido na fila a reconciliar)."
+  },
+  {
+    "name": "clp.processar.interval.estoque",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de estoque. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/estoque."
+  },
+  {
+    "name": "clp.processar.interval.processo",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de processo. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/processo."
+  },
+  {
+    "name": "clp.processar.interval.montagem",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de montagem. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/montagem."
+  },
+  {
+    "name": "clp.processar.interval.expedicao",
+    "type": "java.lang.Long",
+    "description": "Override do intervalo de polling (ms) da estação de expedição. Ausente → cai no clp.processar.interval. Semeia o ClpPollingRegistry no boot; alterável via PUT /api/clp/polling/expedicao."
+  },
+  {
+    "name": "clp.ping.timeout",
+    "type": "java.lang.Integer",
+    "description": "Timeout em ms do ping (probe TCP na porta 102, protocolo S7) que testa o alcance de cada estação antes de comunicar (PlcConnectionService.online). Sem resposta no prazo, a passada é pulada (não trava) e o heartbeat não pulsa → o front marca 'sem comunicação'."
+  },
+  {
+    "name": "clp.socket.connect-timeout",
+    "type": "java.lang.Integer",
+    "description": "Timeout em ms do handshake TCP ao abrir a conexão S7 no pool (PlcConnectionService/S7ProtocolClient). Evita travar ~20s (default do SO) numa estação roteável mas inalcançável na porta 102."
+  },
+  {
+    "name": "clp.socket.read-timeout",
+    "type": "java.lang.Integer",
+    "description": "Timeout em ms (SO_TIMEOUT) de cada leitura no socket S7. Evita travar indefinidamente a leitura de uma estação que caiu no meio da sessão."
+  },
+  {
+    "name": "clp.watchdog.interval",
+    "type": "java.lang.Long",
+    "description": "Intervalo em ms em que o ClpEventoCoordinator verifica a idade da última leitura dos CLPs. Sem leitura há mais de 1,5s, publica estado \"off\" (on-change) para as 4 estações."
+  },
+  {
+    "name": "clp.sse.timeout",
+    "type": "java.lang.Long",
+    "description": "Tempo em ms antes do SseEmitter (GET /api/stream) encerrar a conexão. O EventSource do cliente reconecta automaticamente ao expirar."
+  },
+  {
+    "name": "delay.order.queue",
+    "type": "java.lang.Long",
+    "description": "Intervalo em ms entre processamentos da fila de pedidos (PedidoConsumerList.processOrder), que serializa a produção em um pedido por vez na bancada."
+  },
+  {
+    "name": "tampa.habilitada",
+    "type": "java.lang.Boolean",
+    "description": "Se a bancada possui controladora de tampa automática (ESP32). Semeia o TampaConfigRegistry no boot; alterável via PUT /api/config/tampa. Quando desabilitada, SmartService.enviarTampa vira um no-op silencioso."
+  },
+  {
+    "name": "tampa.ip",
+    "type": "java.lang.String",
+    "description": "IP inicial do ESP32 que controla a tampa automática. Semeia o TampaConfigRegistry no boot; alterável via PUT /api/config/tampa."
+  }
+]}

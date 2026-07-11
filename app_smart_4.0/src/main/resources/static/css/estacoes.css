@@ -5,8 +5,11 @@
    Reusa tokens de vars.css e o componente .badge (base.css).
    ============================================================ */
 
+
+
+
 .estacoes {
-  max-width: 1100px;
+  max-width: calc(100% - 10rem);
   margin: 0 auto;
   padding: 32px 24px;
 }
@@ -17,7 +20,7 @@
 
 .estacoes__titulo {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: 1.333rem;
   font-weight: 700;
   color: var(--color-text);
   display: flex;
@@ -32,11 +35,12 @@
 .estacoes__sub {
   margin-top: 8px;
   color: var(--color-muted);
-  font-size: 13px;
+  font-size: 0.722rem;
 }
 
 .estacoes__grid {
   display: grid;
+  
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 18px;
 }
@@ -64,13 +68,13 @@
 }
 
 .estacao-card__icone {
-  font-size: 18px;
+  font-size: 1rem;
   color: var(--color-accent);
 }
 
 .estacao-card__nome {
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 0.889rem;
   font-weight: 700;
   color: var(--color-text);
 }
@@ -89,14 +93,14 @@
 
 .estacao-card__rotulo {
   color: var(--color-muted);
-  font-size: 12px;
+  font-size: 0.667rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .estacao-card__func {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 0.778rem;
   font-weight: 700;
   color: var(--color-text);
 }
@@ -127,7 +131,7 @@
 
 .hmi__titulo {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.556rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -145,7 +149,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 0.667rem;
   color: var(--color-muted);
 }
 
@@ -187,7 +191,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 12px;
+  font-size: 0.667rem;
 }
 
 .valor__k { color: var(--color-muted); white-space: nowrap; }
@@ -211,7 +215,7 @@
   text-align: center;
   color: var(--color-muted);
   font-style: italic;
-  font-size: 12px;
+  font-size: 0.667rem;
 }
 
 /* Comunicação CLP parada: sem estacao-all recente (watchdog em estacoes.js). */
@@ -222,7 +226,7 @@
 /* OP em execução + botão do popup. */
 .estacao-card__op {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 0.778rem;
   font-weight: 700;
   color: var(--color-accent);
 }
@@ -231,60 +235,9 @@
   align-self: flex-start;
 }
 
-/* ── Popup do pedido em execução (<dialog>) ── */
-.pedido-modal {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-card);
-  padding: 0;
-  width: min(820px, 92vw);
-  max-width: 92vw;
-}
+/* Popup do pedido: estilos movidos para components/pedido-modal.css (compartilhado com o dashboard) */
 
-.pedido-modal::backdrop {
-  background: rgba(0, 0, 0, 0.55);
-}
-
-.pedido-modal__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.pedido-modal__title {
-  font-family: var(--font-mono);
-  font-weight: 700;
-}
-
-.pedido-modal__close {
-  background: none;
-  border: none;
-  color: var(--color-muted);
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.pedido-modal__close:hover {
-  color: var(--color-text);
-}
-
-.pedido-modal__body {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 20px;
-  padding: 20px;
-}
-
-.pedido-modal__body .pedido-viewer {
-  height: 300px;
-}
-
-@media (max-width: 640px) {
-  .pedido-modal__body {
-    grid-template-columns: 1fr;
-  }
+/* Celular: o max-width base (100% - 10rem = -180px) estrangula a coluna. Usa tela cheia. */
+@media (max-width: 768px) {
+  .estacoes { max-width: 100%; padding: 20px 16px; }
 }

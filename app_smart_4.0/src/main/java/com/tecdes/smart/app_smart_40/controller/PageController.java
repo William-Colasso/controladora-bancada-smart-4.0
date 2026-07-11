@@ -7,6 +7,7 @@ import com.tecdes.smart.app_smart_40.model.enums.*;
 import com.tecdes.smart.app_smart_40.service.EstoqueService;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.PedidoService;
+import com.tecdes.smart.app_smart_40.service.clp.TampaConfigRegistry;
 
 import lombok.RequiredArgsConstructor;
 import tools.jackson.databind.ObjectMapper;
@@ -33,6 +34,7 @@ public class PageController {
         private final ExpedicaoService expedicaoService;
         private final PedidoService pedidoService;
         private final ObjectMapper objectMapper;
+        private final TampaConfigRegistry tampaConfigRegistry;
 
         /**
          * GET /
@@ -79,6 +81,8 @@ public class PageController {
                 model.addAttribute("tiposPedido", TipoPedido.values());
                 model.addAttribute("coresTampa", CorTampa.values());
 
+
+                model.addAttribute("tampaHabilitada", tampaConfigRegistry.isHabilitada());
                 // ── Dados para os selects de lâmina (injetados via Thymeleaf inline) ─
                 // Formato: List<Map<String,Object>> → { nome, valor }
                 List<Map<String, Object>> coresLaminas = Arrays.stream(CorLamina.values())
@@ -117,6 +121,28 @@ public class PageController {
         @GetMapping("/estacoes")
         public String estacoes() {
                 return "estacoes/estacoes";
+        }
+
+        /**
+         * GET /magazine
+         * Controle manual dos magazines: estoque (28 posições, cor) e expedição
+         * (12 posições, limpar). Dados iniciais SSR; ao vivo via SSE.
+         */
+        @GetMapping("/magazine")
+        public String magazine(Model model) {
+                model.addAttribute("estoqueJson", toJson(estoqueService.getTodos()));
+                model.addAttribute("expedicaoJson", toJson(expedicaoService.listarTodos()));
+                return "magazine/magazine";
+        }
+
+        /**
+         * GET /configuracao
+         * Configuração da comunicação: IPs dos CLPs (base + final por estação) e
+         * controladora de tampa (ESP32). Sem model — tudo via /api/clp/ips e /api/config/tampa.
+         */
+        @GetMapping("/configuracao")
+        public String configuracao() {
+                return "configuracao/configuracao";
         }
 
         /**

@@ -23,6 +23,8 @@ const INT_COR_BLOCO  = { 0: 'VAZIO', 1: 'PRETO', 2: 'VERMELHO', 3: 'AZUL' };
 const INT_COR_LAMINA = { 1: 'VERMELHO', 2: 'AZUL', 3: 'AMARELO', 4: 'VERDE', 5: 'PRETO', 6: 'BRANCO' };
 // PosicaoLamina: ESQUERDA=1, FRENTE=2, DIREITA=3
 const INT_POSICAO    = { 1: 'ESQUERDA', 2: 'FRENTE', 3: 'DIREITA' };
+// PadraoLamina: NENHUM=0, CASA=1, NAVIO=2, ESTRELA=3
+const PADRAO_TO_INT  = { NENHUM: 0, CASA: 1, NAVIO: 2, ESTRELA: 3 };
 
 const AUTO_ROTATE_SPEED  = 2.0;
 const RESUME_DELAY_MS    = 2500;
@@ -55,6 +57,67 @@ function normLaminaCor(v) {
 
 export function normPosicao(v) {
   return typeof v === 'number' ? (INT_POSICAO[v] ?? 'FRENTE') : (v ?? 'FRENTE');
+}
+
+// ─── Padrões (decal na face externa da lâmina) ───────────────────────────────
+// As artes em img/padroes/ são traço preto sobre fundo transparente, com o
+// ícone deslocado do centro. Recortamos o bounding box do ícone e o pintamos
+// de branco (source-in) para poder tingir via material.color (preto em lâminas
+// claras, branco em escuras).
+
+const PADRAO_CACHE = new Map(); // int → Promise<{ texture, aspect }>
+
+function carregarPadrao(n) {
+  if (!PADRAO_CACHE.has(n)) {
+    PADRAO_CACHE.set(n, new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const { data } = ctx.getImageData(0, 0, c.width, c.height);
+        let minX = c.width, minY = c.height, maxX = -1, maxY = -1;
+        for (let y = 0; y < c.height; y++) {
+          for (let x = 0; x < c.width; x++) {
+            if (data[(y * c.width + x) * 4 + 3] > 8) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (maxX < minX) { reject(new Error(`padrao ${n} sem pixels visíveis`)); return; }
+        const pad = Math.round(Math.max(maxX - minX, maxY - minY) * 0.08);
+        const sx = Math.max(0, minX - pad);
+        const sy = Math.max(0, minY - pad);
+        const w  = Math.min(c.width, maxX + pad) - sx;
+        const h  = Math.min(c.height, maxY + pad) - sy;
+        const out = document.createElement('canvas');
+        out.width = w;
+        out.height = h;
+        const octx = out.getContext('2d');
+        octx.drawImage(img, sx, sy, w, h, 0, 0, w, h);
+        octx.globalCompositeOperation = 'source-in';
+        octx.fillStyle = '#fff';
+        octx.fillRect(0, 0, w, h);
+        resolve({ texture: new THREE.CanvasTexture(out), aspect: w / h });
+      };
+      img.onerror = () => reject(new Error(`falha ao carregar padrao ${n}`));
+      img.src = `/img/padroes/padrao${n}-2.png`;
+    }));
+  }
+  return PADRAO_CACHE.get(n);
+}
+
+function normPadraoInt(v) {
+  return typeof v === 'number' ? v : (PADRAO_TO_INT[v] ?? 0);
+}
+
+function luminancia(hex) {
+  return ((hex >> 16) & 255) * 0.299 + ((hex >> 8) & 255) * 0.587 + (hex & 255) * 0.114;
 }
 
 // ─── Tampa ───────────────────────────────────────────────────────────────────
@@ -123,6 +186,31 @@ function criarBloco(corVal, laminas, yOffset, delta = 0) {
       m.position.set(xBlade, bodyCenterY, 0);
     }
     group.add(m);
+
+    const padraoInt = normPadraoInt(lamina.padrao);
+    if (padraoInt > 0) {
+      const iconColor = luminancia(lHex) < 100 ? 0xffffff : 0x111111;
+      carregarPadrao(padraoInt).then(({ texture, aspect }) => {
+        if (!group.parent) return; // cena já foi reconstruída — decal órfão
+        const dH = bodyH * 0.45;
+        const decal = new THREE.Mesh(
+          new THREE.PlaneGeometry(dH * aspect, dH),
+          new THREE.MeshBasicMaterial({ map: texture, transparent: true, color: iconColor }),
+        );
+        const off = BLADE_T / 2 + 0.005;
+        if (face === 'FRENTE') {
+          decal.position.set(0, bodyCenterY, zBlade + off);
+        } else if (face === 'ESQUERDA') {
+          decal.position.set(-xBlade - off, bodyCenterY, 0);
+          decal.rotation.y = -Math.PI / 2;
+        } else {
+          decal.position.set(xBlade + off, bodyCenterY, 0);
+          decal.rotation.y = Math.PI / 2;
+        }
+        decal.renderOrder = group.renderOrder;
+        group.add(decal);
+      }).catch((e) => console.warn('[pedidoViewer] padrão indisponível:', e));
+    }
   });
 
   return group;
@@ -147,14 +235,29 @@ function descartarObj(obj) {
   obj.children?.forEach(descartarObj);
 }
 
+// Cor do ambiente do viewer — casa com o tema escuro do design system (surface-2 ≈ #1a1a25).
+const AMBIENTE_BG = 0xededed;
+
 function adicionarLuzes(scene) {
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const d1 = new THREE.DirectionalLight(0xffffff, 0.7);
-  d1.position.set(4, 6, 5);
-  scene.add(d1);
-  const d2 = new THREE.DirectionalLight(0xffffff, 0.3);
-  d2.position.set(-4, 2, -4);
-  scene.add(d2);
+  // Hemisfério: céu frio em cima, rebatida quente embaixo — dá volume sem estourar as cores.
+  scene.add(new THREE.HemisphereLight(0x9db4d8, 0x2a2433, 0.9));
+
+  // Key light com sombra suave (o chão ShadowMaterial recebe).
+  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  key.position.set(4, 7, 5);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.camera.left = -5;
+  key.shadow.camera.right = 5;
+  key.shadow.camera.top = 5;
+  key.shadow.camera.bottom = -5;
+  key.shadow.radius = 4;
+  scene.add(key);
+
+  // Rim/fill frio por trás para descolar o objeto do fundo escuro.
+  const rim = new THREE.DirectionalLight(0x6f8ecb, 0.35);
+  rim.position.set(-4, 2, -4);
+  scene.add(rim);
 }
 
 // Percorre todos os descendentes e define renderOrder, garantindo que blocos
@@ -183,6 +286,9 @@ function construirCena(root, pedido) {
   const tampa = criarTampa(pedido.corTampa, totalH);
   definirOrdem(tampa, blocos.length);
   root.add(tampa);
+
+  // Toda a pilha projeta sombra no chão (ShadowMaterial da cena).
+  root.traverse((node) => { if (node.isMesh) node.castShadow = true; });
 }
 
 // ─── API pública ─────────────────────────────────────────────────────────────
@@ -201,17 +307,45 @@ export function createPedidoViewer(container) {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setClearColor(0xe8e1f2, 1);
+  renderer.setClearColor(AMBIENTE_BG, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(0, 1.0, 8);
+  camera.position.set(0, 1.4, 8);
 
   const scene = new THREE.Scene();
+  // Fog sutil funde a borda do "palco" com o fundo — o objeto parece num ambiente, não num vácuo.
+  scene.fog = new THREE.Fog(AMBIENTE_BG, 14, 26);
   adicionarLuzes(scene);
 
   const root = new THREE.Group();
   scene.add(root);
+
+  // Chão invisível que só recebe sombra + anel de referência discreto (ambiente de bancada).
+  const chao = new THREE.Mesh(
+    new THREE.CircleGeometry(7, 48),
+    new THREE.ShadowMaterial({ opacity: 0.35 }),
+  );
+  chao.rotation.x = -Math.PI / 2;
+  chao.receiveShadow = true;
+  scene.add(chao);
+
+  const anel = new THREE.Mesh(
+    new THREE.RingGeometry(2.4, 2.46, 64),
+    new THREE.MeshBasicMaterial({ color: 0x2a2a3a, side: THREE.DoubleSide }),
+  );
+  anel.rotation.x = -Math.PI / 2;
+  scene.add(anel);
+
+  // O root é centralizado em Y (position.y = -totalH/2); o chão acompanha a base da pilha.
+  const posicionarChao = (pedido) => {
+    const nBlocos = pedido?.blocos?.length ?? 0;
+    const y = nBlocos ? -(BH * nBlocos) / 2 - 0.02 : -0.02;
+    chao.position.y = y;
+    anel.position.y = y + 0.005;
+  };
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enablePan      = false;
@@ -248,6 +382,7 @@ export function createPedidoViewer(container) {
     update(pedido) {
       container.classList.toggle('pedido-viewer--vazio', !pedido);
       construirCena(root, pedido);
+      posicionarChao(pedido);
     },
     dispose() {
       cancelAnimationFrame(raf);
@@ -255,6 +390,10 @@ export function createPedidoViewer(container) {
       ro.disconnect();
       controls.dispose();
       limparGrupo(root);
+      chao.geometry.dispose();
+      chao.material.dispose();
+      anel.geometry.dispose();
+      anel.material.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },

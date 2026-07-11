@@ -1,64 +1,8 @@
-import { Api } from '../core/api.js';
-import { Toast } from '../core/toast.js';
 import { createSse } from '../core/sse.js';
 import bancadaStatus from '../components/bancadaStatus.js';
 
-// Atualiza o badge de status dentro de uma linha de estação (.clp-ip-input).
-function setClpBadge(row, status, label, icon) {
-  const badge = row.querySelector('.clp-status-badge');
-  if (!badge) return;
-  badge.className = `clp-status-badge badge badge--${status}`;
-  badge.innerHTML = `<i class="fa-solid ${icon}"></i> ${label}`;
-}
-
-// Pré-preenche os inputs com o IP atual de cada estação (GET /api/clp/ips).
-async function carregarIps() {
-  try {
-    const ips = await Api.get('/api/clp/ips'); // [{ estacao, ip }]
-    ips.forEach(({ estacao, ip }) => {
-      const row = document.getElementById(`${estacao}-clp-ip`);
-      if (row && ip) row.querySelector('input.ip-clp').value = ip;
-    });
-  } catch (_) { /* sem IPs salvos ainda — segue com os campos vazios */ }
-}
-
-// "Tela de conexão" = apenas grava o IP da estação (PUT /api/clp/ips/{estacao}).
-// A leitura do CLP NÃO é mais ligada aqui: os produtores SSE leem sozinhos sempre que houver ao
-// menos 1 cliente SSE conectado (qualquer tela aberta). Ver core/sse.js + SseEmitterRegistry no back.
-// A estação vem do id da linha pai: "estoque-clp-ip" → "estoque" (apiName).
-async function salvarIp(row, estacao) {
-  const input = row.querySelector('input.ip-clp');
-  const ip = input.value.trim();
-  if (!ip) {
-    Toast.error('Informe o IP do CLP.');
-    return;
-  }
-
-  setClpBadge(row, 'dim', 'Salvando...', 'fa-circle-notch fa-spin');
-  try {
-    const r = await Api.put(`/api/clp/ips/${estacao}`, { ip });
-    setClpBadge(row, 'green', 'IP salvo', 'fa-circle-check');
-    Toast.success(`IP da estação ${estacao} salvo: ${r.ip}`);
-  } catch (err) {
-    setClpBadge(row, 'red', 'IP inválido', 'fa-circle-xmark');
-    Toast.error(err.message || 'Falha ao salvar o IP.');
-  }
-}
-
-document.querySelectorAll('.btn-conectar-clp').forEach((button) => {
-  const row = button.closest('.clp-ip-input');
-  const estacao = row.id.replace('-clp-ip', '');
-  button.addEventListener('click', async () => {
-    button.disabled = true;
-    try {
-      await salvarIp(row, estacao);
-    } finally {
-      button.disabled = false;
-    }
-  });
-});
-
-carregarIps();
+// Os IPs dos CLPs (e a tampa) são configurados na página /configuracao — aqui a home só
+// acompanha o status da bancada em tempo real.
 
 // Status das estações da bancada em tempo real (SSE). Alimenta os overlays do bancada-status.
 // Abrir esta tela já basta para o back-end ler E processar os CLPs automaticamente, a cada 300ms

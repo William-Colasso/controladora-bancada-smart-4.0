@@ -1,0 +1,142 @@
+<!doctype html>
+<!--
+  magazine.html
+  =============================================================
+  Controle manual dos magazines físicos (página de OPERAÇÃO —
+  o dashboard é somente leitura):
+    — Estoque: 28 posições, aplicar cor / esvaziar (banco→CLP)
+    — Expedição: 12 posições, limpar posição (banco + CLP)
+
+  Controller: PageController#magazine
+    Model attributes:
+      - estoqueJson   : JSON inicial de List<EstoqueResponseDTO>
+      - expedicaoJson : JSON inicial de List<ExpedicaoResponseDTO>
+  Ao vivo: SSE (eventos 'estoque' e 'expedicao').
+  =============================================================
+-->
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <title>Magazine — Smart 4.0</title>
+    <div th:replace="~{fragments/smart40Fragments :: headDeps}"></div>
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}" />
+    <link rel="stylesheet" th:href="@{/css/magazine.css}" />
+  </head>
+
+  <body>
+    <div th:replace="~{fragments/smart40Fragments :: navbar('magazine')}"></div>
+
+    <input type="hidden" id="initialEstoque"  th:value="${estoqueJson}" />
+    <input type="hidden" id="initialExpedicao" th:value="${expedicaoJson}" />
+
+    <div class="dashboard">
+
+      <!-- ============================================================
+           ESTOQUE — 28 posições, edição de cor
+           ============================================================ -->
+      <section class="section--estoque">
+
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <h2>Magazine · Estoque</h2>
+            </div>
+          </div>
+          <div class="refresh-indicator">
+            <div class="refresh-dot"></div>
+            <span>Ao vivo</span>
+          </div>
+        </div>
+
+        <div class="color-toolbar">
+          <span class="color-toolbar__label">Cor</span>
+
+          <button type="button" class="color-btn color-btn--preto"
+                  data-color="1" title="Preto"></button>
+          <button type="button" class="color-btn color-btn--vermelho"
+                  data-color="2" title="Vermelho"></button>
+          <button type="button" class="color-btn color-btn--azul"
+                  data-color="3" title="Azul"></button>
+          <button type="button" class="color-btn color-btn--vazio"
+                  data-color="0" title="Esvaziar"></button>
+
+          <div class="color-toolbar__divider"></div>
+
+          <span class="selection-info" id="selectionInfo">Nenhum selecionado</span>
+
+          <button type="button" class="btn btn--primary btn--sm" id="applyColorBtn" disabled>
+            Aplicar
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title">Posições 1 – 28</span>
+            <span class="section-meta">Clique ou arraste para selecionar · Escolha a cor · Aplique</span>
+          </div>
+          <div class="card__body">
+            <div class="blocos-grid blocos-grid--estoque" id="estoqueGrid">
+              <th:block th:each="i : ${#numbers.sequence(1, 28)}">
+                <div class="bloco bloco--estoque bloco--vazio skeleton"
+                     th:id="'bloco-est-' + ${i}">
+                  <span class="bloco__pos" th:text="${i}"></span>
+                </div>
+              </th:block>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ============================================================
+           EXPEDIÇÃO — 12 posições, limpar posição
+           ============================================================ -->
+      <section class="section--expedicao">
+
+        <div class="section-header">
+          <div class="section-title">
+            <div class="section-icon" style="background:rgba(90,179,0,0.12);color:#5ab300">
+              <i class="fa-solid fa-truck-ramp-box"></i>
+            </div>
+            <div>
+              <h2>Magazine · Expedição</h2>
+            </div>
+          </div>
+          <div class="refresh-indicator">
+            <div class="refresh-dot"></div>
+            <span>Ao vivo</span>
+          </div>
+        </div>
+
+        <div class="color-toolbar" style="justify-content:flex-start;gap:12px">
+          <span class="color-toolbar__label">Ação</span>
+          <span class="selection-info">
+            Passe o mouse numa posição ocupada e use <i class="fa-solid fa-xmark"></i> para
+            liberá-la (banco + CLP)
+          </span>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <span class="card__title">Posições 1 – 12</span>
+            <span class="section-meta">Limpar remove o pedido da posição e zera a OP no CLP</span>
+          </div>
+          <div class="card__body">
+            <div class="blocos-grid blocos-grid--expedicao" id="expedicaoGrid">
+              <th:block th:each="i : ${#numbers.sequence(1, 12)}">
+                <div class="bloco bloco--vazio skeleton" th:id="'bloco-exp-' + ${i}">
+                  <span class="bloco__pos" th:text="${i}"></span>
+                </div>
+              </th:block>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div><!-- /.dashboard -->
+
+    <script type="module" th:src="@{/js/pages/magazine.js}"></script>
+  </body>
+</html>

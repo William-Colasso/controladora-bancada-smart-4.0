@@ -13,18 +13,20 @@
 }
 
 .formulario-sidebar {
+  min-width:clamp(300px,600px,800px);
   position: sticky;
   top: 72px; /* abaixo da navbar */
 }
 
 .formulario-sidebar__body {
   padding: 14px !important;
+  width: 100%;
 }
 
 .preview-hint {
   margin-top: 10px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: var(--color-dim);
   text-align: center;
   letter-spacing: 0.06em;
@@ -36,6 +38,7 @@
   }
   .formulario-sidebar {
     position: static;
+    min-width: 0; /* o min-width: 600px transbordava a tela em coluna única */
   }
 }
 
@@ -67,7 +70,7 @@
   background: var(--color-accent-lo);
   border: 1px solid rgba(43, 146, 213, 0.3);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   color: var(--color-accent);
   flex-shrink: 0;
@@ -75,7 +78,7 @@
 
 .step-title {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -126,7 +129,7 @@
 
 .bloco-badge {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   padding: 2px 8px;
@@ -138,7 +141,7 @@
 
 .bloco-title {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -160,7 +163,7 @@
 
 .laminas-lbl {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -169,7 +172,7 @@
 
 .btn-add-lam {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 0.5625rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -199,7 +202,7 @@
 
 .lam-col-hdr {
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -228,7 +231,7 @@
   border-radius: var(--radius-sm);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 0.6875rem;
   width: 100%;
   cursor: pointer;
   transition: border-color var(--transition);
@@ -243,7 +246,7 @@
 
 .empty-lam {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 0.625rem;
   color: var(--color-dim);
   padding: 8px 6px;
   border: 1px dashed var(--color-border);
@@ -261,7 +264,7 @@
   border: 1px solid rgba(252, 5, 24, 0.25);
   background: rgba(252, 5, 24, 0.08);
   color: var(--color-red);
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1;
   font-weight: 700;
   cursor: pointer;
@@ -300,7 +303,7 @@
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface-2);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -310,7 +313,7 @@
 pre {
   white-space: pre-wrap;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-muted);
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);

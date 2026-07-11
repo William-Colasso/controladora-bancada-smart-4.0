@@ -3,10 +3,9 @@ package com.tecdes.smart.app_smart_40.service.clp.estacao;
 import org.springframework.stereotype.Service;
 
 import com.tecdes.smart.app_smart_40.model.clp.EstacaoCLP;
-import com.tecdes.smart.app_smart_40.model.clp.EstadoProducaoService;
+import com.tecdes.smart.app_smart_40.service.clp.EstadoProducaoService;
 import com.tecdes.smart.app_smart_40.model.clp.ExpedicaoCLP;
 import com.tecdes.smart.app_smart_40.model.enums.EstacoesCLP;
-import com.tecdes.smart.app_smart_40.repository.ExpedicaoRepository;
 import com.tecdes.smart.app_smart_40.service.ExpedicaoService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnectionService;
 import com.tecdes.smart.app_smart_40.service.clp.connection.PlcConnector;
@@ -18,9 +17,13 @@ import lombok.extern.slf4j.Slf4j;
  * Estação EXPEDIÇÃO. Handshake de operação + gestão do magazine de expedição (guardar/remover
  * pedidos concluídos) com o CLP.
  *
- * <p>Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB9 da estação e processa.
- * O snapshot lido do PLC vive no bean {@link ExpedicaoCLP} (model/clp), não em campos do service.
- * Persistência via {@link ExpedicaoService} (sem HTTP). Sem polling agendado.
+ * <p>Roda sob demanda: {@link #lerEProcessar(String)} lê o bloco DB9 e separa leitura de escrita —
+ * {@link #lerVariaveis(byte[])} decodifica os bytes no bean (só leitura CLP) e
+ * {@link #processarHandshake(PlcConnector)} aplica o handshake (escrita CLP + persistência). O snapshot
+ * lido do PLC vive no bean {@link ExpedicaoCLP} (model/clp), não em campos do service.
+ *
+ * <p><b>Sem acesso direto ao banco:</b> toda persistência passa pelo {@link ExpedicaoService}
+ * (guardar/remover na posição) — este service não conhece repositórios. Sem HTTP. Sem polling agendado.
  */
 @Service
 @RequiredArgsConstructor
@@ -34,7 +37,6 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
     private final PlcConnectionService plcConnectionService;
     private final EstadoProducaoService estado;
     private final ExpedicaoService expedicaoService;
-    private final ExpedicaoRepository expedicaoRepository;
     private final ExpedicaoCLP expedicaoCLP;
 
     @Override
@@ -47,7 +49,7 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
         return expedicaoCLP;
     }
 
-    /** Lê o bloco DB9 da estação EXPEDIÇÃO no IP informado e processa, sob demanda. */
+    /** Lê o bloco DB9 da estação EXPEDIÇÃO no IP informado, decodifica e processa, sob demanda. */
     @Override
     public boolean lerEProcessar(String ip) {
         PlcConnector connector = plcConnectionService.getConnection(ip);
@@ -57,7 +59,8 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
         try {
             synchronized (connector) { // serializa com as leituras read-only do SSE no mesmo socket S7
                 byte[] dados = connector.readBlock(DB, OFFSET, SIZE);
-                processData(ip, dados);
+                lerVariaveis(dados);
+                processarHandshake(connector);
             }
             return true;
         } catch (Exception e) {
@@ -66,15 +69,10 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
         }
     }
 
-    void processData(String ip, byte[] dados) {
-        PlcConnector connector = plcConnectionService.getConnection(ip);
-        if (connector == null) {
-            return;
-        }
-
+    /** Só leitura CLP: decodifica o bloco lido no bean {@link ExpedicaoCLP}. Não escreve no CLP nem no banco. */
+    void lerVariaveis(byte[] dados) {
         estado.setUltimoLeituraMillis(System.currentTimeMillis()); // frescor → gate do estacao-all
 
-        // -------------- Leitura das variáveis → ExpedicaoCLP -------------------
         expedicaoCLP.setRecebidoOp((dados[0] & 0x01) != 0);
 
         expedicaoCLP.setRecebidoExpedicao((dados[2] & 0x01) != 0);
@@ -105,7 +103,13 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
         expedicaoCLP.setAdicionarExpedicao((dados[42] & 0x01) != 0);
         expedicaoCLP.setRemoverExpedicao((dados[42] & 0x02) != 0);
         expedicaoCLP.setOpGuardadoExpedicao(((dados[44] & 0xFF) << 8) | (dados[45] & 0xFF));
+    }
 
+    /**
+     * Só escrita CLP + persistência: handshake sobre o estado já decodificado no bean. O acesso ao
+     * banco (guardar/remover na posição) fica encapsulado no {@link ExpedicaoService}.
+     */
+    void processarHandshake(PlcConnector connector) {
         int posicaoGuardarExp = expedicaoCLP.getPosicaoGuardarExp();
         int posicaoRemovidoExpedicao = expedicaoCLP.getPosicaoRemovidoExpedicao();
         int opGuardadoExpedicao = expedicaoCLP.getOpGuardadoExpedicao();
@@ -178,7 +182,7 @@ public class ExpedicaoClpService implements EstacaoClpHandshake {
             }
         }
 
-        if (!estado.isReadOnly() && (!expedicaoCLP.isAdicionarExpedicao() || !expedicaoCLP.isRemoverExpedicao())) {
+        if (!estado.isReadOnly() && !expedicaoCLP.isAdicionarExpedicao() && !expedicaoCLP.isRemoverExpedicao()) {
             try {
                 connector.writeBit(9, 2, 0, false); // RecebidoExpedicao = FALSE
             } catch (Exception e) {
