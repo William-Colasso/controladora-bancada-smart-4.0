@@ -24,3 +24,8 @@
 }
 .bloco:hover .bloco__limpar { opacity: 1; }
 .bloco__limpar:hover { transform: scale(1.15); background: rgba(252, 5, 24, 0.25); }
+
+/* Touch (tablet/celular) não tem hover: o ✕ ficaria invisível e a posição não poderia ser limpa. */
+@media (hover: none) {
+  .bloco__limpar { opacity: 1; }
+}

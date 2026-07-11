@@ -297,7 +297,7 @@
 }
 
 @media (max-width: 768px) {
-  .dashboard { padding: 16px; gap: 16px; }
+  .dashboard { padding: 16px; gap: 16px; width: 100%; }
   .blocos-grid--estoque { grid-template-columns: repeat(4, 1fr); }
   .blocos-grid--expedicao { grid-template-columns: repeat(4, 1fr); }
   .color-toolbar { flex-wrap: wrap; }
