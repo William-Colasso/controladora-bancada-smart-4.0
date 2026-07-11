@@ -137,13 +137,13 @@ public class PedidoConsumerList {
                 && posicao >= 1 && posicao <= magazine.length
                 && magazine[posicao - 1] == op;
 
-        System.out.println("\n\n\n\n\n\n\nPeça Guardada");
-        System.out.println("POS: " + posicao);
-        System.out.println("OP: " + op);
-        System.out.println("MAGAZINE: " + Arrays.toString(magazine));
-        System.out.println("NoMAGAZINE: " + noMagazine);
+        log.debug("Posição sendo guardada: {}", posicao);
+        log.debug("Ordem de Produção Atual: {}", op);
+        log.debug("Posições atuais do Magazine de Expedição: {}", magazine);
+        log.debug("Algo foi guardado no Magazine? => [{}]", noMagazine ? "SIM" : "NÃO");
 
-        System.out.println("\n\n\n\n\n\n\nPeça Guardada FIM");
+    
+        
         return noMagazine || op == expedicaoCLP.getNumeroOP();
     }
 
