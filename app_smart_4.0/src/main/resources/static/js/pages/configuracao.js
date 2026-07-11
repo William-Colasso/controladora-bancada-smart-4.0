@@ -103,6 +103,69 @@ if (salvarTodosBtn) {
   });
 }
 
+// ── Polling por estação ───────────────────────────────────────────────────────
+const pollingRows = [...document.querySelectorAll('.config-row--polling')];
+const salvarTodosPollingBtn = document.getElementById('salvarTodosPollingBtn');
+
+async function carregarPolling() {
+  try {
+    const lista = await Api.get('/api/clp/polling'); // [{ estacao, intervaloMs }]
+    const porEstacao = Object.fromEntries(lista.map(({ estacao, intervaloMs }) => [estacao, intervaloMs]));
+    pollingRows.forEach((row) => {
+      const est = row.dataset.estacao;
+      const input = row.querySelector('.config-input--intervalo');
+      const ms = porEstacao[est];
+      if (ms != null) input.value = ms;
+      const badge = row.querySelector('.config-badge');
+      setBadge(badge, 'dim', ms != null ? `${ms} ms` : '—', 'fa-stopwatch');
+    });
+  } catch (_) { /* indisponível — inputs ficam vazios */ }
+}
+
+async function salvarPolling(row) {
+  const est = row.dataset.estacao;
+  const badge = row.querySelector('.config-badge');
+  const intervaloMs = Number(row.querySelector('.config-input--intervalo').value);
+
+  if (!Number.isFinite(intervaloMs) || intervaloMs <= 0) {
+    setBadge(badge, 'red', 'informe ms > 0', 'fa-circle-xmark');
+    return false;
+  }
+  setBadge(badge, 'dim', 'salvando…', 'fa-circle-notch fa-spin');
+  try {
+    const r = await Api.put(`/api/clp/polling/${est}`, { intervaloMs });
+    setBadge(badge, 'green', `${r.intervaloMs} ms`, 'fa-circle-check');
+    return true;
+  } catch (err) {
+    setBadge(badge, 'red', err.message || 'intervalo inválido', 'fa-circle-xmark');
+    return false;
+  }
+}
+
+pollingRows.forEach((row) => {
+  row.querySelector('.btn-salvar-polling').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    try {
+      await salvarPolling(row);
+    } finally {
+      e.currentTarget && (e.currentTarget.disabled = false);
+    }
+  });
+});
+
+if (salvarTodosPollingBtn) {
+  salvarTodosPollingBtn.addEventListener('click', async () => {
+    salvarTodosPollingBtn.disabled = true;
+    let ok = 0;
+    for (const row of pollingRows) {
+      if (await salvarPolling(row)) ok++;
+    }
+    salvarTodosPollingBtn.disabled = false;
+    if (ok === pollingRows.length) Toast.success('Intervalos das 4 estações salvos');
+    else Toast.error(`${pollingRows.length - ok} estação(ões) com erro — veja os badges`);
+  });
+}
+
 // ── Tampa (ESP32) ────────────────────────────────────────────────────────────
 async function carregarTampa() {
   try {
@@ -170,5 +233,6 @@ if (leituraSwitch) {
 }
 
 carregarIps();
+carregarPolling();
 carregarTampa();
 carregarModo();
