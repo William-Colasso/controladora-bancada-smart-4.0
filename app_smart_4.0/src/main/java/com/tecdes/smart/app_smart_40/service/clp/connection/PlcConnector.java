@@ -7,12 +7,13 @@ public class PlcConnector {
     S7ProtocolClient client;
     boolean connected = false;
 
-    // Construtor para inicializar o cliente S7ProtocolClient com o IP e porta do CLP
-    public PlcConnector(String ipAddress, int port) {
+    // Construtor para inicializar o cliente S7ProtocolClient com o IP e porta do CLP.
+    // Os timeouts (conexão/leitura) são repassados ao cliente S7 para leituras fail-fast.
+    public PlcConnector(String ipAddress, int port, int connectTimeoutMs, int readTimeoutMs) {
         this.ipAddress = ipAddress;
         this.port = port;
 
-        client = new S7ProtocolClient(this.ipAddress, this.port);
+        client = new S7ProtocolClient(this.ipAddress, this.port, connectTimeoutMs, readTimeoutMs);
 
     }
 

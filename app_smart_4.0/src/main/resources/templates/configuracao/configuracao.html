@@ -103,6 +103,70 @@
       </section>
 
       <!-- ============================================================
+           POLLING POR ESTAÇÃO
+           ============================================================ -->
+      <section class="card">
+        <div class="card__header">
+          <span class="card__title"><i class="fa-solid fa-stopwatch"></i> Polling por estação</span>
+          <span class="section-meta">intervalo de leitura (ms)</span>
+        </div>
+        <div class="card__body">
+
+          <p class="config-hint">Com que frequência cada estação é lida. Valores maiores aliviam a rede/CLP;
+             menores deixam a tela mais responsiva. Vale imediatamente, sem reiniciar.</p>
+
+          <div class="config-divider"></div>
+
+          <div class="config-row config-row--polling" data-estacao="estoque">
+            <label>Estoque</label>
+            <span class="config-preview"><input type="number" min="1" step="50"
+                class="config-input config-input--intervalo" inputmode="numeric" autocomplete="off" /> ms</span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-polling">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-row config-row--polling" data-estacao="processo">
+            <label>Processo</label>
+            <span class="config-preview"><input type="number" min="1" step="50"
+                class="config-input config-input--intervalo" inputmode="numeric" autocomplete="off" /> ms</span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-polling">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-row config-row--polling" data-estacao="montagem">
+            <label>Montagem</label>
+            <span class="config-preview"><input type="number" min="1" step="50"
+                class="config-input config-input--intervalo" inputmode="numeric" autocomplete="off" /> ms</span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-polling">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-row config-row--polling" data-estacao="expedicao">
+            <label>Expedição</label>
+            <span class="config-preview"><input type="number" min="1" step="50"
+                class="config-input config-input--intervalo" inputmode="numeric" autocomplete="off" /> ms</span>
+            <button type="button" class="btn btn--primary btn--sm btn-salvar-polling">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar
+            </button>
+            <span class="config-badge badge badge--dim">—</span>
+          </div>
+
+          <div class="config-actions">
+            <button type="button" class="btn btn--primary" id="salvarTodosPollingBtn">
+              <i class="fa-solid fa-floppy-disk"></i> Salvar todos os intervalos
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============================================================
            CONTROLADORA DE TAMPA (ESP32)
            ============================================================ -->
       <section class="card">
