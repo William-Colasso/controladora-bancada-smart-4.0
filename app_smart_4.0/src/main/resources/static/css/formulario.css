@@ -38,6 +38,7 @@
   }
   .formulario-sidebar {
     position: static;
+    min-width: 0; /* o min-width: 600px transbordava a tela em coluna única */
   }
 }
 

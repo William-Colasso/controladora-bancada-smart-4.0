@@ -195,6 +195,16 @@
   .navbar__subtitle { display: none; }
 }
 
+/* Celular estreito: só o logo cabe ao lado dos 8 botões — some com o texto da marca. */
+@media (max-width: 480px) {
+  .navbar { padding: 0 12px; }
+  .navbar__brand > div { display: none; }
+  .navbar__nav { gap: 0; }
+  .nav-link { padding: 6px 8px; }
+  .nav-btn { width: 32px; height: 32px; }
+  .navbar__actions { gap: 4px; }
+}
+
 /* ============================================================
    Card
    ============================================================ */

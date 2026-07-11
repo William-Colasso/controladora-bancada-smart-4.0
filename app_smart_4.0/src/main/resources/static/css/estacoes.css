@@ -236,3 +236,8 @@
 }
 
 /* Popup do pedido: estilos movidos para components/pedido-modal.css (compartilhado com o dashboard) */
+
+/* Celular: o max-width base (100% - 10rem = -180px) estrangula a coluna. Usa tela cheia. */
+@media (max-width: 768px) {
+  .estacoes { max-width: 100%; padding: 20px 16px; }
+}
