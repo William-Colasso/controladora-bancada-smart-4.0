@@ -1,0 +1,52 @@
+{"properties": [
+  {
+    "name": "clp.ip.estoque",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de estoque. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/estoque, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.ip.processo",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de processo. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/processo, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.ip.montagem",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de montagem. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/montagem, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.ip.expedicao",
+    "type": "java.lang.String",
+    "description": "IP inicial do CLP da estação de expedição. Semeia o ClpIpRegistry no boot; alterável em runtime via PUT /api/clp/ips/expedicao, sem precisar reiniciar a aplicação."
+  },
+  {
+    "name": "clp.processar.interval",
+    "type": "java.lang.Long",
+    "description": "Intervalo em ms entre passadas de leitura/handshake dos 4 CLPs (ClpProcessamentoScheduler). Só roda enquanto houver ao menos um cliente SSE conectado; cada passada notifica o ClpEventoCoordinator, que publica eventos SSE apenas quando as variáveis mudam de estado."
+  },
+  {
+    "name": "clp.watchdog.interval",
+    "type": "java.lang.Long",
+    "description": "Intervalo em ms em que o ClpEventoCoordinator verifica a idade da última leitura dos CLPs. Sem leitura há mais de 1,5s, publica estado \"off\" (on-change) para as 4 estações."
+  },
+  {
+    "name": "clp.sse.timeout",
+    "type": "java.lang.Long",
+    "description": "Tempo em ms antes do SseEmitter (GET /api/stream) encerrar a conexão. O EventSource do cliente reconecta automaticamente ao expirar."
+  },
+  {
+    "name": "delay.order.queue",
+    "type": "java.lang.Long",
+    "description": "Intervalo em ms entre processamentos da fila de pedidos (PedidoConsumerList.processOrder), que serializa a produção em um pedido por vez na bancada."
+  },
+  {
+    "name": "tampa.habilitada",
+    "type": "java.lang.Boolean",
+    "description": "Se a bancada possui controladora de tampa automática (ESP32). Semeia o TampaConfigRegistry no boot; alterável via PUT /api/config/tampa. Quando desabilitada, SmartService.enviarTampa vira um no-op silencioso."
+  },
+  {
+    "name": "tampa.ip",
+    "type": "java.lang.String",
+    "description": "IP inicial do ESP32 que controla a tampa automática. Semeia o TampaConfigRegistry no boot; alterável via PUT /api/config/tampa."
+  }
+]}
