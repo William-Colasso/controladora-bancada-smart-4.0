@@ -34,3 +34,4 @@ build/
 
 ### Ambiente local ###
 .env
+.claude/worktrees/
